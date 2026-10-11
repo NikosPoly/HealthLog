@@ -1,4 +1,4 @@
-package com.example.healthdiary
+package com.example.healthlog
 
 import org.junit.Test
 

@@ -1,5 +1,5 @@
 
-package com.example.healthdiary
+package com.example.healthlog
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -15,9 +15,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.healthdiary.database.HealthDatabase
-import com.example.healthdiary.database.Measurement
-import com.example.healthdiary.ui.theme.HealthDiaryTheme
+import com.example.healthlog.database.HealthDatabase
+import com.example.healthlog.database.Measurement
+import com.example.healthlog.ui.theme.HealthLogTheme
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -33,8 +33,8 @@ class MainActivity : ComponentActivity() {
             .measurementDao()
 
         setContent {
-            HealthDiaryTheme {
-                HealthDiaryScreen(dao)
+            HealthLogTheme{
+                HealthLogScreen(dao)
             }
         }
     }
@@ -42,8 +42,8 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HealthDiaryScreen(
-    dao: com.example.healthdiary.database.MeasurementDao
+fun HealthLogScreen(
+    dao: com.example.healthlog.database.MeasurementDao
 ) {
     val measurements by dao.getAllMeasurements()
         .collectAsState(initial = emptyList())
@@ -350,8 +350,8 @@ fun HistoryCard(
 
 @Preview(showBackground = true)
 @Composable
-fun HealthDiaryPreview() {
-    HealthDiaryTheme {
+fun HealthLogPreview() {
+    HealthLogTheme {
         Text("HealthDiary")
     }
 }

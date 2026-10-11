@@ -22,6 +22,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "HealthDiary"
+rootProject.name = "HealthLog"
 include(":app")
  

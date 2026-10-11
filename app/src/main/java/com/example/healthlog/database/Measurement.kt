@@ -1,4 +1,4 @@
-package com.example.healthdiary.database
+package com.example.healthlog.database
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

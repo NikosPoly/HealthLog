@@ -1,4 +1,4 @@
-package com.example.healthdiary
+package com.example.healthlog
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
