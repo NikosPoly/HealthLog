@@ -17,31 +17,33 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.healthlog.database.MeasurementDao
 import com.example.healthlog.ui.components.HistoryCard
 import com.example.healthlog.ui.components.MeasurementCard
 import com.example.healthlog.ui.components.MeasurementEntryDialog
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HealthLogScreen(
-    dao: MeasurementDao
+    viewModel: HealthLogViewModel
 ) {
-    val measurements by dao.getAllMeasurements()
-        .collectAsState(initial = emptyList())
+    val measurements by viewModel.measurements.collectAsState()
 
-    val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(Unit) {
+        viewModel.messages.collect { message ->
+            snackbarHostState.showSnackbar(message)
+        }
+    }
 
     var selectedCategory by remember {
         mutableStateOf<String?>(null)
@@ -134,12 +136,7 @@ fun HealthLogScreen(
                 HistoryCard(
                     measurement = measurement,
                     onDelete = {
-                        scope.launch {
-                            dao.delete(measurement)
-                            snackbarHostState.showSnackbar(
-                                "Η μέτρηση διαγράφηκε"
-                            )
-                        }
+                        viewModel.delete(measurement)
                     }
                 )
             }
@@ -155,12 +152,7 @@ fun HealthLogScreen(
             onSave = { newMeasurement ->
                 selectedCategory = null
 
-                scope.launch {
-                    dao.insert(newMeasurement)
-                    snackbarHostState.showSnackbar(
-                        "Η μέτρηση αποθηκεύτηκε"
-                    )
-                }
+                viewModel.save(newMeasurement)
             }
         )
     }
