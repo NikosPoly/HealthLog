@@ -1,19 +1,23 @@
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
+# Gradle
+.gradle/
 /build
 /captures
 .externalNativeBuild
 .cxx
+
+# Kotlin 2.x session data and error logs
+.kotlin/
+
+# Local machine config (SDK path, etc.)
 local.properties
 
-# Local Android Studio device settings
-.idea/deploymentTargetSelector.xml
-.idea/deviceManager.xml
+# IntelliJ / Android Studio
+*.iml
+.idea/
+
+# Signing keys and secrets
+*.jks
+*.keystore
+
+# OS files
+.DS_Store
