@@ -6,7 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.healthlog.database.Measurement
-import com.example.healthlog.database.MeasurementDao
+import com.example.healthlog.repository.MeasurementRepository
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -16,11 +16,11 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class HealthLogViewModel(
-    private val dao: MeasurementDao
+    private val repository: MeasurementRepository
 ) : ViewModel() {
 
     // The live list from the database, newest first.
-    val measurements: StateFlow<List<Measurement>> = dao.getAllMeasurements()
+    val measurements: StateFlow<List<Measurement>> = repository.getAllMeasurements()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
@@ -33,23 +33,23 @@ class HealthLogViewModel(
 
     fun save(measurement: Measurement) {
         viewModelScope.launch {
-            dao.insert(measurement)
+            repository.insert(measurement)
             _messages.send("Η μέτρηση αποθηκεύτηκε")
         }
     }
 
     fun delete(measurement: Measurement) {
         viewModelScope.launch {
-            dao.delete(measurement)
+            repository.delete(measurement)
             _messages.send("Η μέτρηση διαγράφηκε")
         }
     }
 
     companion object {
-        // Tells Android how to create this ViewModel with a DAO.
-        fun factory(dao: MeasurementDao): ViewModelProvider.Factory = viewModelFactory {
+        // Tells Android how to create this ViewModel with a repository.
+        fun factory(repository: MeasurementRepository): ViewModelProvider.Factory = viewModelFactory {
             initializer {
-                HealthLogViewModel(dao)
+                HealthLogViewModel(repository)
             }
         }
     }

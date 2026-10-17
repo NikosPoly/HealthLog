@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.healthlog.database.HealthDatabase
+import com.example.healthlog.repository.MeasurementRepository
 import com.example.healthlog.ui.HealthLogScreen
 import com.example.healthlog.ui.HealthLogViewModel
 import com.example.healthlog.ui.theme.HealthLogTheme
@@ -23,8 +24,10 @@ class MainActivity : ComponentActivity() {
             .getDatabase(applicationContext)
             .measurementDao()
 
+        val repository = MeasurementRepository(dao)
+
         val viewModel: HealthLogViewModel by viewModels {
-            HealthLogViewModel.factory(dao)
+            HealthLogViewModel.factory(repository)
         }
 
         setContent {
