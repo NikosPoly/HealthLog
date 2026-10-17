@@ -10,8 +10,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.healthlog.database.Measurement
-import com.example.healthlog.ui.components.HistoryCard
-import com.example.healthlog.ui.components.MeasurementCard
+import com.example.healthlog.ui.components.MeasurementHistoryCard
+import com.example.healthlog.ui.components.MeasurementPickerCard
 import com.example.healthlog.ui.components.MeasurementEntryDialog
 import com.example.healthlog.ui.theme.HealthLogTheme
 
@@ -66,25 +66,25 @@ fun HealthLogContent(
             }
 
             item {
-                MeasurementCard("Αρτηριακή πίεση", "mmHg") {
+                MeasurementPickerCard("Αρτηριακή πίεση", "mmHg") {
                     onOpenEntry("Αρτηριακή πίεση")
                 }
             }
 
             item {
-                MeasurementCard("Παλμοί", "bpm") {
+                MeasurementPickerCard("Παλμοί", "bpm") {
                     onOpenEntry("Παλμοί")
                 }
             }
 
             item {
-                MeasurementCard("Σάκχαρο", "mg/dL") {
+                MeasurementPickerCard("Σάκχαρο", "mg/dL") {
                     onOpenEntry("Σάκχαρο")
                 }
             }
 
             item {
-                MeasurementCard("Βάρος", "kg") {
+                MeasurementPickerCard("Βάρος", "kg") {
                     onOpenEntry("Βάρος")
                 }
             }
@@ -108,7 +108,7 @@ fun HealthLogContent(
                 items = measurements,
                 key = { it.id }
             ) { measurement ->
-                HistoryCard(
+                MeasurementHistoryCard(
                     measurement = measurement,
                     onDelete = {
                         onDelete(measurement)

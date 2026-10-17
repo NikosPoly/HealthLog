@@ -12,7 +12,7 @@ import java.util.Date
 import java.util.Locale
 
 @Composable
-fun HistoryCard(
+fun MeasurementHistoryCard(
     measurement: Measurement,
     onDelete: () -> Unit
 ) {

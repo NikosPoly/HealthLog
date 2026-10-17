@@ -9,7 +9,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun MeasurementCard(
+fun MeasurementPickerCard(
     title: String,
     unit: String,
     onClick: () -> Unit
@@ -22,6 +22,7 @@ fun MeasurementCard(
         Column(Modifier.padding(18.dp)) {
             Text(
                 title,
+
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
