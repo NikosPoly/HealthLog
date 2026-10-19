@@ -26,8 +26,13 @@ fun MeasurementHistoryCard(
     val displayedValue = if (
         measurement.type == "Αρτηριακή πίεση"
     ) {
-        "${measurement.value.toInt()}/" +
+        val pressure = "${measurement.value.toInt()}/" +
                 "${measurement.secondaryValue?.toInt() ?: "?"} mmHg"
+
+        // Older entries have no pulse, so show it only when present.
+        val pulse = measurement.tertiaryValue?.let { " - ${it.toInt()} bpm" } ?: ""
+
+        pressure + pulse
     } else {
         val unit = when (measurement.type) {
             "Παλμοί" -> "bpm"

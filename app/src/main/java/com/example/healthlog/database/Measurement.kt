@@ -14,5 +14,9 @@ data class Measurement(
 
     val secondaryValue: Double? = null,
 
+    // Pulse recorded together with blood pressure.
+    // Nullable because entries saved before this column existed have no pulse.
+    val tertiaryValue: Double? = null,
+
     val timestamp: Long = System.currentTimeMillis()
 )

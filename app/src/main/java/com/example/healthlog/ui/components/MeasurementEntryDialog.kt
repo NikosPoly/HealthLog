@@ -23,16 +23,19 @@ fun MeasurementEntryDialog(
 ) {
     var value1 by remember { mutableStateOf("") }
     var value2 by remember { mutableStateOf("") }
+    var value3 by remember { mutableStateOf("") }
 
     val isPressure = category == "Αρτηριακή πίεση"
 
     val firstNumber = parsePositiveNumber(value1)
     val secondNumber = parsePositiveNumber(value2)
+    val thirdNumber = parsePositiveNumber(value3)
 
     val valid = if (isPressure) {
         firstNumber != null &&
                 secondNumber != null &&
-                firstNumber > secondNumber
+                firstNumber > secondNumber &&
+                thirdNumber != null
     } else {
         firstNumber != null
     }
@@ -73,6 +76,15 @@ fun MeasurementEntryDialog(
                         },
                         singleLine = true
                     )
+
+                    OutlinedTextField(
+                        value = value3,
+                        onValueChange = { value3 = it },
+                        label = {
+                            Text("Παλμοί (bpm)")
+                        },
+                        singleLine = true
+                    )
                 }
 
                 Text(
@@ -92,6 +104,11 @@ fun MeasurementEntryDialog(
                         value = first,
                         secondaryValue = if (isPressure) {
                             secondNumber
+                        } else {
+                            null
+                        },
+                        tertiaryValue = if (isPressure) {
+                            thirdNumber
                         } else {
                             null
                         }
