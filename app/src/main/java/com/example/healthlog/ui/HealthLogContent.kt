@@ -90,6 +90,12 @@ fun HealthLogContent(
             }
 
             item {
+                MeasurementPickerCard("Ύψος", "cm") {
+                    onOpenEntry("Ύψος")
+                }
+            }
+
+            item {
                 Spacer(Modifier.height(12.dp))
                 Text(
                     "Ιστορικό μετρήσεων",

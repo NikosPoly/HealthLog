@@ -38,9 +38,10 @@ fun MeasurementHistoryCard(
             "Παλμοί" -> "bpm"
             "Σάκχαρο" -> "mg/dL"
             "Βάρος" -> "kg"
+            "Ύψος" -> "cm"
             else -> ""
         }
-        "${measurement.value} $unit"
+        "${if (measurement.type == "Βάρος") measurement.value else formatNumber(measurement.value)} $unit"
     }
 
     Card(
@@ -71,3 +72,7 @@ fun MeasurementHistoryCard(
         }
     }
 }
+
+// Whole numbers without ".0" (180 cm), decimals as they are (72.5 kg).
+private fun formatNumber(value: Double): String =
+    if (value % 1.0 == 0.0) value.toLong().toString() else value.toString()

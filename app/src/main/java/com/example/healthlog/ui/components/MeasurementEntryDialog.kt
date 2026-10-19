@@ -2,6 +2,7 @@ package com.example.healthlog.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -12,6 +13,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.healthlog.database.Measurement
 
@@ -27,6 +29,10 @@ fun MeasurementEntryDialog(
     var value3 by rememberSaveable { mutableStateOf("") }
 
     val isPressure = category == "Αρτηριακή πίεση"
+
+    // Weight allows decimals (72,5); every other value is a whole number.
+    // This applies to the first field; the blood pressure fields are always whole numbers.
+    val firstFieldAllowsDecimals = category == "Βάρος"
 
     val firstNumber = parsePositiveNumber(value1)
     val secondNumber = parsePositiveNumber(value2)
@@ -54,37 +60,47 @@ fun MeasurementEntryDialog(
             ) {
                 OutlinedTextField(
                     value = value1,
-                    onValueChange = { value1 = it },
+                    onValueChange = { input ->
+                        if (isAllowedInput(input, firstFieldAllowsDecimals)) value1 = input
+                    },
                     label = {
                         Text(
                             if (isPressure) "Συστολική (mmHg)"
                             else when (category) {
                                 "Παλμοί" -> "Παλμοί (bpm)"
                                 "Σάκχαρο" -> "Σάκχαρο (mg/dL)"
+                                "Ύψος" -> "Ύψος (cm)"
                                 else -> "Βάρος (kg)"
                             }
                         )
                     },
-                    singleLine = true
+                    singleLine = true,
+                    keyboardOptions = numberKeyboard(firstFieldAllowsDecimals)
                 )
 
                 if (isPressure) {
                     OutlinedTextField(
                         value = value2,
-                        onValueChange = { value2 = it },
+                        onValueChange = { input ->
+                            if (isAllowedInput(input, allowDecimals = false)) value2 = input
+                        },
                         label = {
                             Text("Διαστολική (mmHg)")
                         },
-                        singleLine = true
+                        singleLine = true,
+                        keyboardOptions = numberKeyboard(allowDecimals = false)
                     )
 
                     OutlinedTextField(
                         value = value3,
-                        onValueChange = { value3 = it },
+                        onValueChange = { input ->
+                            if (isAllowedInput(input, allowDecimals = false)) value3 = input
+                        },
                         label = {
                             Text("Παλμοί (bpm)")
                         },
-                        singleLine = true
+                        singleLine = true,
+                        keyboardOptions = numberKeyboard(allowDecimals = false)
                     )
                 }
 
@@ -130,6 +146,18 @@ fun MeasurementEntryDialog(
         }
     )
 }
+
+// Only lets digits through; with allowDecimals, also one ',' or '.' (e.g. "72,5").
+// Anything else typed or pasted is ignored, so letters never appear in the field.
+private fun isAllowedInput(text: String, allowDecimals: Boolean): Boolean {
+    val pattern = if (allowDecimals) Regex("[0-9]*([.][0-9]*)?") else Regex("[0-9]*")
+    return pattern.matches(text)
+}
+
+// Number pad for whole numbers, number pad with a decimal separator for decimals.
+private fun numberKeyboard(allowDecimals: Boolean) = KeyboardOptions(
+    keyboardType = if (allowDecimals) KeyboardType.Decimal else KeyboardType.Number
+)
 
 private fun parsePositiveNumber(text: String): Double? {
     val number = text.trim()
