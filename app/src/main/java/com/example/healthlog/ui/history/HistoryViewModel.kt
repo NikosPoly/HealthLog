@@ -1,4 +1,4 @@
-package com.example.healthlog.ui
+package com.example.healthlog.ui.history
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -17,7 +17,8 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class HealthLogViewModel(
+// State and actions of the history screen: the saved measurements and deleting them.
+class HistoryViewModel(
     private val repository: MeasurementRepository
 ) : ViewModel() {
 
@@ -29,10 +30,6 @@ class HealthLogViewModel(
             initialValue = emptyList()
         )
 
-    // Which entry dialog is open: null = none, otherwise the selected category.
-    private val _selectedCategory = MutableStateFlow<String?>(null)
-    val selectedCategory: StateFlow<String?> = _selectedCategory.asStateFlow()
-
     // The measurement waiting for delete confirmation: null = no confirmation open.
     private val _measurementToDelete = MutableStateFlow<Measurement?>(null)
     val measurementToDelete: StateFlow<Measurement?> = _measurementToDelete.asStateFlow()
@@ -40,23 +37,6 @@ class HealthLogViewModel(
     // One-time messages for the snackbar, sent after an operation has finished.
     private val _messages = Channel<String>(Channel.BUFFERED)
     val messages: Flow<String> = _messages.receiveAsFlow()
-
-    fun openEntry(category: String) {
-        _selectedCategory.value = category
-    }
-
-    fun closeEntry() {
-        _selectedCategory.value = null
-    }
-
-    fun save(measurement: Measurement) {
-        closeEntry()
-
-        viewModelScope.launch {
-            repository.insert(measurement)
-            _messages.send("Η μέτρηση αποθηκεύτηκε")
-        }
-    }
 
     fun requestDelete(measurement: Measurement) {
         _measurementToDelete.value = measurement
@@ -83,7 +63,7 @@ class HealthLogViewModel(
         // Tells Android how to create this ViewModel with a repository.
         fun factory(repository: MeasurementRepository): ViewModelProvider.Factory = viewModelFactory {
             initializer {
-                HealthLogViewModel(repository)
+                HistoryViewModel(repository)
             }
         }
     }

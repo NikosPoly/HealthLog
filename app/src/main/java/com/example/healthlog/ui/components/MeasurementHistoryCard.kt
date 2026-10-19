@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.healthlog.database.Measurement
+import com.example.healthlog.ui.format.formatMeasurementValue
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
