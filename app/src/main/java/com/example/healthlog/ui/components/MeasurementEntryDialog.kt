@@ -10,7 +10,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.dp
 import com.example.healthlog.database.Measurement
@@ -21,9 +21,10 @@ fun MeasurementEntryDialog(
     onDismiss: () -> Unit,
     onSave: (Measurement) -> Unit
 ) {
-    var value1 by remember { mutableStateOf("") }
-    var value2 by remember { mutableStateOf("") }
-    var value3 by remember { mutableStateOf("") }
+    // rememberSaveable keeps the typed text when the screen is rotated.
+    var value1 by rememberSaveable { mutableStateOf("") }
+    var value2 by rememberSaveable { mutableStateOf("") }
+    var value3 by rememberSaveable { mutableStateOf("") }
 
     val isPressure = category == "Αρτηριακή πίεση"
 
