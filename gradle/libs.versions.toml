@@ -10,8 +10,10 @@ kotlin = "2.2.10"
 composeBom = "2026.02.01"
 room = "2.8.5"
 ksp = "2.3.10"
+navigationCompose = "2.9.0"
 
 [libraries]
+androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }

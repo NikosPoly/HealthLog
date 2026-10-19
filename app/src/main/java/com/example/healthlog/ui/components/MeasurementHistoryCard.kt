@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.healthlog.database.Measurement
+import com.example.healthlog.ui.format.formatMeasurementValue
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -23,20 +24,7 @@ fun MeasurementHistoryCard(
         )
     }
 
-    val displayedValue = if (
-        measurement.type == "Αρτηριακή πίεση"
-    ) {
-        "${measurement.value.toInt()}/" +
-                "${measurement.secondaryValue?.toInt() ?: "?"} mmHg"
-    } else {
-        val unit = when (measurement.type) {
-            "Παλμοί" -> "bpm"
-            "Σάκχαρο" -> "mg/dL"
-            "Βάρος" -> "kg"
-            else -> ""
-        }
-        "${measurement.value} $unit"
-    }
+    val displayedValue = formatMeasurementValue(measurement)
 
     Card(
         modifier = Modifier.fillMaxWidth()
