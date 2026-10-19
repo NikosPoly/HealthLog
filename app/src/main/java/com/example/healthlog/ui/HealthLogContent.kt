@@ -10,9 +10,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.healthlog.database.Measurement
+import com.example.healthlog.ui.components.DeleteConfirmationDialog
 import com.example.healthlog.ui.components.MeasurementHistoryCard
 import com.example.healthlog.ui.components.MeasurementPickerCard
 import com.example.healthlog.ui.components.MeasurementEntryDialog
+import com.example.healthlog.ui.components.formatMeasurementValue
 import com.example.healthlog.ui.theme.HealthLogTheme
 
 // Layout only: draws the screen from the values it receives
@@ -22,11 +24,14 @@ import com.example.healthlog.ui.theme.HealthLogTheme
 fun HealthLogContent(
     measurements: List<Measurement>,
     selectedCategory: String?,
+    measurementToDelete: Measurement?,
     snackbarHostState: SnackbarHostState,
     onOpenEntry: (String) -> Unit,
     onDismissEntry: () -> Unit,
     onSave: (Measurement) -> Unit,
-    onDelete: (Measurement) -> Unit
+    onRequestDelete: (Measurement) -> Unit,
+    onConfirmDelete: () -> Unit,
+    onCancelDelete: () -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -117,7 +122,7 @@ fun HealthLogContent(
                 MeasurementHistoryCard(
                     measurement = measurement,
                     onDelete = {
-                        onDelete(measurement)
+                        onRequestDelete(measurement)
                     }
                 )
             }
@@ -129,6 +134,15 @@ fun HealthLogContent(
             category = category,
             onDismiss = onDismissEntry,
             onSave = onSave
+        )
+    }
+
+    // Shown outside the list, so it doesn't depend on the card being visible.
+    measurementToDelete?.let { measurement ->
+        DeleteConfirmationDialog(
+            details = "${measurement.type}: ${formatMeasurementValue(measurement)}",
+            onConfirm = onConfirmDelete,
+            onDismiss = onCancelDelete
         )
     }
 }
@@ -152,11 +166,14 @@ private fun HealthLogContentPreview() {
                 )
             ),
             selectedCategory = null,
+            measurementToDelete = null,
             snackbarHostState = remember { SnackbarHostState() },
             onOpenEntry = {},
             onDismissEntry = {},
             onSave = {},
-            onDelete = {}
+            onRequestDelete = {},
+            onConfirmDelete = {},
+            onCancelDelete = {}
         )
     }
 }

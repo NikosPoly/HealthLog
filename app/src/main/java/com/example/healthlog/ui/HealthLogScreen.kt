@@ -15,6 +15,7 @@ fun HealthLogScreen(
 ) {
     val measurements by viewModel.measurements.collectAsState()
     val selectedCategory by viewModel.selectedCategory.collectAsState()
+    val measurementToDelete by viewModel.measurementToDelete.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -27,10 +28,13 @@ fun HealthLogScreen(
     HealthLogContent(
         measurements = measurements,
         selectedCategory = selectedCategory,
+        measurementToDelete = measurementToDelete,
         snackbarHostState = snackbarHostState,
         onOpenEntry = viewModel::openEntry,
         onDismissEntry = viewModel::closeEntry,
         onSave = viewModel::save,
-        onDelete = viewModel::delete
+        onRequestDelete = viewModel::requestDelete,
+        onConfirmDelete = viewModel::confirmDelete,
+        onCancelDelete = viewModel::cancelDelete
     )
 }

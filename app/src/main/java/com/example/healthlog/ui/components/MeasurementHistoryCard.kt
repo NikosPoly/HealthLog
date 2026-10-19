@@ -23,26 +23,7 @@ fun MeasurementHistoryCard(
         )
     }
 
-    val displayedValue = if (
-        measurement.type == "Αρτηριακή πίεση"
-    ) {
-        val pressure = "${measurement.value.toInt()}/" +
-                "${measurement.secondaryValue?.toInt() ?: "?"} mmHg"
-
-        // Older entries have no pulse, so show it only when present.
-        val pulse = measurement.tertiaryValue?.let { " - ${it.toInt()} bpm" } ?: ""
-
-        pressure + pulse
-    } else {
-        val unit = when (measurement.type) {
-            "Παλμοί" -> "bpm"
-            "Σάκχαρο" -> "mg/dL"
-            "Βάρος" -> "kg"
-            "Ύψος" -> "cm"
-            else -> ""
-        }
-        "${if (measurement.type == "Βάρος") measurement.value else formatNumber(measurement.value)} $unit"
-    }
+    val displayedValue = formatMeasurementValue(measurement)
 
     Card(
         modifier = Modifier.fillMaxWidth()
@@ -72,7 +53,3 @@ fun MeasurementHistoryCard(
         }
     }
 }
-
-// Whole numbers without ".0" (180 cm), decimals as they are (72.5 kg).
-private fun formatNumber(value: Double): String =
-    if (value % 1.0 == 0.0) value.toLong().toString() else value.toString()

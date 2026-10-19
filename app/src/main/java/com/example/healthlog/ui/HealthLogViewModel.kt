@@ -33,6 +33,10 @@ class HealthLogViewModel(
     private val _selectedCategory = MutableStateFlow<String?>(null)
     val selectedCategory: StateFlow<String?> = _selectedCategory.asStateFlow()
 
+    // The measurement waiting for delete confirmation: null = no confirmation open.
+    private val _measurementToDelete = MutableStateFlow<Measurement?>(null)
+    val measurementToDelete: StateFlow<Measurement?> = _measurementToDelete.asStateFlow()
+
     // One-time messages for the snackbar, sent after an operation has finished.
     private val _messages = Channel<String>(Channel.BUFFERED)
     val messages: Flow<String> = _messages.receiveAsFlow()
@@ -54,7 +58,21 @@ class HealthLogViewModel(
         }
     }
 
-    fun delete(measurement: Measurement) {
+    fun requestDelete(measurement: Measurement) {
+        _measurementToDelete.value = measurement
+    }
+
+    fun cancelDelete() {
+        _measurementToDelete.value = null
+    }
+
+    fun confirmDelete() {
+        val measurement = _measurementToDelete.value ?: return
+        _measurementToDelete.value = null
+        delete(measurement)
+    }
+
+    private fun delete(measurement: Measurement) {
         viewModelScope.launch {
             repository.delete(measurement)
             _messages.send("Η μέτρηση διαγράφηκε")
