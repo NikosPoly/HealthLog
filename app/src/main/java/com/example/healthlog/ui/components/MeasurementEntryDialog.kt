@@ -16,10 +16,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.healthlog.database.Measurement
+import com.example.healthlog.model.MeasurementType
 
 @Composable
 fun MeasurementEntryDialog(
-    category: String,
+    type: MeasurementType,
     onDismiss: () -> Unit,
     onSave: (Measurement) -> Unit
 ) {
@@ -28,11 +29,11 @@ fun MeasurementEntryDialog(
     var value2 by rememberSaveable { mutableStateOf("") }
     var value3 by rememberSaveable { mutableStateOf("") }
 
-    val isPressure = category == "Αρτηριακή πίεση"
+    val isPressure = type == MeasurementType.BLOOD_PRESSURE
 
     // Weight allows decimals (72,5); every other value is a whole number.
     // This applies to the first field; the blood pressure fields are always whole numbers.
-    val firstFieldAllowsDecimals = category == "Βάρος"
+    val firstFieldAllowsDecimals = type.allowsDecimals
 
     val firstNumber = parsePositiveNumber(value1)
     val secondNumber = parsePositiveNumber(value2)
@@ -52,7 +53,7 @@ fun MeasurementEntryDialog(
             onDismiss()
         },
         title = {
-            Text(category)
+            Text(type.label)
         },
         text = {
             Column(
@@ -66,12 +67,7 @@ fun MeasurementEntryDialog(
                     label = {
                         Text(
                             if (isPressure) "Συστολική (mmHg)"
-                            else when (category) {
-                                "Παλμοί" -> "Παλμοί (bpm)"
-                                "Σάκχαρο" -> "Σάκχαρο (mg/dL)"
-                                "Ύψος" -> "Ύψος (cm)"
-                                else -> "Βάρος (kg)"
-                            }
+                            else "${type.label} (${type.unit})"
                         )
                     },
                     singleLine = true,
@@ -117,7 +113,7 @@ fun MeasurementEntryDialog(
                     val first = firstNumber ?: return@TextButton
 
                     val newMeasurement = Measurement(
-                        type = category,
+                        type = type,
                         value = first,
                         secondaryValue = if (isPressure) {
                             secondNumber
@@ -150,7 +146,7 @@ fun MeasurementEntryDialog(
 // Only lets digits through; with allowDecimals, also one ',' or '.' (e.g. "72,5").
 // Anything else typed or pasted is ignored, so letters never appear in the field.
 private fun isAllowedInput(text: String, allowDecimals: Boolean): Boolean {
-    val pattern = if (allowDecimals) Regex("[0-9]*([.][0-9]*)?") else Regex("[0-9]*")
+    val pattern = if (allowDecimals) Regex("[0-9]*([.,][0-9]*)?") else Regex("[0-9]*")
     return pattern.matches(text)
 }
 

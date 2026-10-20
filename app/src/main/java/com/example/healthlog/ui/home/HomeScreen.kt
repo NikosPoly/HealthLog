@@ -14,7 +14,7 @@ fun HomeScreen(
     viewModel: HomeViewModel,
     onOpenHistory: () -> Unit
 ) {
-    val selectedCategory by viewModel.selectedCategory.collectAsState()
+    val selectedType by viewModel.selectedType.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -25,7 +25,7 @@ fun HomeScreen(
     }
 
     HomeContent(
-        selectedCategory = selectedCategory,
+        selectedType = selectedType,
         snackbarHostState = snackbarHostState,
         onOpenEntry = viewModel::openEntry,
         onDismissEntry = viewModel::closeEntry,

@@ -2,6 +2,7 @@ package com.example.healthlog.ui.home
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -11,6 +12,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
+import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.ui.components.MeasurementEntryDialog
 import com.example.healthlog.ui.components.MeasurementPickerCard
 import com.example.healthlog.ui.theme.HealthLogTheme
@@ -20,9 +22,9 @@ import com.example.healthlog.ui.theme.HealthLogTheme
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeContent(
-    selectedCategory: String?,
+    selectedType: MeasurementType?,
     snackbarHostState: SnackbarHostState,
-    onOpenEntry: (String) -> Unit,
+    onOpenEntry: (MeasurementType) -> Unit,
     onDismissEntry: () -> Unit,
     onSave: (Measurement) -> Unit,
     onOpenHistory: () -> Unit
@@ -46,7 +48,7 @@ fun HomeContent(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { onOpenEntry("Αρτηριακή πίεση") }
+                onClick = { onOpenEntry(MeasurementType.BLOOD_PRESSURE) }
             ) {
                 Text("+", style = MaterialTheme.typography.headlineMedium)
             }
@@ -72,41 +74,18 @@ fun HomeContent(
                 )
             }
 
-            item {
-                MeasurementPickerCard("Αρτηριακή πίεση", "mmHg") {
-                    onOpenEntry("Αρτηριακή πίεση")
-                }
-            }
-
-            item {
-                MeasurementPickerCard("Παλμοί", "bpm") {
-                    onOpenEntry("Παλμοί")
-                }
-            }
-
-            item {
-                MeasurementPickerCard("Σάκχαρο", "mg/dL") {
-                    onOpenEntry("Σάκχαρο")
-                }
-            }
-
-            item {
-                MeasurementPickerCard("Βάρος", "kg") {
-                    onOpenEntry("Βάρος")
-                }
-            }
-
-            item {
-                MeasurementPickerCard("Ύψος", "cm") {
-                    onOpenEntry("Ύψος")
+            // One card per measurement type, in the order they are declared in the enum.
+            items(MeasurementType.entries) { type ->
+                MeasurementPickerCard(type.label, type.unit) {
+                    onOpenEntry(type)
                 }
             }
         }
     }
 
-    selectedCategory?.let { category ->
+    selectedType?.let { type ->
         MeasurementEntryDialog(
-            category = category,
+            type = type,
             onDismiss = onDismissEntry,
             onSave = onSave
         )
@@ -118,7 +97,7 @@ fun HomeContent(
 private fun HomeContentPreview() {
     HealthLogTheme {
         HomeContent(
-            selectedCategory = null,
+            selectedType = null,
             snackbarHostState = remember { SnackbarHostState() },
             onOpenEntry = {},
             onDismissEntry = {},

@@ -9,7 +9,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [Measurement::class],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class HealthDatabase : RoomDatabase() {
@@ -28,6 +28,18 @@ abstract class HealthDatabase : RoomDatabase() {
             }
         }
 
+        // Version 2 → 3: the type is now stored as the MeasurementType name
+        // instead of the Greek text, so the existing rows are converted.
+        private val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("UPDATE measurements SET type = 'BLOOD_PRESSURE' WHERE type = 'Αρτηριακή πίεση'")
+                db.execSQL("UPDATE measurements SET type = 'PULSE' WHERE type = 'Παλμοί'")
+                db.execSQL("UPDATE measurements SET type = 'BLOOD_SUGAR' WHERE type = 'Σάκχαρο'")
+                db.execSQL("UPDATE measurements SET type = 'WEIGHT' WHERE type = 'Βάρος'")
+                db.execSQL("UPDATE measurements SET type = 'HEIGHT' WHERE type = 'Ύψος'")
+            }
+        }
+
         fun getDatabase(context: Context): HealthDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -35,7 +47,7 @@ abstract class HealthDatabase : RoomDatabase() {
                     HealthDatabase::class.java,
                     "health_database"
                 )
-                    .addMigrations(MIGRATION_1_2)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                     .build()
 
                 INSTANCE = instance
