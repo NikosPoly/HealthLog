@@ -11,6 +11,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
+import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.ui.components.DeleteConfirmationDialog
 import com.example.healthlog.ui.components.MeasurementHistoryCard
 import com.example.healthlog.ui.format.formatMeasurementValue
@@ -82,7 +83,7 @@ fun HistoryContent(
     // Shown outside the list, so it doesn't depend on the card being visible.
     measurementToDelete?.let { measurement ->
         DeleteConfirmationDialog(
-            details = "${measurement.type}: ${formatMeasurementValue(measurement)}",
+            details = "${measurement.type.label}: ${formatMeasurementValue(measurement)}",
             onConfirm = onConfirmDelete,
             onDismiss = onCancelDelete
         )
@@ -97,14 +98,14 @@ private fun HistoryContentPreview() {
             measurements = listOf(
                 Measurement(
                     id = 1,
-                    type = "Αρτηριακή πίεση",
+                    type = MeasurementType.BLOOD_PRESSURE,
                     value = 120.0,
                     secondaryValue = 80.0,
                     tertiaryValue = 72.0
                 ),
                 Measurement(
                     id = 2,
-                    type = "Βάρος",
+                    type = MeasurementType.WEIGHT,
                     value = 78.0
                 )
             ),

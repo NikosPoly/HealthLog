@@ -16,91 +16,53 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.healthlog.database.Measurement
+import com.example.healthlog.model.MeasurementType
 
 @Composable
 fun MeasurementEntryDialog(
-    category: String,
+    type: MeasurementType,
     onDismiss: () -> Unit,
     onSave: (Measurement) -> Unit
 ) {
+    // The typed text of each field, in the order of type.fields.
     // rememberSaveable keeps the typed text when the screen is rotated.
-    var value1 by rememberSaveable { mutableStateOf("") }
-    var value2 by rememberSaveable { mutableStateOf("") }
-    var value3 by rememberSaveable { mutableStateOf("") }
+    var texts by rememberSaveable { mutableStateOf(List(type.fields.size) { "" }) }
 
-    val isPressure = category == "Αρτηριακή πίεση"
+    val numbers = texts.map { parsePositiveNumber(it) }
+    val values = numbers.filterNotNull()
 
-    // Weight allows decimals (72,5); every other value is a whole number.
-    // This applies to the first field; the blood pressure fields are always whole numbers.
-    val firstFieldAllowsDecimals = category == "Βάρος"
+    // Every field is required.
+    val allFilled = values.size == type.fields.size
 
-    val firstNumber = parsePositiveNumber(value1)
-    val secondNumber = parsePositiveNumber(value2)
-    val thirdNumber = parsePositiveNumber(value3)
-
-    val valid = if (isPressure) {
-        firstNumber != null &&
-                secondNumber != null &&
-                firstNumber > secondNumber &&
-                thirdNumber != null
-    } else {
-        firstNumber != null
-    }
+    // Blood pressure: the systolic value must be higher than the diastolic.
+    val valid = allFilled &&
+            (type != MeasurementType.BLOOD_PRESSURE || values[0] > values[1])
 
     AlertDialog(
         onDismissRequest = {
             onDismiss()
         },
         title = {
-            Text(category)
+            Text(type.label)
         },
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                OutlinedTextField(
-                    value = value1,
-                    onValueChange = { input ->
-                        if (isAllowedInput(input, firstFieldAllowsDecimals)) value1 = input
-                    },
-                    label = {
-                        Text(
-                            if (isPressure) "Συστολική (mmHg)"
-                            else when (category) {
-                                "Παλμοί" -> "Παλμοί (bpm)"
-                                "Σάκχαρο" -> "Σάκχαρο (mg/dL)"
-                                "Ύψος" -> "Ύψος (cm)"
-                                else -> "Βάρος (kg)"
+                // One text field per value of the type.
+                type.fields.forEachIndexed { index, field ->
+                    OutlinedTextField(
+                        value = texts[index],
+                        onValueChange = { input ->
+                            if (isAllowedInput(input, field.allowsDecimals)) {
+                                texts = texts.toMutableList().also { it[index] = input }
                             }
-                        )
-                    },
-                    singleLine = true,
-                    keyboardOptions = numberKeyboard(firstFieldAllowsDecimals)
-                )
-
-                if (isPressure) {
-                    OutlinedTextField(
-                        value = value2,
-                        onValueChange = { input ->
-                            if (isAllowedInput(input, allowDecimals = false)) value2 = input
                         },
                         label = {
-                            Text("Διαστολική (mmHg)")
+                            Text("${field.label} (${field.unit})")
                         },
                         singleLine = true,
-                        keyboardOptions = numberKeyboard(allowDecimals = false)
-                    )
-
-                    OutlinedTextField(
-                        value = value3,
-                        onValueChange = { input ->
-                            if (isAllowedInput(input, allowDecimals = false)) value3 = input
-                        },
-                        label = {
-                            Text("Παλμοί (bpm)")
-                        },
-                        singleLine = true,
-                        keyboardOptions = numberKeyboard(allowDecimals = false)
+                        keyboardOptions = numberKeyboard(field.allowsDecimals)
                     )
                 }
 
@@ -114,21 +76,14 @@ fun MeasurementEntryDialog(
             TextButton(
                 enabled = valid,
                 onClick = {
-                    val first = firstNumber ?: return@TextButton
+                    if (!valid) return@TextButton
 
+                    // The values are stored in order: value, secondaryValue, tertiaryValue.
                     val newMeasurement = Measurement(
-                        type = category,
-                        value = first,
-                        secondaryValue = if (isPressure) {
-                            secondNumber
-                        } else {
-                            null
-                        },
-                        tertiaryValue = if (isPressure) {
-                            thirdNumber
-                        } else {
-                            null
-                        }
+                        type = type,
+                        value = values[0],
+                        secondaryValue = values.getOrNull(1),
+                        tertiaryValue = values.getOrNull(2)
                     )
 
                     onSave(newMeasurement)

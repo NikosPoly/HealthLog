@@ -34,7 +34,7 @@ fun MeasurementHistoryCard(
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Text(
-                measurement.type,
+                measurement.type.label,
                 fontWeight = FontWeight.Bold
             )
 

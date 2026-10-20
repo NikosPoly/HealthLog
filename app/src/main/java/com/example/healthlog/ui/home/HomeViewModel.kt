@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.healthlog.database.Measurement
+import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.repository.MeasurementRepository
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -20,20 +21,20 @@ class HomeViewModel(
     private val repository: MeasurementRepository
 ) : ViewModel() {
 
-    // Which entry dialog is open: null = none, otherwise the selected category.
-    private val _selectedCategory = MutableStateFlow<String?>(null)
-    val selectedCategory: StateFlow<String?> = _selectedCategory.asStateFlow()
+    // Which entry dialog is open: null = none, otherwise the selected type.
+    private val _selectedType = MutableStateFlow<MeasurementType?>(null)
+    val selectedType: StateFlow<MeasurementType?> = _selectedType.asStateFlow()
 
     // One-time messages for the snackbar, sent after an operation has finished.
     private val _messages = Channel<String>(Channel.BUFFERED)
     val messages: Flow<String> = _messages.receiveAsFlow()
 
-    fun openEntry(category: String) {
-        _selectedCategory.value = category
+    fun openEntry(type: MeasurementType) {
+        _selectedType.value = type
     }
 
     fun closeEntry() {
-        _selectedCategory.value = null
+        _selectedType.value = null
     }
 
     fun save(measurement: Measurement) {

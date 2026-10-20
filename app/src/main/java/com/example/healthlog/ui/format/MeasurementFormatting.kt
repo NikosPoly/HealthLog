@@ -1,28 +1,31 @@
 package com.example.healthlog.ui.format
 
 import com.example.healthlog.database.Measurement
+import com.example.healthlog.model.MeasurementType
 
 // The value text of a measurement, e.g. "120/80 mmHg · 72 bpm" or "78.0 kg".
 // Used by the history card and the delete confirmation, so both show the same text.
-fun formatMeasurementValue(measurement: Measurement): String =
-    if (measurement.type == "Αρτηριακή πίεση") {
+fun formatMeasurementValue(measurement: Measurement): String {
+    val fields = measurement.type.fields
+
+    return if (measurement.type == MeasurementType.BLOOD_PRESSURE) {
         val pressure = "${measurement.value.toInt()}/" +
-                "${measurement.secondaryValue?.toInt() ?: "?"} mmHg"
+                "${measurement.secondaryValue?.toInt() ?: "?"} ${fields[0].unit}"
 
         // Older entries have no pulse, so show it only when present.
-        val pulse = measurement.tertiaryValue?.let { " · ${it.toInt()} bpm" } ?: ""
+        val pulse = measurement.tertiaryValue?.let { " · ${it.toInt()} ${fields[2].unit}" } ?: ""
 
         pressure + pulse
     } else {
-        val unit = when (measurement.type) {
-            "Παλμοί" -> "bpm"
-            "Σάκχαρο" -> "mg/dL"
-            "Βάρος" -> "kg"
-            "Ύψος" -> "cm"
-            else -> ""
-        }
-        "${if (measurement.type == "Βάρος") measurement.value else formatNumber(measurement.value)} $unit"
+        val field = fields.first()
+
+        // Values that allow decimals (weight) always show them; the others drop ".0".
+        val number = if (field.allowsDecimals) measurement.value.toString()
+        else formatNumber(measurement.value)
+
+        "$number ${field.unit}"
     }
+}
 
 // Whole numbers without ".0" (180 cm); older entries with real decimals keep them (5.6).
 private fun formatNumber(value: Double): String =
