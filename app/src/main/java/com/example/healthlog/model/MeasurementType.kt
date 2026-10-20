@@ -1,17 +1,44 @@
 package com.example.healthlog.model
 
-// The kinds of measurement the app records.
-// The constant name (e.g. BLOOD_PRESSURE) is what the database stores, so renaming
-// a constant needs a database migration. The label and unit are only for display
-// and can be changed freely.
-enum class MeasurementType(
+// One input value of a measurement, e.g. "Συστολική (mmHg)".
+data class MeasurementField(
     val label: String,
     val unit: String,
     val allowsDecimals: Boolean
+)
+
+// The kinds of measurement the app records, each with the values it is made of.
+// The constant name (e.g. BLOOD_PRESSURE) is what the database stores, so renaming
+// or deleting a constant needs a database migration.
+// The fields are stored in order in value, secondaryValue and tertiaryValue,
+// so a type can have at most three: don't reorder fields or remove one in the middle.
+// Labels, units and allowsDecimals are only in the code and can be changed freely.
+enum class MeasurementType(
+    val label: String,
+    val fields: List<MeasurementField>
 ) {
-    BLOOD_PRESSURE("Αρτηριακή πίεση", "mmHg", false),
-    PULSE("Παλμοί", "bpm", false),
-    BLOOD_SUGAR("Σάκχαρο", "mg/dL", false),
-    WEIGHT("Βάρος", "kg", true),
-    HEIGHT("Ύψος", "cm", false)
+    BLOOD_PRESSURE(
+        "Αρτηριακή πίεση",
+        listOf(
+            MeasurementField("Συστολική", "mmHg", allowsDecimals = false),
+            MeasurementField("Διαστολική", "mmHg", allowsDecimals = false),
+            MeasurementField("Παλμοί", "bpm", allowsDecimals = false)
+        )
+    ),
+    PULSE(
+        "Παλμοί",
+        listOf(MeasurementField("Παλμοί", "bpm", allowsDecimals = false))
+    ),
+    BLOOD_SUGAR(
+        "Σάκχαρο",
+        listOf(MeasurementField("Σάκχαρο", "mg/dL", allowsDecimals = false))
+    ),
+    WEIGHT(
+        "Βάρος",
+        listOf(MeasurementField("Βάρος", "kg", allowsDecimals = true))
+    ),
+    HEIGHT(
+        "Ύψος",
+        listOf(MeasurementField("Ύψος", "cm", allowsDecimals = false))
+    )
 }
