@@ -78,7 +78,7 @@ fun HomeContent(
             // One card per measurement type, in the order they are declared in the enum.
             // The card shows the unit of the first value (mmHg for blood pressure).
             items(MeasurementType.entries) { type ->
-                MeasurementPickerCard(type.label, type.fields.first().unit) {
+                MeasurementPickerCard(stringResource(type.label), type.fields.first().unit) {
                     onOpenEntry(type)
                 }
             }

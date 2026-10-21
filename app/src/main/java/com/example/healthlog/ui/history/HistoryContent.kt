@@ -84,7 +84,7 @@ fun HistoryContent(
     // Shown outside the list, so it doesn't depend on the card being visible.
     measurementToDelete?.let { measurement ->
         DeleteConfirmationDialog(
-            details = "${measurement.type.label}: ${formatMeasurementValue(measurement)}",
+            details = "${stringResource(measurement.type.label)}: ${formatMeasurementValue(measurement)}",
             onConfirm = onConfirmDelete,
             onDismiss = onCancelDelete
         )

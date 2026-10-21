@@ -49,7 +49,7 @@ fun MeasurementEntryDialog(
             onDismiss()
         },
         title = {
-            Text(type.label)
+            Text(stringResource(type.label))
         },
         text = {
             // Scrollable, so every field and the note stay reachable when the
@@ -68,7 +68,7 @@ fun MeasurementEntryDialog(
                             }
                         },
                         label = {
-                            Text("${field.label} (${field.unit})")
+                            Text("${stringResource(field.label)} (${field.unit})")
                         },
                         singleLine = true,
                         keyboardOptions = numberKeyboard(
