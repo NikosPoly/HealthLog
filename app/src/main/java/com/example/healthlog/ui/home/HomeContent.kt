@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -32,12 +33,12 @@ fun HomeContent(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Ημερολόγιο Υγείας") },
+                title = { Text(stringResource(R.string.home_title)) },
                 actions = {
                     IconButton(onClick = onOpenHistory) {
                         Icon(
                             painter = painterResource(R.drawable.ic_history),
-                            contentDescription = "Ιστορικό μετρήσεων"
+                            contentDescription = stringResource(R.string.history_title)
                         )
                     }
                 }
@@ -68,7 +69,7 @@ fun HomeContent(
         ) {
             item {
                 Text(
-                    "Νέα μέτρηση",
+                    stringResource(R.string.home_new_measurement),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
@@ -77,7 +78,7 @@ fun HomeContent(
             // One card per measurement type, in the order they are declared in the enum.
             // The card shows the unit of the first value (mmHg for blood pressure).
             items(MeasurementType.entries) { type ->
-                MeasurementPickerCard(type.label, type.fields.first().unit) {
+                MeasurementPickerCard(stringResource(type.label), type.fields.first().unit) {
                     onOpenEntry(type)
                 }
             }

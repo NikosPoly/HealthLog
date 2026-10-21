@@ -1,8 +1,12 @@
 package com.example.healthlog.model
 
+import androidx.annotation.StringRes
+import com.example.healthlog.R
+
 // One input value of a measurement, e.g. "Συστολική (mmHg)".
+// The label is a string resource, so it can be translated.
 data class MeasurementField(
-    val label: String,
+    @param:StringRes val label: Int,
     val unit: String,
     val allowsDecimals: Boolean
 )
@@ -14,31 +18,31 @@ data class MeasurementField(
 // so a type can have at most three: don't reorder fields or remove one in the middle.
 // Labels, units and allowsDecimals are only in the code and can be changed freely.
 enum class MeasurementType(
-    val label: String,
+    @param:StringRes val label: Int,
     val fields: List<MeasurementField>
 ) {
     BLOOD_PRESSURE(
-        "Αρτηριακή πίεση",
+        R.string.type_blood_pressure,
         listOf(
-            MeasurementField("Συστολική", "mmHg", allowsDecimals = false),
-            MeasurementField("Διαστολική", "mmHg", allowsDecimals = false),
-            MeasurementField("Παλμοί", "bpm", allowsDecimals = false)
+            MeasurementField(R.string.field_systolic, "mmHg", allowsDecimals = false),
+            MeasurementField(R.string.field_diastolic, "mmHg", allowsDecimals = false),
+            MeasurementField(R.string.type_pulse, "bpm", allowsDecimals = false)
         )
     ),
     PULSE(
-        "Παλμοί",
-        listOf(MeasurementField("Παλμοί", "bpm", allowsDecimals = false))
+        R.string.type_pulse,
+        listOf(MeasurementField(R.string.type_pulse, "bpm", allowsDecimals = false))
     ),
     BLOOD_SUGAR(
-        "Σάκχαρο",
-        listOf(MeasurementField("Σάκχαρο", "mg/dL", allowsDecimals = false))
+        R.string.type_blood_sugar,
+        listOf(MeasurementField(R.string.type_blood_sugar, "mg/dL", allowsDecimals = false))
     ),
     WEIGHT(
-        "Βάρος",
-        listOf(MeasurementField("Βάρος", "kg", allowsDecimals = true))
+        R.string.type_weight,
+        listOf(MeasurementField(R.string.type_weight, "kg", allowsDecimals = true))
     ),
     HEIGHT(
-        "Ύψος",
-        listOf(MeasurementField("Ύψος", "cm", allowsDecimals = false))
+        R.string.type_height,
+        listOf(MeasurementField(R.string.type_height, "cm", allowsDecimals = false))
     )
 }

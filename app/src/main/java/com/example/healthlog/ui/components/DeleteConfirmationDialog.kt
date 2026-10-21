@@ -7,8 +7,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.healthlog.R
 
 // Asks the user to confirm before a measurement is deleted.
 @Composable
@@ -20,13 +22,13 @@ fun DeleteConfirmationDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text("Διαγραφή μέτρησης")
+            Text(stringResource(R.string.delete_dialog_title))
         },
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text("Θέλετε σίγουρα να διαγράψετε αυτή τη μέτρηση;")
+                Text(stringResource(R.string.delete_dialog_message))
 
                 Text(
                     details,
@@ -37,12 +39,12 @@ fun DeleteConfirmationDialog(
         },
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text("Διαγραφή")
+                Text(stringResource(R.string.action_delete))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Ακύρωση")
+                Text(stringResource(R.string.action_cancel))
             }
         }
     )

@@ -1,3 +1,39 @@
 <resources>
     <string name="app_name">HealthLog</string>
+
+    <!-- Home screen -->
+    <string name="home_title">Ημερολόγιο Υγείας</string>
+    <string name="home_new_measurement">Νέα μέτρηση</string>
+
+    <!-- History screen -->
+    <string name="history_title">Ιστορικό μετρήσεων</string>
+    <string name="history_empty">Δεν υπάρχουν ακόμη καταχωρίσεις.</string>
+
+    <!-- Buttons and actions used in several places -->
+    <string name="action_back">Πίσω</string>
+    <string name="action_save">Αποθήκευση</string>
+    <string name="action_cancel">Ακύρωση</string>
+    <string name="action_delete">Διαγραφή</string>
+
+    <!-- Entry dialog -->
+    <string name="entry_timestamp_note">Η ημερομηνία και η ώρα αποθηκεύονται αυτόματα.</string>
+
+    <!-- Delete confirmation dialog -->
+    <string name="delete_dialog_title">Διαγραφή μέτρησης</string>
+    <string name="delete_dialog_message">Θέλετε σίγουρα να διαγράψετε αυτή τη μέτρηση;</string>
+
+    <!-- Snackbar messages -->
+    <string name="message_measurement_saved">Η μέτρηση αποθηκεύτηκε</string>
+    <string name="message_measurement_deleted">Η μέτρηση διαγράφηκε</string>
+
+    <!-- Measurement types (single-value types also use these as their field label) -->
+    <string name="type_blood_pressure">Αρτηριακή πίεση</string>
+    <string name="type_pulse">Παλμοί</string>
+    <string name="type_blood_sugar">Σάκχαρο</string>
+    <string name="type_weight">Βάρος</string>
+    <string name="type_height">Ύψος</string>
+
+    <!-- Blood pressure fields -->
+    <string name="field_systolic">Συστολική</string>
+    <string name="field_diastolic">Διαστολική</string>
 </resources>

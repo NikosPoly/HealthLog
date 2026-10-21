@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.healthlog.R
@@ -33,12 +34,12 @@ fun HistoryContent(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Ιστορικό μετρήσεων") },
+                title = { Text(stringResource(R.string.history_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
                             painter = painterResource(R.drawable.ic_arrow_back),
-                            contentDescription = "Πίσω"
+                            contentDescription = stringResource(R.string.action_back)
                         )
                     }
                 }
@@ -62,7 +63,7 @@ fun HistoryContent(
         ) {
             if (measurements.isEmpty()) {
                 item {
-                    Text("Δεν υπάρχουν ακόμη καταχωρίσεις.")
+                    Text(stringResource(R.string.history_empty))
                 }
             }
 
@@ -83,7 +84,7 @@ fun HistoryContent(
     // Shown outside the list, so it doesn't depend on the card being visible.
     measurementToDelete?.let { measurement ->
         DeleteConfirmationDialog(
-            details = "${measurement.type.label}: ${formatMeasurementValue(measurement)}",
+            details = "${stringResource(measurement.type.label)}: ${formatMeasurementValue(measurement)}",
             onConfirm = onConfirmDelete,
             onDismiss = onCancelDelete
         )

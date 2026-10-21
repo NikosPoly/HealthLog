@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.repository.MeasurementRepository
@@ -26,8 +27,10 @@ class HomeViewModel(
     val selectedType: StateFlow<MeasurementType?> = _selectedType.asStateFlow()
 
     // One-time messages for the snackbar, sent after an operation has finished.
-    private val _messages = Channel<String>(Channel.BUFFERED)
-    val messages: Flow<String> = _messages.receiveAsFlow()
+    // They are string resource IDs: the screen turns them into text, so the
+    // ViewModel doesn't need access to resources.
+    private val _messages = Channel<Int>(Channel.BUFFERED)
+    val messages: Flow<Int> = _messages.receiveAsFlow()
 
     fun openEntry(type: MeasurementType) {
         _selectedType.value = type
@@ -42,7 +45,7 @@ class HomeViewModel(
 
         viewModelScope.launch {
             repository.insert(measurement)
-            _messages.send("Η μέτρηση αποθηκεύτηκε")
+            _messages.send(R.string.message_measurement_saved)
         }
     }
 

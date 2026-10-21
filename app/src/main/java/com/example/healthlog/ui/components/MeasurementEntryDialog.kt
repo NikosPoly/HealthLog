@@ -16,9 +16,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType
 
@@ -47,7 +49,7 @@ fun MeasurementEntryDialog(
             onDismiss()
         },
         title = {
-            Text(type.label)
+            Text(stringResource(type.label))
         },
         text = {
             // Scrollable, so every field and the note stay reachable when the
@@ -66,7 +68,7 @@ fun MeasurementEntryDialog(
                             }
                         },
                         label = {
-                            Text("${field.label} (${field.unit})")
+                            Text("${stringResource(field.label)} (${field.unit})")
                         },
                         singleLine = true,
                         keyboardOptions = numberKeyboard(
@@ -77,7 +79,7 @@ fun MeasurementEntryDialog(
                 }
 
                 Text(
-                    "Η ημερομηνία και η ώρα αποθηκεύονται αυτόματα.",
+                    stringResource(R.string.entry_timestamp_note),
                     style = MaterialTheme.typography.bodySmall
                 )
             }
@@ -99,14 +101,14 @@ fun MeasurementEntryDialog(
                     onSave(newMeasurement)
                 }
             ) {
-                Text("Αποθήκευση")
+                Text(stringResource(R.string.action_save))
             }
         },
         dismissButton = {
             TextButton(
                 onClick = { onDismiss() }
             ) {
-                Text("Ακύρωση")
+                Text(stringResource(R.string.action_cancel))
             }
         }
     )
