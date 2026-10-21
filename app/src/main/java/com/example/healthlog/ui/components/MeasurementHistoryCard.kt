@@ -8,22 +8,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.ui.format.formatMeasurementValue
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import com.example.healthlog.ui.format.formatTimestamp
 
 @Composable
 fun MeasurementHistoryCard(
     measurement: Measurement,
     onDelete: () -> Unit
 ) {
-    val formatter = remember {
-        SimpleDateFormat(
-            "dd/MM/yyyy HH:mm",
-            Locale("el", "GR")
-        )
-    }
-
     val displayedValue = formatMeasurementValue(measurement)
 
     Card(
@@ -44,7 +35,7 @@ fun MeasurementHistoryCard(
             )
 
             Text(
-                formatter.format(Date(measurement.timestamp)),
+                formatTimestamp(measurement.timestamp),
                 style = MaterialTheme.typography.bodySmall
             )
 
