@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.repository.MeasurementRepository
 import kotlinx.coroutines.channels.Channel
@@ -35,8 +36,10 @@ class HistoryViewModel(
     val measurementToDelete: StateFlow<Measurement?> = _measurementToDelete.asStateFlow()
 
     // One-time messages for the snackbar, sent after an operation has finished.
-    private val _messages = Channel<String>(Channel.BUFFERED)
-    val messages: Flow<String> = _messages.receiveAsFlow()
+    // They are string resource IDs: the screen turns them into text, so the
+    // ViewModel doesn't need access to resources.
+    private val _messages = Channel<Int>(Channel.BUFFERED)
+    val messages: Flow<Int> = _messages.receiveAsFlow()
 
     fun requestDelete(measurement: Measurement) {
         _measurementToDelete.value = measurement
@@ -55,7 +58,7 @@ class HistoryViewModel(
     private fun delete(measurement: Measurement) {
         viewModelScope.launch {
             repository.delete(measurement)
-            _messages.send("Η μέτρηση διαγράφηκε")
+            _messages.send(R.string.message_measurement_deleted)
         }
     }
 
