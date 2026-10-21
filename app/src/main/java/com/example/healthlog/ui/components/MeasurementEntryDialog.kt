@@ -2,7 +2,9 @@ package com.example.healthlog.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -13,6 +15,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.healthlog.database.Measurement
@@ -46,7 +50,10 @@ fun MeasurementEntryDialog(
             Text(type.label)
         },
         text = {
+            // Scrollable, so every field and the note stay reachable when the
+            // keyboard leaves little space (e.g. landscape with three fields).
             Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 // One text field per value of the type.
@@ -62,7 +69,10 @@ fun MeasurementEntryDialog(
                             Text("${field.label} (${field.unit})")
                         },
                         singleLine = true,
-                        keyboardOptions = numberKeyboard(field.allowsDecimals)
+                        keyboardOptions = numberKeyboard(
+                            allowDecimals = field.allowsDecimals,
+                            isLast = index == type.fields.lastIndex
+                        )
                     )
                 }
 
@@ -110,8 +120,11 @@ private fun isAllowedInput(text: String, allowDecimals: Boolean): Boolean {
 }
 
 // Number pad for whole numbers, number pad with a decimal separator for decimals.
-private fun numberKeyboard(allowDecimals: Boolean) = KeyboardOptions(
-    keyboardType = if (allowDecimals) KeyboardType.Decimal else KeyboardType.Number
+// The action key moves to the next field ("Next"), and closes the keyboard
+// on the last field ("Done"), so the Save button becomes visible again.
+private fun numberKeyboard(allowDecimals: Boolean, isLast: Boolean) = KeyboardOptions(
+    keyboardType = if (allowDecimals) KeyboardType.Decimal else KeyboardType.Number,
+    imeAction = if (isLast) ImeAction.Done else ImeAction.Next
 )
 
 private fun parsePositiveNumber(text: String): Double? {
