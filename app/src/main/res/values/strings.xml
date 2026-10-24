@@ -17,6 +17,15 @@
 
     <!-- Entry dialog -->
     <string name="entry_timestamp_note">Η ημερομηνία και η ώρα αποθηκεύονται αυτόματα.</string>
+    <string name="entry_required_note">* Υποχρεωτικό πεδίο</string>
+
+    <!-- Validation errors in the entry dialog -->
+    <string name="error_required">Το πεδίο είναι υποχρεωτικό</string>
+    <string name="error_incomplete_decimal">Συμπληρώστε δεκαδικό ψηφίο ή αφαιρέστε την τελεία</string>
+    <string name="error_invalid_number">Μη έγκυρη τιμή</string>
+    <!-- %1$s = lowest accepted value, %2$s = highest accepted value -->
+    <string name="error_value_out_of_range">Η τιμή πρέπει να είναι από %1$s έως %2$s</string>
+    <string name="error_diastolic_not_below_systolic">Η διαστολική πρέπει να είναι μικρότερη από τη συστολική</string>
 
     <!-- Delete confirmation dialog -->
     <string name="delete_dialog_title">Διαγραφή μέτρησης</string>
