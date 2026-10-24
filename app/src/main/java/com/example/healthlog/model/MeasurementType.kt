@@ -31,7 +31,7 @@ enum class MeasurementType(
     BLOOD_PRESSURE(
         R.string.type_blood_pressure,
         listOf(
-            MeasurementField(R.string.field_systolic, "mmHg", minValue = 30.0, maxValue = 300.0),
+            MeasurementField(R.string.field_systolic, "mmHg", minValue = 31.0, maxValue = 300.0),
             MeasurementField(R.string.field_diastolic, "mmHg", minValue = 30.0, maxValue = 150.0),
             MeasurementField(R.string.type_pulse, "bpm", minValue = 30.0, maxValue = 300.0)
         )
