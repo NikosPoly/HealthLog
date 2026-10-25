@@ -1,7 +1,10 @@
 package com.example.healthlog.ui.components
 
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
@@ -24,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
@@ -146,26 +150,29 @@ fun MeasurementEntryDialog(
             }
         },
         confirmButton = {
-            TextButton(
-                enabled = valid,
-                onClick = {
-                    if (!valid) return@TextButton
+            // A disabled button swallows taps, so this Box notices them first.
+            Box(modifier = Modifier.clearFocusOnPress()) {
+                TextButton(
+                    enabled = valid,
+                    onClick = {
+                        if (!valid) return@TextButton
 
-                    // All fields are valid numbers here, stored in order:
-                    // value, secondaryValue, tertiaryValue.
-                    val values = texts.map { it.toDouble() }
+                        // All fields are valid numbers here, stored in order:
+                        // value, secondaryValue, tertiaryValue.
+                        val values = texts.map { it.toDouble() }
 
-                    val newMeasurement = Measurement(
-                        type = type,
-                        value = values[0],
-                        secondaryValue = values.getOrNull(1),
-                        tertiaryValue = values.getOrNull(2)
-                    )
+                        val newMeasurement = Measurement(
+                            type = type,
+                            value = values[0],
+                            secondaryValue = values.getOrNull(1),
+                            tertiaryValue = values.getOrNull(2)
+                        )
 
-                    onSave(newMeasurement)
+                        onSave(newMeasurement)
+                    }
+                ) {
+                    Text(stringResource(R.string.action_save))
                 }
-            ) {
-                Text(stringResource(R.string.action_save))
             }
         },
         dismissButton = {
@@ -185,6 +192,18 @@ private fun Modifier.clearFocusOnTap(): Modifier = composed {
     val focusManager = LocalFocusManager.current
     pointerInput(focusManager) {
         detectTapGestures { focusManager.clearFocus() }
+    }
+}
+
+// Leaves the focused text field when this element is pressed, even if a child
+// (like a disabled button) would swallow the tap. Looks at the touch before the children do.
+private fun Modifier.clearFocusOnPress(): Modifier = composed {
+    val focusManager = LocalFocusManager.current
+    pointerInput(focusManager) {
+        awaitEachGesture {
+            awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+            focusManager.clearFocus()
+        }
     }
 }
 
@@ -208,7 +227,6 @@ private fun isErrorVisible(error: ValidationError, text: String, fieldLeft: Bool
         ValidationError.DiastolicNotBelowSystolic -> true
     }
 
-// after
 // What can be typed in a field. Anything else typed or pasted is ignored,
 // so it never appears in the field:
 // - digits only, at most 6 before the decimal point
