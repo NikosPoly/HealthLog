@@ -2,8 +2,9 @@ package com.example.healthlog.ui.format
 
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType
+import java.util.Locale
 
-// The value text of a measurement, e.g. "120/80 mmHg · 72 bpm" or "78.0 kg".
+// The value text of a measurement, e.g. "120/80 mmHg · 72 bpm" or "78.00 kg".
 // Used by the history card and the delete confirmation, so both show the same text.
 fun formatMeasurementValue(measurement: Measurement): String {
     val fields = measurement.type.fields
@@ -19,9 +20,13 @@ fun formatMeasurementValue(measurement: Measurement): String {
     } else {
         val field = fields.first()
 
-        // Values that allow decimals (weight) always show them; the others drop ".0".
-        val number = if (field.allowsDecimals) measurement.value.toString()
-        else formatNumber(measurement.value)
+        // Values with decimals (weight) always show all of them: 72 → "72.00", 72.4 → "72.40".
+        // Locale.ROOT keeps "." as the separator, whatever the phone's language.
+        val number = if (field.allowsDecimals) {
+            String.format(Locale.ROOT, "%.${field.maxDecimals}f", measurement.value)
+        } else {
+            formatNumber(measurement.value)
+        }
 
         "$number ${field.unit}"
     }
