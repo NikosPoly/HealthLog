@@ -10,7 +10,7 @@ kotlin = "2.2.10"
 composeBom = "2026.09.00"
 room = "2.8.5"
 ksp = "2.3.10"
-navigationCompose = "2.9.0"
+navigationCompose = "2.10.2"
 
 [libraries]
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
