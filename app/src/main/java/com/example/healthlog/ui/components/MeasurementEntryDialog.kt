@@ -92,7 +92,7 @@ fun MeasurementEntryDialog(
                         OutlinedTextField(
                             value = texts[index],
                             onValueChange = { input ->
-                                if (isAllowedInput(input, field.allowsDecimals)) {
+                                if (isAllowedInput(input, field.maxDecimals)) {
                                     texts = texts.toMutableList().also { it[index] = input }
                                 }
                             },
@@ -208,10 +208,22 @@ private fun isErrorVisible(error: ValidationError, text: String, fieldLeft: Bool
         ValidationError.DiastolicNotBelowSystolic -> true
     }
 
-// Only lets digits through; with allowDecimals, also one ',' or '.' (e.g. "72,5").
-// Anything else typed or pasted is ignored, so letters never appear in the field.
-private fun isAllowedInput(text: String, allowDecimals: Boolean): Boolean {
-    val pattern = if (allowDecimals) Regex("[0-9]*([.][0-9]*)?") else Regex("[0-9]*")
+// after
+// What can be typed in a field. Anything else typed or pasted is ignored,
+// so it never appears in the field:
+// - digits only, at most 6 before the decimal point
+// - no leading zero, and the value can't start with "."
+// - with maxDecimals > 0: one "." followed by at most maxDecimals digits (e.g. "72.55")
+// "72." is allowed while typing; the validation reports it if the field is left like that.
+private fun isAllowedInput(text: String, maxDecimals: Int): Boolean {
+    if (text.isEmpty()) return true
+
+    val wholePart = "[1-9][0-9]{0,5}"
+    val pattern = if (maxDecimals > 0) {
+        Regex("$wholePart(\\.[0-9]{0,$maxDecimals})?")
+    } else {
+        Regex(wholePart)
+    }
     return pattern.matches(text)
 }
 
