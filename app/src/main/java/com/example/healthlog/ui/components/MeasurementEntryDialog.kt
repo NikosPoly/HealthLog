@@ -20,7 +20,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -51,9 +51,25 @@ fun MeasurementEntryDialog(
     // rememberSaveable keeps the typed text when the screen is rotated.
     var texts by rememberSaveable { mutableStateOf(List(type.fields.size) { "" }) }
 
-    // Which fields the user has already left (had focus, then lost it).
-    // Some errors are only shown after that, so they don't appear while still typing.
+    // Which fields the user has already left: moved to another field, tapped elsewhere
+    // in the dialog, or pressed Done. Some errors are only shown after that, so they
+    // don't appear while still typing.
     var leftFields by rememberSaveable { mutableStateOf(List(type.fields.size) { false }) }
+
+    // The field the user is in (null = none). Saved across rotation, so the field still
+    // counts as "the one being edited" even though Android removes the focus on rotation.
+    var focusedIndex by rememberSaveable { mutableStateOf<Int?>(null) }
+
+    // The user leaves the field they were in: from now on its errors are shown.
+    // Only called for the user's own actions, never when focus is lost by itself
+    // (e.g. on rotation), so rotating doesn't trigger errors.
+    fun leaveFocusedField() {
+        val index = focusedIndex ?: return
+        if (!leftFields[index]) {
+            leftFields = leftFields.toMutableList().also { it[index] = true }
+        }
+        focusedIndex = null
+    }
 
     // One entry per field: null = valid.
     val errors = validateMeasurement(type, texts)
@@ -67,7 +83,7 @@ fun MeasurementEntryDialog(
         },
         // A tap anywhere in the dialog outside a text field leaves the current field,
         // so its errors appear (see clearFocusOnTap below).
-        modifier = Modifier.clearFocusOnTap(),
+        modifier = Modifier.clearFocusOnTap(onTap = { leaveFocusedField() }),
         title = {
             Text(stringResource(type.label))
         },
@@ -88,9 +104,6 @@ fun MeasurementEntryDialog(
                     val visibleError = errors[index]?.takeIf {
                         isErrorVisible(it, texts[index], leftFields[index])
                     }
-
-                    // Remembers whether this field has had focus, to notice when it is left.
-                    var hadFocus by remember { mutableStateOf(false) }
 
                     Row(verticalAlignment = Alignment.Top) {
                         OutlinedTextField(
@@ -114,15 +127,21 @@ fun MeasurementEntryDialog(
                             ),
                             // "Done" on the last field also leaves it, so its errors appear.
                             keyboardActions = KeyboardActions(
-                                onDone = { focusManager.clearFocus() }
+                                onDone = {
+                                    leaveFocusedField()
+                                    focusManager.clearFocus()
+                                }
                             ),
                             modifier = Modifier
                                 .weight(1f)
                                 .onFocusChanged { focusState ->
-                                    if (focusState.isFocused) {
-                                        hadFocus = true
-                                    } else if (hadFocus && !leftFields[index]) {
-                                        leftFields = leftFields.toMutableList().also { it[index] = true }
+                                    // Only gaining focus matters. Moving here from another
+                                    // field leaves that one; tapping back into the same field
+                                    // (e.g. after rotation) doesn't count as leaving it.
+                                    // Losing focus is ignored: it also happens on rotation.
+                                    if (focusState.isFocused && focusedIndex != index) {
+                                        leaveFocusedField()
+                                        focusedIndex = index
                                     }
                                 }
                         )
@@ -151,7 +170,7 @@ fun MeasurementEntryDialog(
         },
         confirmButton = {
             // A disabled button swallows taps, so this Box notices them first.
-            Box(modifier = Modifier.clearFocusOnPress()) {
+            Box(modifier = Modifier.clearFocusOnPress(onPress = { leaveFocusedField() })) {
                 TextButton(
                     enabled = valid,
                     onClick = {
@@ -185,23 +204,29 @@ fun MeasurementEntryDialog(
     )
 }
 
-// Leaves the focused text field when this element is tapped.
+// Leaves the focused text field when this element is tapped: calls onTap, then clears the focus.
 // "composed" reads the focus manager where the modifier is used, i.e. inside the dialog's
 // own window; otherwise it would clear the focus of the screen behind the dialog.
-private fun Modifier.clearFocusOnTap(): Modifier = composed {
+private fun Modifier.clearFocusOnTap(onTap: () -> Unit): Modifier = composed {
     val focusManager = LocalFocusManager.current
+    val currentOnTap by rememberUpdatedState(onTap)
     pointerInput(focusManager) {
-        detectTapGestures { focusManager.clearFocus() }
+        detectTapGestures {
+            currentOnTap()
+            focusManager.clearFocus()
+        }
     }
 }
 
 // Leaves the focused text field when this element is pressed, even if a child
 // (like a disabled button) would swallow the tap. Looks at the touch before the children do.
-private fun Modifier.clearFocusOnPress(): Modifier = composed {
+private fun Modifier.clearFocusOnPress(onPress: () -> Unit): Modifier = composed {
     val focusManager = LocalFocusManager.current
+    val currentOnPress by rememberUpdatedState(onPress)
     pointerInput(focusManager) {
         awaitEachGesture {
             awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+            currentOnPress()
             focusManager.clearFocus()
         }
     }
