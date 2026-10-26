@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
+import com.example.healthlog.model.MeasurementType
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -21,5 +22,5 @@ interface MeasurementDao {
     @Query(
         "SELECT * FROM measurements WHERE type = :type ORDER BY timestamp DESC, id DESC"
     )
-    fun getMeasurementsByType(type: String): Flow<List<Measurement>>
+    fun getMeasurementsByType(type: MeasurementType): Flow<List<Measurement>>
 }
