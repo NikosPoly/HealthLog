@@ -47,7 +47,7 @@
     <string name="message_measurement_deleted">Η μέτρηση διαγράφηκε</string>
 
     <!-- Measurement types (single-value types also use these as their field label) -->
-    <string name="type_blood_pressure">Αρτηριακή πίεση</string>
+    <string name="type_blood_pressure">Αρτηριακή Πίεση</string>
     <string name="type_pulse">Παλμοί</string>
     <string name="type_blood_sugar">Σάκχαρο</string>
     <string name="type_weight">Βάρος</string>

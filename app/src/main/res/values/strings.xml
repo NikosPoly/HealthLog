@@ -52,9 +52,9 @@
     <string name="message_measurement_deleted">Measurement deleted</string>
 
     <!-- Measurement types (single-value types also use these as their field label) -->
-    <string name="type_blood_pressure">Blood pressure</string>
+    <string name="type_blood_pressure">Blood Pressure</string>
     <string name="type_pulse">Pulse</string>
-    <string name="type_blood_sugar">Blood sugar</string>
+    <string name="type_blood_sugar">Blood Sugar</string>
     <string name="type_weight">Weight</string>
     <string name="type_height">Height</string>
 
