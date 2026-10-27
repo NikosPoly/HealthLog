@@ -20,14 +20,16 @@ fun validationErrorMessage(error: ValidationError): String = when (error) {
     is ValidationError.OutOfRange ->
         stringResource(
             R.string.error_value_out_of_range,
-            formatLimit(error.min),
-            formatLimit(error.max)
+            formatLimit(error.min, decimalSeparator()),
+            formatLimit(error.max, decimalSeparator())
         )
 
     ValidationError.DiastolicNotBelowSystolic ->
         stringResource(R.string.error_diastolic_not_below_systolic)
 }
 
-// Range limits without ".0" (30, not 30.0); a limit with real decimals keeps them (1.5).
-private fun formatLimit(value: Double): String =
-    if (value % 1.0 == 0.0) value.toLong().toString() else value.toString()
+// Range limits without ".0" (30, not 30.0); a limit with real decimals keeps them
+// with the language's separator (1.5, or 1,5 in Greek).
+private fun formatLimit(value: Double, decimalSeparator: Char): String =
+    if (value % 1.0 == 0.0) value.toLong().toString()
+    else value.toString().replace('.', decimalSeparator)

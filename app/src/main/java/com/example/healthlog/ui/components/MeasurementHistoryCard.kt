@@ -9,15 +9,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
+import com.example.healthlog.ui.format.decimalSeparator
 import com.example.healthlog.ui.format.formatMeasurementValue
 import com.example.healthlog.ui.format.formatTimestamp
+import com.example.healthlog.ui.format.rememberDateTimeFormatter
 
 @Composable
 fun MeasurementHistoryCard(
     measurement: Measurement,
     onDelete: () -> Unit
 ) {
-    val displayedValue = formatMeasurementValue(measurement)
+    // Value and date in the formats of the current language.
+    val displayedValue = formatMeasurementValue(measurement, decimalSeparator())
+    val dateFormatter = rememberDateTimeFormatter()
 
     Card(
         modifier = Modifier.fillMaxWidth()
@@ -37,7 +41,7 @@ fun MeasurementHistoryCard(
             )
 
             Text(
-                formatTimestamp(measurement.timestamp),
+                formatTimestamp(measurement.timestamp, dateFormatter),
                 style = MaterialTheme.typography.bodySmall
             )
 

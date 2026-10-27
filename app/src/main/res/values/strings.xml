@@ -1,48 +1,64 @@
 <resources>
-    <string name="app_name">HealthLog</string>
+    <!-- Default language: English. Greek is in values-el/strings.xml. -->
+    <!-- The app name is the same in every language, so it is only defined here. -->
+    <string name="app_name" translatable="false">HealthLog</string>
+
+    <!-- Number and date formats of this language.
+         format_locale: language used for words in dates (month names, AM/PM).
+         date_time_pattern: see java.time.format.DateTimeFormatter.
+         New languages: use the international date format "yyyy-MM-dd HH:mm"
+         unless decided otherwise. -->
+    <string name="format_locale">en</string>
+    <string name="decimal_separator">.</string>
+    <string name="date_time_pattern">MMM d, yyyy, h:mm a</string>
+
+    <!-- Texts combined from parts. %1$s = label, %2$s = unit -->
+    <string name="field_label_with_unit">%1$s (%2$s)</string>
+    <!-- %1$s = measurement type, %2$s = value with unit -->
+    <string name="delete_dialog_details">%1$s: %2$s</string>
 
     <!-- Home screen -->
-    <string name="home_title">Ημερολόγιο Υγείας</string>
-    <string name="home_new_measurement">Νέα μέτρηση</string>
+    <string name="home_title">Health Log</string>
+    <string name="home_new_measurement">New measurement</string>
 
     <!-- History screen -->
-    <string name="history_title">Ιστορικό μετρήσεων</string>
-    <string name="history_empty">Δεν υπάρχουν ακόμη καταχωρίσεις.</string>
+    <string name="history_title">Measurement history</string>
+    <string name="history_empty">No entries yet.</string>
 
     <!-- Buttons and actions used in several places -->
-    <string name="action_back">Πίσω</string>
-    <string name="action_save">Αποθήκευση</string>
-    <string name="action_cancel">Ακύρωση</string>
-    <string name="action_delete">Διαγραφή</string>
+    <string name="action_back">Back</string>
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_delete">Delete</string>
 
     <!-- Entry dialog -->
-    <string name="entry_timestamp_note">Η ημερομηνία και η ώρα αποθηκεύονται αυτόματα.</string>
-    <string name="entry_required_note">* Υποχρεωτικό πεδίο</string>
+    <string name="entry_timestamp_note">The date and time are saved automatically.</string>
+    <string name="entry_required_note">* Required field</string>
 
     <!-- Validation errors in the entry dialog -->
-    <string name="error_required">Το πεδίο είναι υποχρεωτικό</string>
-    <string name="error_incomplete_decimal">Συμπληρώστε δεκαδικό ψηφίο ή αφαιρέστε την τελεία</string>
-    <string name="error_invalid_number">Μη έγκυρη τιμή</string>
+    <string name="error_required">This field is required</string>
+    <string name="error_incomplete_decimal">Add a decimal digit or remove the decimal point</string>
+    <string name="error_invalid_number">Invalid value</string>
     <!-- %1$s = lowest accepted value, %2$s = highest accepted value -->
-    <string name="error_value_out_of_range">Η τιμή πρέπει να είναι από %1$s έως %2$s</string>
-    <string name="error_diastolic_not_below_systolic">Η διαστολική πρέπει να είναι μικρότερη από τη συστολική</string>
+    <string name="error_value_out_of_range">The value must be between %1$s and %2$s</string>
+    <string name="error_diastolic_not_below_systolic">Diastolic must be lower than systolic</string>
 
     <!-- Delete confirmation dialog -->
-    <string name="delete_dialog_title">Διαγραφή μέτρησης</string>
-    <string name="delete_dialog_message">Θέλετε σίγουρα να διαγράψετε αυτή τη μέτρηση;</string>
+    <string name="delete_dialog_title">Delete measurement</string>
+    <string name="delete_dialog_message">Are you sure you want to delete this measurement?</string>
 
     <!-- Snackbar messages -->
-    <string name="message_measurement_saved">Η μέτρηση αποθηκεύτηκε</string>
-    <string name="message_measurement_deleted">Η μέτρηση διαγράφηκε</string>
+    <string name="message_measurement_saved">Measurement saved</string>
+    <string name="message_measurement_deleted">Measurement deleted</string>
 
     <!-- Measurement types (single-value types also use these as their field label) -->
-    <string name="type_blood_pressure">Αρτηριακή πίεση</string>
-    <string name="type_pulse">Παλμοί</string>
-    <string name="type_blood_sugar">Σάκχαρο</string>
-    <string name="type_weight">Βάρος</string>
-    <string name="type_height">Ύψος</string>
+    <string name="type_blood_pressure">Blood Pressure</string>
+    <string name="type_pulse">Pulse</string>
+    <string name="type_blood_sugar">Blood Sugar</string>
+    <string name="type_weight">Weight</string>
+    <string name="type_height">Height</string>
 
     <!-- Blood pressure fields -->
-    <string name="field_systolic">Συστολική</string>
-    <string name="field_diastolic">Διαστολική</string>
+    <string name="field_systolic">Systolic</string>
+    <string name="field_diastolic">Diastolic</string>
 </resources>

@@ -18,6 +18,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberUpdatedState
@@ -39,6 +40,7 @@ import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.model.ValidationError
 import com.example.healthlog.model.validateMeasurement
+import com.example.healthlog.ui.format.decimalSeparator
 import com.example.healthlog.ui.format.validationErrorMessage
 
 @Composable
@@ -71,8 +73,23 @@ fun MeasurementEntryDialog(
         focusedIndex = null
     }
 
+    // The decimal separator of the current language: "," in Greek, "." in English.
+    val separator = decimalSeparator()
+
+    // If the language changes while the dialog is open, convert what is already typed
+    // to the new separator (e.g. "82.56" → "82,56"), so it can still be edited.
+    LaunchedEffect(separator) {
+        texts = texts.map { text -> text.replace(',', separator).replace('.', separator) }
+    }
+
+    // The typed texts with "." as separator, e.g. "72,5" → "72.5". The validation and
+    // the saved values always work with "."; only what is typed and shown uses the
+    // language's separator. Both "," and "." are converted, so a text typed before
+    // switching the language is still read correctly.
+    val normalizedTexts = texts.map { it.replace(',', '.') }
+
     // One entry per field: null = valid.
-    val errors = validateMeasurement(type, texts)
+    val errors = validateMeasurement(type, normalizedTexts)
 
     // Save is possible only when every field passes every check.
     val valid = errors.all { it == null }
@@ -102,19 +119,25 @@ fun MeasurementEntryDialog(
                 type.fields.forEachIndexed { index, field ->
                     // The error of this field, only if it should be shown right now.
                     val visibleError = errors[index]?.takeIf {
-                        isErrorVisible(it, texts[index], leftFields[index])
+                        isErrorVisible(it, normalizedTexts[index], leftFields[index])
                     }
 
                     Row(verticalAlignment = Alignment.Top) {
                         OutlinedTextField(
                             value = texts[index],
                             onValueChange = { input ->
-                                if (isAllowedInput(input, field.maxDecimals)) {
+                                if (isAllowedInput(input, field.maxDecimals, separator)) {
                                     texts = texts.toMutableList().also { it[index] = input }
                                 }
                             },
                             label = {
-                                Text("${stringResource(field.label)} (${field.unit})")
+                                Text(
+                                    stringResource(
+                                        R.string.field_label_with_unit,
+                                        stringResource(field.label),
+                                        field.unit
+                                    )
+                                )
                             },
                             isError = visibleError != null,
                             supportingText = visibleError?.let { error ->
@@ -178,7 +201,7 @@ fun MeasurementEntryDialog(
 
                         // All fields are valid numbers here, stored in order:
                         // value, secondaryValue, tertiaryValue.
-                        val values = texts.map { it.toDouble() }
+                        val values = normalizedTexts.map { it.toDouble() }
 
                         val newMeasurement = Measurement(
                             type = type,
@@ -234,7 +257,7 @@ private fun Modifier.clearFocusOnPress(onPress: () -> Unit): Modifier = composed
 
 // When an error is shown. Save is blocked by every error, but some are only shown
 // once the field has been left, so they don't appear while the user is still typing:
-// - empty, or ending with "." → after leaving the field
+// - empty, or ending with the decimal separator → after leaving the field
 // - too high → immediately, since typing more digits can't fix it
 // - too low → after leaving the field, since the user may still be typing (e.g. "12" on the way to "120")
 // - systolic/diastolic comparison and invalid text → immediately
@@ -254,16 +277,17 @@ private fun isErrorVisible(error: ValidationError, text: String, fieldLeft: Bool
 
 // What can be typed in a field. Anything else typed or pasted is ignored,
 // so it never appears in the field:
-// - digits only, at most 6 before the decimal point
-// - no leading zero, and the value can't start with "."
-// - with maxDecimals > 0: one "." followed by at most maxDecimals digits (e.g. "72.55")
-// "72." is allowed while typing; the validation reports it if the field is left like that.
-private fun isAllowedInput(text: String, maxDecimals: Int): Boolean {
+// - digits only, at most 6 before the decimal separator
+// - no leading zero, and the value can't start with the separator
+// - with maxDecimals > 0: one separator ("," in Greek, "." in English) followed by
+//   at most maxDecimals digits (e.g. "72,55" / "72.55")
+// "72," / "72." is allowed while typing; the validation reports it if the field is left like that.
+private fun isAllowedInput(text: String, maxDecimals: Int, separator: Char): Boolean {
     if (text.isEmpty()) return true
 
     val wholePart = "[1-9][0-9]{0,5}"
     val pattern = if (maxDecimals > 0) {
-        Regex("$wholePart(\\.[0-9]{0,$maxDecimals})?")
+        Regex("$wholePart(${Regex.escape(separator.toString())}[0-9]{0,$maxDecimals})?")
     } else {
         Regex(wholePart)
     }

@@ -15,6 +15,7 @@ import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.ui.components.DeleteConfirmationDialog
 import com.example.healthlog.ui.components.MeasurementHistoryCard
+import com.example.healthlog.ui.format.decimalSeparator
 import com.example.healthlog.ui.format.formatMeasurementValue
 import com.example.healthlog.ui.theme.HealthLogTheme
 
@@ -84,7 +85,11 @@ fun HistoryContent(
     // Shown outside the list, so it doesn't depend on the card being visible.
     measurementToDelete?.let { measurement ->
         DeleteConfirmationDialog(
-            details = "${stringResource(measurement.type.label)}: ${formatMeasurementValue(measurement)}",
+            details = stringResource(
+                R.string.delete_dialog_details,
+                stringResource(measurement.type.label),
+                formatMeasurementValue(measurement, decimalSeparator())
+            ),
             onConfirm = onConfirmDelete,
             onDismiss = onCancelDelete
         )
