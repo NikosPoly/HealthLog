@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.room)
 }
 
 android {
@@ -35,6 +36,12 @@ android {
     buildFeatures {
         compose = true
     }
+}
+
+// Room writes a JSON description of each database version into app/schemas.
+// The files are committed, so migration tests can create databases of older versions.
+room {
+    schemaDirectory("$projectDir/schemas")
 }
 
 dependencies {

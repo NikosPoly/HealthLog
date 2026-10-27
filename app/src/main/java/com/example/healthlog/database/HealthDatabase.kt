@@ -10,7 +10,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 @Database(
     entities = [Measurement::class],
     version = 3,
-    exportSchema = false
+    exportSchema = true
 )
 abstract class HealthDatabase : RoomDatabase() {
 
