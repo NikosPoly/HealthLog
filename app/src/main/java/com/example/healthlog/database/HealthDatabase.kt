@@ -10,7 +10,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 @Database(
     entities = [Measurement::class],
     version = 3,
-    exportSchema = false
+    exportSchema = true
 )
 abstract class HealthDatabase : RoomDatabase() {
 
@@ -22,7 +22,7 @@ abstract class HealthDatabase : RoomDatabase() {
 
         // Version 1 → 2: add the pulse column for blood pressure entries.
         // Existing rows keep their data; the new column is empty (null) for them.
-        private val MIGRATION_1_2 = object : Migration(1, 2) {
+        internal val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE measurements ADD COLUMN tertiaryValue REAL")
             }
@@ -30,7 +30,7 @@ abstract class HealthDatabase : RoomDatabase() {
 
         // Version 2 → 3: the type is now stored as the MeasurementType name
         // instead of the Greek text, so the existing rows are converted.
-        private val MIGRATION_2_3 = object : Migration(2, 3) {
+        internal val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("UPDATE measurements SET type = 'BLOOD_PRESSURE' WHERE type = 'Αρτηριακή πίεση'")
                 db.execSQL("UPDATE measurements SET type = 'PULSE' WHERE type = 'Παλμοί'")

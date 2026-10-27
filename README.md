@@ -60,12 +60,18 @@ decimal separator and date format there.
 
 ## Tests
 
-Unit tests run on your computer, without an emulator:
+There are two kinds of tests:
 
-- **Android Studio:** right-click `app/src/test` → **Run 'Tests in…'**
-- **Terminal:** `./gradlew testDebugUnitTest`
+| Kind | Folder | Runs on | Covers |
+|---|---|---|---|
+| Unit tests | `app/src/test` | your computer | the validation rules (`MeasurementValidationTest`) |
+| Instrumented tests | `app/src/androidTest` | an emulator or device | the database migrations (`MigrationTest`) |
 
-The tests currently cover the validation rules (`MeasurementValidationTest`).
+- **Android Studio:** right-click the test file or folder → **Run**
+- **Terminal:** `./gradlew testDebugUnitTest` (unit tests), `./gradlew connectedDebugAndroidTest` (instrumented tests)
+
+**Note:** after instrumented tests, Gradle uninstalls the app from that device, including its data.
+Run them on a separate emulator, not on a device with data you want to keep.
 
 ## Database
 
@@ -77,6 +83,15 @@ Any change to what is stored needs a database migration in `HealthDatabase.kt`, 
 - reordering the fields of a measurement type (their position decides the column they are stored in)
 
 Changes to labels, units, ranges or the UI do not need a migration.
+
+Room writes a JSON description of every database version into `app/schemas/` (committed to Git).
+The migration tests use these files to create databases of older versions.
+`1.json` and `2.json` were reconstructed from `3.json`, since schema export was only enabled at version 3.
+
+When changing the database:
+1. increase `version` in `HealthDatabase.kt` and add a migration
+2. build the project, which creates the new schema file in `app/schemas/`
+3. add a test for the new migration in `MigrationTest`
 
 ## Roadmap
 
