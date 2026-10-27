@@ -57,9 +57,13 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
+    // Keeps all kotlinx.serialization libraries (used by Navigation and by Room's test tools)
+    // on the same version. Without it, the migration tests fail with an AbstractMethodError.
+    implementation(platform(libs.kotlinx.serialization.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.room.testing)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
     // Room Database
