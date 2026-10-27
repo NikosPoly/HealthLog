@@ -2,7 +2,7 @@
 
 HealthLog is an Android app for recording everyday health measurements (blood pressure, pulse,
 blood sugar, weight and height) and looking back at them in a simple history.
-The app's interface is currently in Greek.
+The app is available in Greek and English.
 
 ## Features
 
@@ -14,6 +14,9 @@ The app's interface is currently in Greek.
 - **Input validation:** every value is checked against a range; errors are shown under the field
   and saving is only possible when everything is valid
 - **Rotation-safe:** typed values, dialogs and errors survive screen rotation
+- **Greek and English:** the app follows the phone's language (English for any other language);
+  on Android 13+ it can also be set per app. Numbers and dates follow the language
+  (72,50 kg and 27/10/2026 18:41 in Greek, 72.50 kg and Oct 27, 2026, 6:41 PM in English)
 
 ## Tech stack
 
@@ -36,13 +39,15 @@ All source code is in `app/src/main/java/com/example/healthlog/`:
 | `ui/home/` | Home screen: picking a measurement type and entering a value |
 | `ui/history/` | History screen: the list of measurements and deleting them |
 | `ui/components/` | Reusable UI parts: cards and dialogs |
-| `ui/format/` | Turning data into display text: values, dates and validation messages |
+| `ui/format/` | Turning data into display text: values, dates, validation messages and the number/date formats of each language |
 | `ui/theme/` | Colors, typography and theme |
 
 Each screen is split into a **Screen** (connects the ViewModel to the UI) and a **Content**
 (layout only, previewable in Android Studio).
 
-All displayed texts are in `app/src/main/res/values/strings.xml`.
+All displayed texts are in `app/src/main/res/values/strings.xml` (English, the default)
+and `app/src/main/res/values-el/strings.xml` (Greek). Each language also defines its own
+decimal separator and date format there.
 
 ## Requirements and setup
 
@@ -75,9 +80,8 @@ Changes to labels, units, ranges or the UI do not need a migration.
 
 ## Roadmap
 
-- English translation
 - Own color theme and app icon
-- User profiles with sign-up and log-in
+- User profiles with sign-up and log-in (including choosing the language in the app)
 - Wider test coverage
 
 ## License
