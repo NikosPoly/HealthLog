@@ -2,6 +2,16 @@
     <!-- Greek. The default language (English) is in values/strings.xml. -->
     <!-- app_name is not repeated here: it is the same in every language. -->
 
+    <!-- Number and date formats of this language (see values/strings.xml). -->
+    <string name="format_locale">el</string>
+    <string name="decimal_separator">,</string>
+    <string name="date_time_pattern">dd/MM/yyyy HH:mm</string>
+
+    <!-- Texts combined from parts. %1$s = label, %2$s = unit -->
+    <string name="field_label_with_unit">%1$s (%2$s)</string>
+    <!-- %1$s = measurement type, %2$s = value with unit -->
+    <string name="delete_dialog_details">%1$s: %2$s</string>
+
     <!-- Home screen -->
     <string name="home_title">Ημερολόγιο Υγείας</string>
     <string name="home_new_measurement">Νέα μέτρηση</string>
@@ -22,7 +32,7 @@
 
     <!-- Validation errors in the entry dialog -->
     <string name="error_required">Το πεδίο είναι υποχρεωτικό</string>
-    <string name="error_incomplete_decimal">Συμπληρώστε δεκαδικό ψηφίο ή αφαιρέστε την τελεία</string>
+    <string name="error_incomplete_decimal">Συμπληρώστε δεκαδικό ψηφίο ή αφαιρέστε την υποδιαστολή</string>
     <string name="error_invalid_number">Μη έγκυρη τιμή</string>
     <!-- %1$s = lowest accepted value, %2$s = highest accepted value -->
     <string name="error_value_out_of_range">Η τιμή πρέπει να είναι από %1$s έως %2$s</string>

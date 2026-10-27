@@ -4,9 +4,10 @@ import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType
 import java.util.Locale
 
-// The value text of a measurement, e.g. "120/80 mmHg · 72 bpm" or "78.00 kg".
+// The value text of a measurement, e.g. "120/80 mmHg · 72 bpm" or "78.00 kg" ("78,00 kg" in Greek).
 // Used by the history card and the delete confirmation, so both show the same text.
-fun formatMeasurementValue(measurement: Measurement): String {
+// decimalSeparator comes from the current language (see LocaleFormats.kt).
+fun formatMeasurementValue(measurement: Measurement, decimalSeparator: Char): String {
     val fields = measurement.type.fields
 
     return if (measurement.type == MeasurementType.BLOOD_PRESSURE) {
@@ -21,12 +22,12 @@ fun formatMeasurementValue(measurement: Measurement): String {
         val field = fields.first()
 
         // Values with decimals (weight) always show all of them: 72 → "72.00", 72.4 → "72.40".
-        // Locale.ROOT keeps "." as the separator, whatever the phone's language.
+        // Formatted with "." (Locale.ROOT), then "." is replaced by the language's separator.
         val number = if (field.allowsDecimals) {
             String.format(Locale.ROOT, "%.${field.maxDecimals}f", measurement.value)
         } else {
             formatNumber(measurement.value)
-        }
+        }.replace('.', decimalSeparator)
 
         "$number ${field.unit}"
     }

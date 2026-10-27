@@ -1,7 +1,21 @@
 <resources>
     <!-- Default language: English. Greek is in values-el/strings.xml. -->
     <!-- The app name is the same in every language, so it is only defined here. -->
-    <string name="app_name">HealthLog</string>
+    <string name="app_name" translatable="false">HealthLog</string>
+
+    <!-- Number and date formats of this language.
+         format_locale: language used for words in dates (month names, AM/PM).
+         date_time_pattern: see java.time.format.DateTimeFormatter.
+         New languages: use the international date format "yyyy-MM-dd HH:mm"
+         unless decided otherwise. -->
+    <string name="format_locale">en</string>
+    <string name="decimal_separator">.</string>
+    <string name="date_time_pattern">MMM d, yyyy, h:mm a</string>
+
+    <!-- Texts combined from parts. %1$s = label, %2$s = unit -->
+    <string name="field_label_with_unit">%1$s (%2$s)</string>
+    <!-- %1$s = measurement type, %2$s = value with unit -->
+    <string name="delete_dialog_details">%1$s: %2$s</string>
 
     <!-- Home screen -->
     <string name="home_title">Health Log</string>
