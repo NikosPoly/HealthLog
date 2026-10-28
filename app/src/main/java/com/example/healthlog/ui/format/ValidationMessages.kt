@@ -30,6 +30,7 @@ fun validationErrorMessage(error: ValidationError): String = when (error) {
 
 // Range limits without ".0" (30, not 30.0); a limit with real decimals keeps them
 // with the language's separator (1.5, or 1,5 in Greek).
-private fun formatLimit(value: Double, decimalSeparator: Char): String =
+// internal (not private) so that unit tests can check it.
+internal fun formatLimit(value: Double, decimalSeparator: Char): String =
     if (value % 1.0 == 0.0) value.toLong().toString()
     else value.toString().replace('.', decimalSeparator)
