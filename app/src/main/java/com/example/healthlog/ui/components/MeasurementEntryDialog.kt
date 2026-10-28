@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -22,8 +23,6 @@ import androidx.compose.ui.unit.dp
 import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType
-import com.example.healthlog.model.ValidationError
-import com.example.healthlog.model.validateMeasurement
 import com.example.healthlog.ui.format.decimalSeparator
 
 @Composable
@@ -32,50 +31,20 @@ fun MeasurementEntryDialog(
     onDismiss: () -> Unit,
     onSave: (Measurement) -> Unit
 ) {
-    // The typed text of each field, in the order of type.fields.
-    // rememberSaveable keeps the typed text when the screen is rotated.
-    var texts by rememberSaveable { mutableStateOf(List(type.fields.size) { "" }) }
-
-    // Which fields the user has already left: moved to another field, tapped elsewhere
-    // in the dialog, or pressed Done. Some errors are only shown after that, so they
-    // don't appear while still typing.
-    var leftFields by rememberSaveable { mutableStateOf(List(type.fields.size) { false }) }
-
-    // The field the user is in (null = none). Saved across rotation, so the field still
-    // counts as "the one being edited" even though Android removes the focus on rotation.
-    var focusedIndex by rememberSaveable { mutableStateOf<Int?>(null) }
-
-    // The user leaves the field they were in: from now on its errors are shown.
-    // Only called for the user's own actions, never when focus is lost by itself
-    // (e.g. on rotation), so rotating doesn't trigger errors.
-    fun leaveFocusedField() {
-        val index = focusedIndex ?: return
-        if (!leftFields[index]) {
-            leftFields = leftFields.toMutableList().also { it[index] = true }
-        }
-        focusedIndex = null
+    // Everything the user has typed and done in the dialog, with the dialog's rules
+    // (see MeasurementEntryState.kt). rememberSaveable keeps it when the screen is rotated.
+    var state by rememberSaveable(stateSaver = entryStateSaver) {
+        mutableStateOf(MeasurementEntryState.initial(type))
     }
 
     // The decimal separator of the current language: "," in Greek, "." in English.
     val separator = decimalSeparator()
 
     // If the language changes while the dialog is open, convert what is already typed
-    // to the new separator (e.g. "82.56" → "82,56"), so it can still be edited.
+    // to the new separator, so it can still be edited.
     LaunchedEffect(separator) {
-        texts = texts.map { text -> text.replace(',', separator).replace('.', separator) }
+        state = state.withSeparator(separator)
     }
-
-    // The typed texts with "." as separator, e.g. "72,5" → "72.5". The validation and
-    // the saved values always work with "."; only what is typed and shown uses the
-    // language's separator. Both "," and "." are converted, so a text typed before
-    // switching the language is still read correctly.
-    val normalizedTexts = texts.map { it.replace(',', '.') }
-
-    // One entry per field: null = valid.
-    val errors = validateMeasurement(type, normalizedTexts)
-
-    // Save is possible only when every field passes every check.
-    val valid = errors.all { it == null }
 
     AlertDialog(
         onDismissRequest = {
@@ -83,7 +52,7 @@ fun MeasurementEntryDialog(
         },
         // A tap anywhere in the dialog outside a text field leaves the current field,
         // so its errors appear (see clearFocusOnTap in FocusModifiers.kt).
-        modifier = Modifier.clearFocusOnTap(onTap = { leaveFocusedField() }),
+        modifier = Modifier.clearFocusOnTap(onTap = { state = state.leaveFocusedField() }),
         title = {
             Text(stringResource(type.label))
         },
@@ -102,29 +71,17 @@ fun MeasurementEntryDialog(
                 type.fields.forEachIndexed { index, field ->
                     MeasurementFieldInput(
                         field = field,
-                        text = texts[index],
-                        // The error of this field, only if it should be shown right now.
-                        error = errors[index]?.takeIf {
-                            isErrorVisible(it, normalizedTexts[index], leftFields[index])
-                        },
+                        text = state.texts[index],
+                        error = state.visibleError(index),
                         separator = separator,
                         isLast = index == type.fields.lastIndex,
-                        onTextChange = { input ->
-                            texts = texts.toMutableList().also { it[index] = input }
-                        },
-                        // Only gaining focus matters. Moving here from another
-                        // field leaves that one; tapping back into the same field
-                        // (e.g. after rotation) doesn't count as leaving it.
-                        // Losing focus is ignored: it also happens on rotation.
-                        onFocused = {
-                            if (focusedIndex != index) {
-                                leaveFocusedField()
-                                focusedIndex = index
-                            }
-                        },
+                        onTextChange = { input -> state = state.withText(index, input) },
+                        // Only gaining focus matters; losing focus is ignored,
+                        // since it also happens on rotation.
+                        onFocused = { state = state.focusField(index) },
                         // "Done" on the last field also leaves it, so its errors appear.
                         onDone = {
-                            leaveFocusedField()
+                            state = state.leaveFocusedField()
                             focusManager.clearFocus()
                         }
                     )
@@ -144,24 +101,12 @@ fun MeasurementEntryDialog(
         },
         confirmButton = {
             // A disabled button swallows taps, so this Box notices them first.
-            Box(modifier = Modifier.clearFocusOnPress(onPress = { leaveFocusedField() })) {
+            Box(modifier = Modifier.clearFocusOnPress(onPress = { state = state.leaveFocusedField() })) {
                 TextButton(
-                    enabled = valid,
+                    // Save is possible only when every field passes every check.
+                    enabled = state.isValid,
                     onClick = {
-                        if (!valid) return@TextButton
-
-                        // All fields are valid numbers here, stored in order:
-                        // value, secondaryValue, tertiaryValue.
-                        val values = normalizedTexts.map { it.toDouble() }
-
-                        val newMeasurement = Measurement(
-                            type = type,
-                            value = values[0],
-                            secondaryValue = values.getOrNull(1),
-                            tertiaryValue = values.getOrNull(2)
-                        )
-
-                        onSave(newMeasurement)
+                        state.toMeasurement()?.let(onSave)
                     }
                 ) {
                     Text(stringResource(R.string.action_save))
@@ -178,22 +123,17 @@ fun MeasurementEntryDialog(
     )
 }
 
-// When an error is shown. Save is blocked by every error, but some are only shown
-// once the field has been left, so they don't appear while the user is still typing:
-// - empty, or ending with the decimal separator → after leaving the field
-// - too high → immediately, since typing more digits can't fix it
-// - too low → after leaving the field, since the user may still be typing (e.g. "12" on the way to "120")
-// - systolic/diastolic comparison and invalid text → immediately
-private fun isErrorVisible(error: ValidationError, text: String, fieldLeft: Boolean): Boolean =
-    when (error) {
-        ValidationError.Required,
-        ValidationError.IncompleteDecimal -> fieldLeft
-
-        is ValidationError.OutOfRange -> {
-            val number = text.toDoubleOrNull()
-            (number != null && number > error.max) || fieldLeft
-        }
-
-        ValidationError.InvalidNumber,
-        ValidationError.DiastolicNotBelowSystolic -> true
+// Saves the dialog's state across rotation: the type by name, plus the typed texts,
+// the left fields and the focused field, which Android can store as they are.
+private val entryStateSaver = listSaver<MeasurementEntryState, Any?>(
+    save = { listOf(it.type.name, it.texts, it.leftFields, it.focusedIndex) },
+    restore = {
+        @Suppress("UNCHECKED_CAST")
+        MeasurementEntryState(
+            type = MeasurementType.valueOf(it[0] as String),
+            texts = it[1] as List<String>,
+            leftFields = it[2] as List<Boolean>,
+            focusedIndex = it[3] as Int?
+        )
     }
+)
