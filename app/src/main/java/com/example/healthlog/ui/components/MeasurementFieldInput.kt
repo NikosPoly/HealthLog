@@ -1,5 +1,7 @@
 package com.example.healthlog.ui.components
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardActions
@@ -11,11 +13,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.healthlog.R
 import com.example.healthlog.model.MeasurementField
+import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.model.ValidationError
 import com.example.healthlog.ui.format.validationErrorMessage
+import com.example.healthlog.ui.theme.HealthLogTheme
 
 // One input field of the entry dialog: the text field with its label, unit and error message,
 // and the red mandatory marker next to it. The dialog decides the text, which error to show
@@ -81,5 +86,39 @@ fun MeasurementFieldInput(
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.padding(start = 8.dp, top = 25.dp)
         )
+    }
+}
+
+// Previews: a field without an error, and one with an error under it.
+@Preview(showBackground = true)
+@Composable
+private fun MeasurementFieldInputPreview() {
+    HealthLogTheme {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            MeasurementFieldInput(
+                field = MeasurementType.WEIGHT.fields[0],
+                text = "72.5",
+                error = null,
+                separator = '.',
+                isLast = false,
+                onTextChange = {},
+                onFocused = {},
+                onDone = {}
+            )
+
+            MeasurementFieldInput(
+                field = MeasurementType.HEIGHT.fields[0],
+                text = "18",
+                error = ValidationError.OutOfRange(30.0, 250.0),
+                separator = '.',
+                isLast = true,
+                onTextChange = {},
+                onFocused = {},
+                onDone = {}
+            )
+        }
     }
 }
