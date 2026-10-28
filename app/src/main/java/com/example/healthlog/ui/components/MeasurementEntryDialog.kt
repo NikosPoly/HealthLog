@@ -24,6 +24,9 @@ import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.ui.format.decimalSeparator
+import com.example.healthlog.ui.input.MeasurementFieldInput
+import com.example.healthlog.ui.input.clearFocusOnPress
+import com.example.healthlog.ui.input.clearFocusOnTap
 
 @Composable
 fun MeasurementEntryDialog(

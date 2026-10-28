@@ -1,4 +1,4 @@
-package com.example.healthlog.ui.components
+package com.example.healthlog.ui.input
 
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

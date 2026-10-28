@@ -1,4 +1,4 @@
-package com.example.healthlog.ui.components
+package com.example.healthlog.ui.input
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
