@@ -60,19 +60,24 @@ decimal separator and date format there.
 
 ## Tests
 
-There are two kinds of tests:
+**Unit tests** (`app/src/test`, run on your computer):
+- `MeasurementValidationTest`: the validation rules
+- `MeasurementTypeTest`: the rules of the measurement types (stored names, fields, ranges)
+- `NumberInputTest`: what can be typed into number fields
+- `MeasurementEntryStateTest`: the entry dialog's state and rules
+- `MeasurementFormattingTest`: how measurement values are shown (units, decimals, separator)
+- `DateFormattingTest`: the date format of each language
+- `ValidationMessagesTest`: how range limits are shown in error messages
 
-| Kind | Folder | Runs on | Covers |
-|---|---|---|---|
-| Unit tests | `app/src/test` | your computer | the validation rules (`MeasurementValidationTest`) |
-| Instrumented tests | `app/src/androidTest` | an emulator or device | the database migrations (`MigrationTest`) |
+**Instrumented tests** (`app/src/androidTest`, run on an emulator or device):
+- `MigrationTest`: the database migrations
+- `MeasurementEntryDialogTest`: the entry dialog's UI
 
 - **Android Studio:** right-click the test file or folder → **Run**
 - **Terminal:** `./gradlew testDebugUnitTest` (unit tests), `./gradlew connectedDebugAndroidTest` (instrumented tests)
 
 **Note:** after instrumented tests, Gradle uninstalls the app from that device, including its data.
 Run them on a separate emulator, not on a device with data you want to keep.
-
 ## Database
 
 Measurements are stored locally with Room. The database is currently at **version 3**.
