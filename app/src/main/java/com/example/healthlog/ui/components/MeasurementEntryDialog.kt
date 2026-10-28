@@ -3,14 +3,10 @@ package com.example.healthlog.ui.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -19,9 +15,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -31,7 +25,6 @@ import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.model.ValidationError
 import com.example.healthlog.model.validateMeasurement
 import com.example.healthlog.ui.format.decimalSeparator
-import com.example.healthlog.ui.format.validationErrorMessage
 
 @Composable
 fun MeasurementEntryDialog(
@@ -107,66 +100,34 @@ fun MeasurementEntryDialog(
             ) {
                 // One text field per value of the type.
                 type.fields.forEachIndexed { index, field ->
-                    // The error of this field, only if it should be shown right now.
-                    val visibleError = errors[index]?.takeIf {
-                        isErrorVisible(it, normalizedTexts[index], leftFields[index])
-                    }
-
-                    Row(verticalAlignment = Alignment.Top) {
-                        OutlinedTextField(
-                            value = texts[index],
-                            onValueChange = { input ->
-                                if (isAllowedInput(input, field.maxDecimals, separator)) {
-                                    texts = texts.toMutableList().also { it[index] = input }
-                                }
-                            },
-                            label = {
-                                Text(
-                                    stringResource(
-                                        R.string.field_label_with_unit,
-                                        stringResource(field.label),
-                                        field.unit
-                                    )
-                                )
-                            },
-                            isError = visibleError != null,
-                            supportingText = visibleError?.let { error ->
-                                { Text(validationErrorMessage(error)) }
-                            },
-                            singleLine = true,
-                            keyboardOptions = numberKeyboard(
-                                allowDecimals = field.allowsDecimals,
-                                isLast = index == type.fields.lastIndex
-                            ),
-                            // "Done" on the last field also leaves it, so its errors appear.
-                            keyboardActions = KeyboardActions(
-                                onDone = {
-                                    leaveFocusedField()
-                                    focusManager.clearFocus()
-                                }
-                            ),
-                            modifier = Modifier
-                                .weight(1f)
-                                .onFocusChanged { focusState ->
-                                    // Only gaining focus matters. Moving here from another
-                                    // field leaves that one; tapping back into the same field
-                                    // (e.g. after rotation) doesn't count as leaving it.
-                                    // Losing focus is ignored: it also happens on rotation.
-                                    if (focusState.isFocused && focusedIndex != index) {
-                                        leaveFocusedField()
-                                        focusedIndex = index
-                                    }
-                                }
-                        )
-
-                        // Mandatory marker, outside the field.
-                        Text(
-                            "*",
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.titleLarge,
-                            modifier = Modifier.padding(start = 8.dp, top = 16.dp)
-                        )
-                    }
+                    MeasurementFieldInput(
+                        field = field,
+                        text = texts[index],
+                        // The error of this field, only if it should be shown right now.
+                        error = errors[index]?.takeIf {
+                            isErrorVisible(it, normalizedTexts[index], leftFields[index])
+                        },
+                        separator = separator,
+                        isLast = index == type.fields.lastIndex,
+                        onTextChange = { input ->
+                            texts = texts.toMutableList().also { it[index] = input }
+                        },
+                        // Only gaining focus matters. Moving here from another
+                        // field leaves that one; tapping back into the same field
+                        // (e.g. after rotation) doesn't count as leaving it.
+                        // Losing focus is ignored: it also happens on rotation.
+                        onFocused = {
+                            if (focusedIndex != index) {
+                                leaveFocusedField()
+                                focusedIndex = index
+                            }
+                        },
+                        // "Done" on the last field also leaves it, so its errors appear.
+                        onDone = {
+                            leaveFocusedField()
+                            focusManager.clearFocus()
+                        }
+                    )
                 }
 
                 Text(
