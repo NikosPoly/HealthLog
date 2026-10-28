@@ -30,8 +30,6 @@ The app is available in Greek and English.
 
 All source code is in `app/src/main/java/com/example/healthlog/`:
 
-All source code is in `app/src/main/java/com/example/healthlog/`:
-
 ```
 healthlog/
 ├── database/         Room entity (Measurement), DAO, database and migrations
