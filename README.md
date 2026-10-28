@@ -30,20 +30,29 @@ The app is available in Greek and English.
 
 All source code is in `app/src/main/java/com/example/healthlog/`:
 
-| Package | Contents |
-|---|---|
-| `database/` | Room entity (`Measurement`), DAO, database and migrations |
-| `repository/` | `MeasurementRepository`, the single access point to the data |
-| `model/` | `MeasurementType` (the kinds of measurement, their fields, units and ranges) and the validation rules |
-| `ui/` | Navigation (`HealthLogNavHost`) |
-| `ui/home/` | Home screen: picking a measurement type and entering a value |
-| `ui/history/` | History screen: the list of measurements and deleting them |
-| `ui/components/` | Reusable UI parts: cards and dialogs |
-| `ui/format/` | Turning data into display text: values, dates, validation messages and the number/date formats of each language |
-| `ui/theme/` | Colors, typography and theme |
+All source code is in `app/src/main/java/com/example/healthlog/`:
+
+```
+healthlog/
+├── database/         Room entity (Measurement), DAO, database and migrations
+├── repository/       MeasurementRepository, the single access point to the data
+├── model/            measurement types (fields, units, ranges) and validation rules
+└── ui/               navigation (HealthLogNavHost)
+    ├── home/         home screen: picking a type and entering a value
+    ├── history/      history screen: the list of measurements and deleting them
+    ├── components/   cards and dialogs, incl. the entry dialog and its state
+    ├── input/        text input: one field, number input rules, focus helpers
+    ├── format/       display text: values, dates, messages, per-language formats
+    └── theme/        colors, typography and theme
+```
 
 Each screen is split into a **Screen** (connects the ViewModel to the UI) and a **Content**
 (layout only, previewable in Android Studio).
+
+Larger components are split by responsibility. For example, the entry dialog consists of
+`MeasurementEntryDialog` (layout) and `MeasurementEntryState` (its state and rules, unit-tested)
+in `ui/components/`, plus `MeasurementFieldInput`, `NumberInput` and `FocusModifiers` in `ui/input/`.
+Most components have a `@Preview` (dialogs can't be shown in the preview).
 
 All displayed texts are in `app/src/main/res/values/strings.xml` (English, the default)
 and `app/src/main/res/values-el/strings.xml` (Greek). Each language also defines its own
@@ -72,7 +81,16 @@ decimal separator and date format there.
 **Instrumented tests** (`app/src/androidTest`, run on an emulator or device):
 - `MigrationTest`: the database migrations
 - `MeasurementEntryDialogTest`: the entry dialog's UI
+There are two kinds of tests:
 
+**Unit tests** (`app/src/test`, run on your computer):
+- `MeasurementValidationTest`: the validation rules
+- `NumberInputTest`: what can be typed into number fields
+- `MeasurementEntryStateTest`: the entry dialog's state and rules
+
+**Instrumented tests** (`app/src/androidTest`, run on an emulator or device):
+- `MigrationTest`: the database migrations
+- `MeasurementEntryDialogTest`: the entry dialog's UI
 - **Android Studio:** right-click the test file or folder → **Run**
 - **Terminal:** `./gradlew testDebugUnitTest` (unit tests), `./gradlew connectedDebugAndroidTest` (instrumented tests)
 
@@ -103,7 +121,3 @@ When changing the database:
 - Own color theme and app icon
 - User profiles with sign-up and log-in (including choosing the language in the app)
 - Wider test coverage
-
-## License
-
-This project is licensed under the [Apache License 2.0](LICENSE).
