@@ -68,6 +68,7 @@ decimal separator and date format there.
 3. Run the `app` configuration on an emulator or a device
 
 ## Tests
+There are two kinds of tests:
 
 **Unit tests** (`app/src/test`, run on your computer):
 - `MeasurementValidationTest`: the validation rules
@@ -83,14 +84,6 @@ decimal separator and date format there.
 - `MeasurementEntryDialogTest`: the entry dialog's UI
 There are two kinds of tests:
 
-**Unit tests** (`app/src/test`, run on your computer):
-- `MeasurementValidationTest`: the validation rules
-- `NumberInputTest`: what can be typed into number fields
-- `MeasurementEntryStateTest`: the entry dialog's state and rules
-
-**Instrumented tests** (`app/src/androidTest`, run on an emulator or device):
-- `MigrationTest`: the database migrations
-- `MeasurementEntryDialogTest`: the entry dialog's UI
 - **Android Studio:** right-click the test file or folder → **Run**
 - **Terminal:** `./gradlew testDebugUnitTest` (unit tests), `./gradlew connectedDebugAndroidTest` (instrumented tests)
 
