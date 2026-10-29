@@ -9,8 +9,9 @@ class MeasurementRepository(
     private val dao: MeasurementDao
 ) {
 
-    fun getAllMeasurements(): Flow<List<Measurement>> =
-        dao.getAllMeasurements()
+    // The live list of one measurement type, newest first.
+    fun getMeasurementsByType(type: MeasurementType): Flow<List<Measurement>> =
+        dao.getMeasurementsByType(type)
 
     // Saves a new measurement (see measurementsToSave for what is stored).
     // Everything is saved in one database transaction: either all of it or nothing.
