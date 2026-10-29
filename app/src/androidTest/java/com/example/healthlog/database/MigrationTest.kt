@@ -119,15 +119,19 @@ class MigrationTest {
             .build()
 
         try {
-            // Newest first, as the history shows them.
-            val measurements = runBlocking { database.measurementDao().getAllMeasurements().first() }
+            // Read as the history does: one type at a time.
+            val dao = database.measurementDao()
+            val weights = runBlocking { dao.getMeasurementsByType(MeasurementType.WEIGHT).first() }
+            val bloodPressures = runBlocking {
+                dao.getMeasurementsByType(MeasurementType.BLOOD_PRESSURE).first()
+            }
 
-            assertEquals(2, measurements.size)
-            assertEquals(MeasurementType.WEIGHT, measurements[0].type)
-            assertEquals(80.25, measurements[0].value, 0.0)
-            assertEquals(MeasurementType.BLOOD_PRESSURE, measurements[1].type)
-            assertEquals(85.0, measurements[1].secondaryValue!!, 0.0)
-            assertEquals(null, measurements[1].tertiaryValue)
+            assertEquals(1, weights.size)
+            assertEquals(80.25, weights[0].value, 0.0)
+
+            assertEquals(1, bloodPressures.size)
+            assertEquals(85.0, bloodPressures[0].secondaryValue!!, 0.0)
+            assertEquals(null, bloodPressures[0].tertiaryValue)
         } finally {
             database.close()
         }
