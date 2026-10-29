@@ -44,7 +44,7 @@ class HomeViewModel(
         closeEntry()
 
         viewModelScope.launch {
-            repository.insert(measurement)
+            repository.save(measurement)
             _messages.send(R.string.message_measurement_saved)
         }
     }

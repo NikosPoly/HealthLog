@@ -13,6 +13,10 @@ interface MeasurementDao {
     @Insert
     suspend fun insert(measurement: Measurement)
 
+    // Inserts several measurements in one transaction: either all of them or none.
+    @Insert
+    suspend fun insertAll(measurements: List<Measurement>)
+
     @Delete
     suspend fun delete(measurement: Measurement)
 
