@@ -1,10 +1,15 @@
 package com.example.healthlog.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.repository.MeasurementRepository
 import com.example.healthlog.ui.history.HistoryScreen
 import com.example.healthlog.ui.history.HistoryViewModel
@@ -23,6 +28,11 @@ fun HealthLogNavHost(
     repository: MeasurementRepository
 ) {
     val navController = rememberNavController()
+
+    // The history page last shown. Kept here, above the history screen, so it is
+    // remembered when the history is closed and opened again while the app is running.
+    // Blood pressure when the app starts.
+    var historyType by rememberSaveable { mutableStateOf(MeasurementType.BLOOD_PRESSURE) }
 
     NavHost(
         navController = navController,
@@ -49,6 +59,8 @@ fun HealthLogNavHost(
 
             HistoryScreen(
                 viewModel = viewModel,
+                selectedType = historyType,
+                onSelectType = { historyType = it },
                 onBack = {
                     // Go back to Home, but never remove Home itself (e.g. on a double tap).
                     navController.popBackStack(Routes.HOME, inclusive = false)
