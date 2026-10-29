@@ -7,6 +7,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
+import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.repository.MeasurementRepository
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -18,18 +19,25 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-// State and actions of the history screen: the saved measurements and deleting them.
+// State and actions of the history screen: the saved measurements per type and deleting them.
 class HistoryViewModel(
     private val repository: MeasurementRepository
 ) : ViewModel() {
 
-    // The live list from the database, newest first.
-    val measurements: StateFlow<List<Measurement>> = repository.getAllMeasurements()
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = emptyList()
-        )
+    // One live list per measurement type, newest first. Each history page shows one of them.
+    private val measurementsByType: Map<MeasurementType, StateFlow<List<Measurement>>> =
+        MeasurementType.entries.associateWith { type ->
+            repository.getMeasurementsByType(type)
+                .stateIn(
+                    scope = viewModelScope,
+                    started = SharingStarted.WhileSubscribed(5_000),
+                    initialValue = emptyList()
+                )
+        }
+
+    // The live list of one measurement type.
+    fun measurementsOf(type: MeasurementType): StateFlow<List<Measurement>> =
+        measurementsByType.getValue(type)
 
     // The measurement waiting for delete confirmation: null = no confirmation open.
     private val _measurementToDelete = MutableStateFlow<Measurement?>(null)

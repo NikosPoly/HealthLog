@@ -9,7 +9,11 @@ The app is available in Greek and English.
 - **Five measurement types:** blood pressure (systolic, diastolic and pulse), pulse, blood sugar,
   weight and height
 - **Automatic date and time** for every entry
-- **History** of all measurements, newest first
+- **History per measurement type:** one page per type, chosen with tabs or by swiping left and
+  right; newest first. The last selected type is remembered while the app is open
+- **Blood pressure includes the pulse:** saving a blood pressure also saves its pulse as a
+  separate Pulse entry, so it appears in both histories. The two entries are independent:
+  deleting one keeps the other
 - **Delete with confirmation**
 - **Input validation:** every value is checked against a range; errors are shown under the field
   and saving is only possible when everything is valid
@@ -76,10 +80,12 @@ There are two kinds of tests:
 - `MeasurementFormattingTest`: how measurement values are shown (units, decimals, separator)
 - `DateFormattingTest`: the date format of each language
 - `ValidationMessagesTest`: how range limits are shown in error messages
+- `MeasurementRepositoryTest`: what is stored when a measurement is saved
 
 **Instrumented tests** (`app/src/androidTest`, run on an emulator or device):
 - `MigrationTest`: the database migrations
 - `MeasurementEntryDialogTest`: the entry dialog's UI
+- `HistoryContentTest`: the history's tabs, swiping, empty pages and deleting
 There are two kinds of tests:
 
 - **Android Studio:** right-click the test file or folder → **Run**
@@ -110,5 +116,6 @@ When changing the database:
 ## Roadmap
 
 - Own color theme and app icon
+- History: a chart over time, and filters (e.g. last 5, last month, out-of-range values)
 - User profiles with sign-up and log-in (including choosing the language in the app)
 - Wider test coverage
