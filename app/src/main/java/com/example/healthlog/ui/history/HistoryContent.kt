@@ -1,5 +1,8 @@
 package com.example.healthlog.ui.history
 
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,11 +30,21 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -42,6 +55,7 @@ import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.ui.chart.ChartPage
 import com.example.healthlog.ui.chart.ChartPeriod
 import com.example.healthlog.ui.chart.PeriodChips
+import com.example.healthlog.ui.chart.ScreenTap
 import com.example.healthlog.ui.components.DeleteConfirmationDialog
 import com.example.healthlog.ui.components.MeasurementHistoryCard
 import com.example.healthlog.ui.format.decimalSeparator
@@ -82,6 +96,10 @@ fun HistoryContent(
     val pagerState = rememberPagerState(initialPage = types.indexOf(selectedType)) { types.size }
     val scope = rememberCoroutineScope()
 
+    // The latest tap anywhere on the screen. The chart pages use it to close the box of
+    // a tapped dot when the tap is outside the chart.
+    var screenTap by remember { mutableStateOf<ScreenTap?>(null) }
+
     // Reports the shown page, whether it changed by swiping or by tapping a tab.
     LaunchedEffect(pagerState) {
         snapshotFlow { pagerState.currentPage }.collect { page ->
@@ -90,6 +108,7 @@ fun HistoryContent(
     }
 
     Scaffold(
+        modifier = Modifier.watchTaps { screenTap = ScreenTap(it) },
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.history_title)) },
@@ -153,7 +172,8 @@ fun HistoryContent(
                     ChartPage(
                         type = type,
                         measurements = measurements,
-                        period = period
+                        period = period,
+                        screenTap = screenTap
                     )
                 } else {
                     MeasurementList(
@@ -177,6 +197,38 @@ fun HistoryContent(
             onDismiss = onCancelDelete
         )
     }
+}
+
+// Reports every tap on this element or anything inside it, with its position relative to
+// the whole screen. It only watches: the buttons, tabs and chart underneath still get
+// their taps as usual. A swipe is not a tap.
+// composed: so the element's position is remembered across recompositions, like
+// clearFocusOnTap in ui/input.
+private fun Modifier.watchTaps(onTap: (Offset) -> Unit): Modifier = composed {
+    val position = remember { ElementPosition() }
+    val currentOnTap by rememberUpdatedState(onTap)
+
+    onGloballyPositioned { position.coordinates = it }
+        .pointerInput(Unit) {
+            awaitEachGesture {
+                // Initial pass: sees the touch before the elements underneath, without
+                // taking it from them.
+                val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                val up = waitForUpOrCancellation(pass = PointerEventPass.Initial)
+                val moved = up != null &&
+                    (up.position - down.position).getDistance() > viewConfiguration.touchSlop
+                val element = position.coordinates
+
+                if (up != null && !moved && element != null && element.isAttached) {
+                    currentOnTap(element.localToRoot(up.position))
+                }
+            }
+        }
+}
+
+// Where an element is on the screen. A plain field, not state: nothing is redrawn from it.
+private class ElementPosition {
+    var coordinates: LayoutCoordinates? = null
 }
 
 // The button at the top center that switches between the list and the chart.

@@ -2,22 +2,31 @@ package com.example.healthlog.ui.chart
 
 import android.text.format.DateFormat
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.ui.format.decimalSeparator
+import com.example.healthlog.ui.format.formatMeasurementValue
+import com.example.healthlog.ui.format.formatTimestamp
+import com.example.healthlog.ui.format.rememberDateTimeFormatter
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
 import com.patrykandpatrick.vico.compose.cartesian.CartesianMeasuringContext
 import com.patrykandpatrick.vico.compose.cartesian.axis.Axis
 import com.patrykandpatrick.vico.compose.cartesian.axis.HorizontalAxis
 import com.patrykandpatrick.vico.compose.cartesian.axis.VerticalAxis
+import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisGuidelineComponent
 import com.patrykandpatrick.vico.compose.cartesian.data.CartesianChartModel
 import com.patrykandpatrick.vico.compose.cartesian.data.CartesianLayerRangeProvider
 import com.patrykandpatrick.vico.compose.cartesian.data.CartesianValueFormatter
@@ -25,17 +34,26 @@ import com.patrykandpatrick.vico.compose.cartesian.data.LineCartesianLayerModel
 import com.patrykandpatrick.vico.compose.cartesian.layer.LineCartesianLayer
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLine
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLayer
+import com.patrykandpatrick.vico.compose.cartesian.marker.CartesianMarker
+import com.patrykandpatrick.vico.compose.cartesian.marker.CartesianMarkerController
+import com.patrykandpatrick.vico.compose.cartesian.marker.DefaultCartesianMarker
+import com.patrykandpatrick.vico.compose.cartesian.marker.Interaction
+import com.patrykandpatrick.vico.compose.cartesian.marker.rememberDefaultCartesianMarker
 import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
 import com.patrykandpatrick.vico.compose.cartesian.rememberVicoScrollState
 import com.patrykandpatrick.vico.compose.common.Fill
+import com.patrykandpatrick.vico.compose.common.Insets
+import com.patrykandpatrick.vico.compose.common.MarkerCornerBasedShape
 import com.patrykandpatrick.vico.compose.common.ProvideVicoTheme
 import com.patrykandpatrick.vico.compose.common.component.rememberShapeComponent
+import com.patrykandpatrick.vico.compose.common.component.rememberTextComponent
 import com.patrykandpatrick.vico.compose.common.data.ExtraStore
 import com.patrykandpatrick.vico.compose.m3.common.rememberM3VicoTheme
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.max
@@ -46,6 +64,7 @@ import kotlin.math.roundToLong
 // The bottom axis is time: the space between two dots matches the time between them.
 // Scrolling and zooming are off, so the whole period always fits and a sideways swipe
 // over the chart changes the tab.
+// Tapping a dot shows its value, date and time; tapping it again or anywhere else hides it.
 // This is the only file that uses the Vico chart library.
 @Composable
 fun MeasurementChart(
@@ -58,7 +77,7 @@ fun MeasurementChart(
     val model = remember(oldestFirst, type) { chartModel(oldestFirst, type) }
 
     val field = type.fields[0]
-    val separator = decimalSeparator().toString()
+    val separator = decimalSeparator()
     val locale = Locale.forLanguageTag(stringResource(R.string.format_locale))
 
     // Long periods show month and year on the axis; shorter ones day and month.
@@ -70,7 +89,7 @@ fun MeasurementChart(
     val yFormatter = remember(field.maxDecimals, separator) {
         CartesianValueFormatter.decimal(
             decimalCount = field.maxDecimals,
-            decimalSeparator = separator
+            decimalSeparator = separator.toString()
         )
     }
     // Whole-number types get a wider minimum range, so their axis steps stay whole numbers.
@@ -78,11 +97,51 @@ fun MeasurementChart(
         PaddedRange(minMargin = if (field.maxDecimals > 0) 1.0 else 5.0)
     }
 
+    // The text shown for a tapped dot: the value as in the history list, then date and time.
+    // Blood pressure shows systolic and diastolic together (with the pulse).
+    val dateTimeFormatter = rememberDateTimeFormatter()
+    val markerFormatter = remember(oldestFirst, separator, dateTimeFormatter) {
+        val measurementAt = oldestFirst.associateBy { it.timestamp / MILLIS_PER_DAY }
+        DefaultCartesianMarker.ValueFormatter { _, targets ->
+            val measurement = measurementAt[targets.first().x]
+            if (measurement == null) {
+                ""
+            } else {
+                formatMeasurementValue(measurement, separator) + "\n" +
+                    formatTimestamp(measurement.timestamp, dateTimeFormatter)
+            }
+        }
+    }
+    val touchRadius = with(LocalDensity.current) { TOUCH_RADIUS.toPx() }
+    val markerController = remember(touchRadius) { TapOnDotController(touchRadius) }
+
     // Takes the chart's colors and text styles from the app's Material theme.
     ProvideVicoTheme(rememberM3VicoTheme()) {
         val lines = listOf(
             rememberDotLine(MaterialTheme.colorScheme.primary),
             rememberDotLine(MaterialTheme.colorScheme.tertiary)
+        )
+        val marker = rememberDefaultCartesianMarker(
+            label = rememberTextComponent(
+                style = TextStyle(
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 12.sp,
+                    textAlign = TextAlign.Center
+                ),
+                lineCount = 2,
+                padding = Insets(8.dp, 4.dp),
+                background = rememberShapeComponent(
+                    fill = Fill(MaterialTheme.colorScheme.surface),
+                    shape = MarkerCornerBasedShape(RoundedCornerShape(8.dp)),
+                    strokeFill = Fill(MaterialTheme.colorScheme.outline),
+                    strokeThickness = 1.dp
+                )
+            ),
+            valueFormatter = markerFormatter,
+            // Above the dot, or below it when there's no room above.
+            labelPosition = DefaultCartesianMarker.LabelPosition.AroundPoint,
+            // A vertical line through the tapped dot.
+            guideline = rememberAxisGuidelineComponent()
         )
 
         CartesianChartHost(
@@ -95,7 +154,9 @@ fun MeasurementChart(
                 bottomAxis = HorizontalAxis.rememberBottom(valueFormatter = xFormatter),
                 // One day: the base unit of the time axis.
                 // (The lambda receives the model and the x range, which aren't needed.)
-                getXStep = { _, _, _ -> 1.0 }
+                getXStep = { _, _, _ -> 1.0 },
+                marker = marker,
+                markerController = markerController
             ),
             model = model,
             modifier = modifier,
@@ -106,6 +167,9 @@ fun MeasurementChart(
 
 private const val MILLIS_PER_DAY = 86_400_000.0
 private const val LONG_PERIOD_DAYS = 180
+
+// How close to a dot (sideways) a tap must be to select it.
+private val TOUCH_RADIUS = 24.dp
 
 // The chart's data. x is the time in days, y the value.
 private fun chartModel(oldestFirst: List<Measurement>, type: MeasurementType): CartesianChartModel =
@@ -139,6 +203,31 @@ private fun rememberDotLine(color: Color): LineCartesianLayer.Line {
             LineCartesianLayer.PointProvider.single(LineCartesianLayer.Point(dot, size = 8.dp))
         }
     )
+}
+
+// Shows the marker when a tap lands on a dot; hides it when the same dot is tapped again
+// or the tap is away from every dot. (Vico's own "toggle on tap" would instead select the
+// nearest dot wherever you tap.)
+private class TapOnDotController(private val touchRadius: Float) : CartesianMarkerController {
+    private var shownTargets: List<CartesianMarker.Target>? = null
+
+    override val acceptsLongPress = false
+
+    override fun shouldAcceptInteraction(
+        interaction: Interaction,
+        targets: List<CartesianMarker.Target>
+    ) = interaction is Interaction.Tap
+
+    override fun shouldShowMarker(
+        interaction: Interaction,
+        targets: List<CartesianMarker.Target>
+    ): Boolean {
+        val onDot = targets.isNotEmpty() &&
+            targets.all { abs(it.canvasX - interaction.point.x) <= touchRadius }
+        val show = onDot && targets != shownTargets
+        shownTargets = if (show) targets else null
+        return show
+    }
 }
 
 // The dates on the bottom axis, in the app's language: e.g. "Oct 5" or «5 Οκτ».
