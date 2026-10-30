@@ -21,7 +21,7 @@ data class FieldStats(
 data class PeriodStats(
     val count: Int,
     // The main value: systolic for blood pressure.
-    // Null with fewer than two measurements; the screen shows "-".
+    // Null without measurements. With one, it is the highest, the lowest and the average.
     val primary: FieldStats?,
     // Diastolic for blood pressure; null for the other types.
     // The pulse has its own stats in the Pulse tab.
@@ -47,7 +47,7 @@ private fun fieldStats(
     val withValues = measurements.mapNotNull { measurement ->
         valueOf(measurement)?.let { value -> measurement to value }
     }
-    if (withValues.size < 2) return null
+    if (withValues.isEmpty()) return null
 
     val highest = withValues.maxWith(
         compareBy<Pair<Measurement, Double>> { it.second }.thenBy { it.first.timestamp }

@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -33,8 +35,9 @@ import java.time.ZonedDateTime
 // A new object for every tap, even at the same spot, so each one is noticed.
 class ScreenTap(val position: Offset)
 
-// The trend page of one type: its chart and, later, its stats.
-// Without measurements in the period, a message instead of the chart.
+// The trend page of one type: its chart, and its stats below it.
+// Without measurements in the period, a message instead of the chart and the stats.
+// Scrolls up and down when it doesn't fit (small screens, landscape).
 // The box of a tapped dot is closed by a tap anywhere on the screen outside the chart,
 // and it never comes back by itself: not after swiping to another tab and back,
 // nor after choosing another period.
@@ -68,6 +71,7 @@ fun ChartPage(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -89,10 +93,9 @@ fun ChartPage(
                         .semantics { contentDescription = description }
                 )
             }
-        }
 
-        // Temporary, to check the chips until the stats are added.
-        Text("${stringResource(R.string.stats_count)}: ${inPeriod.size}")
+            ChartStatsSection(type = type, inPeriod = inPeriod)
+        }
     }
 }
 

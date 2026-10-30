@@ -30,11 +30,14 @@ class MeasurementStatsTest {
     }
 
     @Test
-    fun oneMeasurement_countOne_noValues() {
-        val stats = periodStats(listOf(weight(1, 72.0)), MeasurementType.WEIGHT)
+    fun oneMeasurement_isTheHighestLowestAndAverage() {
+        val only = weight(1, 72.5)
+        val stats = periodStats(listOf(only), MeasurementType.WEIGHT)
 
         assertEquals(1, stats.count)
-        assertNull(stats.primary)
+        assertEquals(only, stats.primary?.highest)
+        assertEquals(only, stats.primary?.lowest)
+        assertEquals(72.5, stats.primary!!.average, 0.0)
     }
 
     @Test
