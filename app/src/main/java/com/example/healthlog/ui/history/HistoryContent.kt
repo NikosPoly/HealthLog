@@ -40,6 +40,8 @@ import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.ui.chart.ChartPage
+import com.example.healthlog.ui.chart.ChartPeriod
+import com.example.healthlog.ui.chart.PeriodChips
 import com.example.healthlog.ui.components.DeleteConfirmationDialog
 import com.example.healthlog.ui.components.MeasurementHistoryCard
 import com.example.healthlog.ui.format.decimalSeparator
@@ -51,6 +53,7 @@ import kotlinx.coroutines.launch
 // user actions are reported through the callbacks.
 // One page per measurement type, chosen with the tabs or by swiping left and right.
 // The button above the pages switches every page between the list and the chart.
+// In chart mode, the chips below it choose the period of the chart.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryContent(
@@ -60,6 +63,8 @@ fun HistoryContent(
     selectedType: MeasurementType,
     // True: the pages show the chart; false: the list. The same for every tab.
     showTrend: Boolean,
+    // How far back the chart looks. Only used in chart mode.
+    period: ChartPeriod,
     measurementToDelete: Measurement?,
     snackbarHostState: SnackbarHostState,
     onBack: () -> Unit,
@@ -67,6 +72,7 @@ fun HistoryContent(
     onSelectType: (MeasurementType) -> Unit,
     // Called by the button that switches between the list and the chart.
     onToggleTrend: () -> Unit,
+    onSelectPeriod: (ChartPeriod) -> Unit,
     onRequestDelete: (Measurement) -> Unit,
     onConfirmDelete: () -> Unit,
     onCancelDelete: () -> Unit
@@ -127,17 +133,31 @@ fun HistoryContent(
                 onToggle = onToggleTrend
             )
 
+            // Only for the chart; the list always shows every measurement.
+            if (showTrend) {
+                PeriodChips(
+                    selected = period,
+                    onSelect = onSelectPeriod,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
+
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier.fillMaxSize()
             ) { page ->
                 val type = types[page]
+                val measurements = measurementsByType[type].orEmpty()
 
                 if (showTrend) {
-                    ChartPage(type = type)
+                    ChartPage(
+                        type = type,
+                        measurements = measurements,
+                        period = period
+                    )
                 } else {
                     MeasurementList(
-                        measurements = measurementsByType[type].orEmpty(),
+                        measurements = measurements,
                         onRequestDelete = onRequestDelete
                     )
                 }
@@ -257,11 +277,13 @@ private fun HistoryContentPreview() {
             ),
             selectedType = MeasurementType.BLOOD_PRESSURE,
             showTrend = false,
+            period = ChartPeriod.ALL,
             measurementToDelete = null,
             snackbarHostState = remember { SnackbarHostState() },
             onBack = {},
             onSelectType = {},
             onToggleTrend = {},
+            onSelectPeriod = {},
             onRequestDelete = {},
             onConfirmDelete = {},
             onCancelDelete = {}

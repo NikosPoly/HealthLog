@@ -19,6 +19,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType
+import com.example.healthlog.ui.chart.ChartPeriod
 import com.example.healthlog.ui.theme.HealthLogTheme
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -64,6 +65,7 @@ class HistoryContentTest {
                     measurementsByType = sampleData,
                     selectedType = shownType,
                     showTrend = false,
+                    period = ChartPeriod.ALL,
                     measurementToDelete = null,
                     snackbarHostState = remember { SnackbarHostState() },
                     onBack = {},
@@ -72,6 +74,7 @@ class HistoryContentTest {
                         selectedType = it
                     },
                     onToggleTrend = {},
+                    onSelectPeriod = {},
                     onRequestDelete = { requestedDelete = it },
                     onConfirmDelete = {},
                     onCancelDelete = {}
