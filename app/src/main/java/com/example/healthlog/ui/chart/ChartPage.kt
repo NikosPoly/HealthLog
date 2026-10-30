@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -36,7 +37,8 @@ import java.time.ZonedDateTime
 class ScreenTap(val position: Offset)
 
 // The trend page of one type: its chart, and its stats below it.
-// Without measurements in the period, a message instead of the chart and the stats.
+// Without measurements in the period, a message instead of the chart and the period stats.
+// The latest measurement is always shown, whatever the period.
 // Scrolls up and down when it doesn't fit (small screens, landscape).
 // The box of a tapped dot is closed by a tap anywhere on the screen outside the chart,
 // and it never comes back by itself: not after swiping to another tab and back,
@@ -95,6 +97,12 @@ fun ChartPage(
             }
 
             ChartStatsSection(type = type, inPeriod = inPeriod)
+            HorizontalDivider()
+        }
+
+        // The list is newest first. A type without any measurement shows only the message.
+        measurements.firstOrNull()?.let { latest ->
+            LatestStatsSection(latest = latest)
         }
     }
 }
