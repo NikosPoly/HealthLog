@@ -63,6 +63,7 @@ class HistoryContentTest {
                 HistoryContent(
                     measurementsByType = sampleData,
                     selectedType = shownType,
+                    showTrend = false,
                     measurementToDelete = null,
                     snackbarHostState = remember { SnackbarHostState() },
                     onBack = {},
@@ -70,6 +71,7 @@ class HistoryContentTest {
                         shownType = it
                         selectedType = it
                     },
+                    onToggleTrend = {},
                     onRequestDelete = { requestedDelete = it },
                     onConfirmDelete = {},
                     onCancelDelete = {}

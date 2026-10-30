@@ -4,15 +4,20 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -34,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType
+import com.example.healthlog.ui.chart.ChartPage
 import com.example.healthlog.ui.components.DeleteConfirmationDialog
 import com.example.healthlog.ui.components.MeasurementHistoryCard
 import com.example.healthlog.ui.format.decimalSeparator
@@ -44,6 +50,7 @@ import kotlinx.coroutines.launch
 // Layout only: the history screen, drawn from the values it receives;
 // user actions are reported through the callbacks.
 // One page per measurement type, chosen with the tabs or by swiping left and right.
+// The button above the pages switches every page between the list and the chart.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryContent(
@@ -51,11 +58,15 @@ fun HistoryContent(
     measurementsByType: Map<MeasurementType, List<Measurement>>,
     // The type whose page is shown.
     selectedType: MeasurementType,
+    // True: the pages show the chart; false: the list. The same for every tab.
+    showTrend: Boolean,
     measurementToDelete: Measurement?,
     snackbarHostState: SnackbarHostState,
     onBack: () -> Unit,
     // Called when another page is shown, by tapping a tab or by swiping.
     onSelectType: (MeasurementType) -> Unit,
+    // Called by the button that switches between the list and the chart.
+    onToggleTrend: () -> Unit,
     onRequestDelete: (Measurement) -> Unit,
     onConfirmDelete: () -> Unit,
     onCancelDelete: () -> Unit
@@ -110,14 +121,26 @@ fun HistoryContent(
                 }
             }
 
+            // Outside the pages, so it stays in place while swiping.
+            TrendToggle(
+                showTrend = showTrend,
+                onToggle = onToggleTrend
+            )
+
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier.fillMaxSize()
             ) { page ->
-                MeasurementList(
-                    measurements = measurementsByType[types[page]].orEmpty(),
-                    onRequestDelete = onRequestDelete
-                )
+                val type = types[page]
+
+                if (showTrend) {
+                    ChartPage(type = type)
+                } else {
+                    MeasurementList(
+                        measurements = measurementsByType[type].orEmpty(),
+                        onRequestDelete = onRequestDelete
+                    )
+                }
             }
         }
     }
@@ -133,6 +156,38 @@ fun HistoryContent(
             onConfirm = onConfirmDelete,
             onDismiss = onCancelDelete
         )
+    }
+}
+
+// The button at the top center that switches between the list and the chart.
+// It shows what it switches to: "See trend" on the list, "See history" on the chart.
+@Composable
+private fun TrendToggle(
+    showTrend: Boolean,
+    onToggle: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        OutlinedButton(onClick = onToggle) {
+            Icon(
+                painter = painterResource(
+                    if (showTrend) R.drawable.ic_history else R.drawable.ic_trend
+                ),
+                // The text next to it already says what the button does.
+                contentDescription = null,
+                modifier = Modifier.size(ButtonDefaults.IconSize)
+            )
+            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+            Text(
+                stringResource(
+                    if (showTrend) R.string.chart_show_history else R.string.chart_show_trend
+                )
+            )
+        }
     }
 }
 
@@ -201,10 +256,12 @@ private fun HistoryContentPreview() {
                 )
             ),
             selectedType = MeasurementType.BLOOD_PRESSURE,
+            showTrend = false,
             measurementToDelete = null,
             snackbarHostState = remember { SnackbarHostState() },
             onBack = {},
             onSelectType = {},
+            onToggleTrend = {},
             onRequestDelete = {},
             onConfirmDelete = {},
             onCancelDelete = {}
