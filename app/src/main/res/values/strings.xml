@@ -25,6 +25,30 @@
     <string name="history_title">Measurement history</string>
     <string name="history_empty">No entries yet.</string>
 
+    <!-- History charts. %1$s = measurement type -->
+    <string name="chart_show_trend">See trend</string>
+    <string name="chart_show_history">See history</string>
+    <string name="chart_period_7_days">7 days</string>
+    <string name="chart_period_30_days">30 days</string>
+    <string name="chart_period_6_months">6 months</string>
+    <string name="chart_period_1_year">1 year</string>
+    <string name="chart_period_all">All</string>
+    <string name="chart_empty">The chart needs measurements from this period.</string>
+    <string name="chart_description">Chart of %1$s</string>
+
+    <!-- Chart stats -->
+    <string name="stats_period_title">In this period</string>
+    <string name="stats_count">Measurements</string>
+    <string name="stats_highest">Highest</string>
+    <string name="stats_lowest">Lowest</string>
+    <string name="stats_average">Average</string>
+    <string name="stats_highest_systolic">Highest systolic</string>
+    <string name="stats_lowest_systolic">Lowest systolic</string>
+    <string name="stats_highest_diastolic">Highest diastolic</string>
+    <string name="stats_lowest_diastolic">Lowest diastolic</string>
+    <string name="stats_last_recorded">Last recorded</string>
+    <string name="stats_latest_measurement">Latest measurement</string>
+
     <!-- Buttons and actions used in several places -->
     <string name="action_back">Back</string>
     <string name="action_save">Save</string>
