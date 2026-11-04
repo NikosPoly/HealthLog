@@ -32,10 +32,6 @@ import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType
 import java.time.ZonedDateTime
 
-// A tap anywhere on the screen, at a position relative to the whole screen.
-// A new object for every tap, even at the same spot, so each one is noticed.
-class ScreenTap(val position: Offset)
-
 // The trend page of one type: its chart, and its stats below it.
 // Without measurements in the period, a message instead of the chart and the period stats.
 // The latest measurement is always shown, whatever the period.
