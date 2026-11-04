@@ -5,9 +5,18 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -65,13 +74,48 @@ import kotlin.math.roundToLong
 // Scrolling and zooming are off, so the whole period always fits and a sideways swipe
 // over the chart changes the tab.
 // Tapping a dot shows its value, date and time; tapping it again or anywhere else hides it.
+// The box closes on a tap anywhere on the screen outside the chart (screenTap), and it
+// never comes back by itself: not after swiping to another tab and back, nor after
+// choosing another period.
 // This is the only file that uses the Vico chart library.
 @Composable
 fun MeasurementChart(
     type: MeasurementType,
     // The measurements to draw, in any order. Must not be empty.
     measurements: List<Measurement>,
+    // The latest tap anywhere on the screen, or null before the first one.
+    screenTap: ScreenTap?,
     modifier: Modifier = Modifier
+) {
+    // When any of these three changes, the chart is drawn from scratch, without the box
+    // of a tapped dot:
+    // - chartInstance is new every time the chart is shown (e.g. after swiping back to it)
+    // - measurements change with the period and the data
+    // - closeCount goes up on every tap outside the chart
+    val chartInstance = remember { Any() }
+    var closeCount by remember { mutableIntStateOf(0) }
+    val chartPosition = remember { ChartPosition() }
+
+    // Taps on the chart itself are handled by the chart.
+    LaunchedEffect(screenTap) {
+        if (screenTap != null && !chartPosition.contains(screenTap.position)) closeCount++
+    }
+
+    key(chartInstance, measurements, closeCount) {
+        VicoLineChart(
+            type = type,
+            measurements = measurements,
+            modifier = modifier.onGloballyPositioned { chartPosition.coordinates = it }
+        )
+    }
+}
+
+// The chart itself, drawn with Vico.
+@Composable
+private fun VicoLineChart(
+    type: MeasurementType,
+    measurements: List<Measurement>,
+    modifier: Modifier
 ) {
     val oldestFirst = remember(measurements) { measurements.sortedBy { it.timestamp } }
     val model = remember(oldestFirst, type) { chartModel(oldestFirst, type) }
@@ -162,6 +206,17 @@ fun MeasurementChart(
             modifier = modifier,
             scrollState = rememberVicoScrollState(scrollEnabled = false)
         )
+    }
+}
+
+// Where the chart is on the screen, to tell whether a tap was on it.
+// A plain field, not state: it changes on every layout and nothing is redrawn from it.
+private class ChartPosition {
+    var coordinates: LayoutCoordinates? = null
+
+    fun contains(position: Offset): Boolean {
+        val chart = coordinates?.takeIf { it.isAttached } ?: return false
+        return chart.boundsInRoot().contains(position)
     }
 }
 
