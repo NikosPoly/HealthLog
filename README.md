@@ -44,19 +44,19 @@ All source code is in `app/src/main/java/com/example/healthlog/`:
 
 ```
 healthlog/
-├── database/         Room entity (Measurement), DAO, database and migrations
-├── repository/       MeasurementRepository, the single access point to the data
-├── model/            measurement types (fields, units, ranges) and validation rules
-└── ui/               navigation (HealthLogNavHost)
-    ├── home/         home screen: picking a type and entering a value
-    ├── history/      history screen: tabs, list or chart, deleting measurements
-    ├── chart/        charts: the chart page, periods, screen taps
-    │   ├── stats/    the stats below the chart: calculations, sections, one stat row
-    │   └── vico/     the chart itself, its tooltip and axes (the only place Vico is used)
-    ├── components/   cards and dialogs, incl. the entry dialog and its state
-    ├── input/        text input: one field, number input rules, focus helpers
-    ├── format/       display text: values, dates, "time ago", messages, per-language formats
-    └── theme/        colors, typography and theme
+├── database/                Room entity (Measurement), DAO, database and migrations
+├── repository/              MeasurementRepository, the single access point to the data
+├── model/                   measurement types (fields, units, ranges) and validation rules
+└── ui/                      navigation (HealthLogNavHost)
+    ├── home/                home screen: the measurement type cards
+    │   └── newmeasurement/  adding a measurement: the entry dialog, its state and inputs
+    ├── history/             history screen: tabs, the list/chart switch, deleting
+    │   ├── list/            the list mode: the measurement cards
+    │   └── chart/           the chart mode: the chart page, periods, screen taps
+    │       ├── stats/       the stats below the chart: calculations, sections, one stat row
+    │       └── vico/        the chart itself, its tooltip and axes (the only place Vico is used)
+    ├── format/              display text: values, dates, "time ago", messages, per-language formats
+    └── theme/               colors, typography and theme
 ```
 
 Each screen is split into a **Screen** (connects the ViewModel to the UI) and a **Content**
@@ -64,7 +64,7 @@ Each screen is split into a **Screen** (connects the ViewModel to the UI) and a 
 
 Larger components are split by responsibility. For example, the entry dialog consists of
 `MeasurementEntryDialog` (layout) and `MeasurementEntryState` (its state and rules, unit-tested)
-in `ui/components/`, plus `MeasurementFieldInput`, `NumberInput` and `FocusModifiers` in `ui/input/`.
+plus `MeasurementFieldInput`, `NumberInput` and `FocusModifiers`, all in `ui/home/newmeasurement/`.
 Most components have a `@Preview` (dialogs can't be shown in the preview).
 
 All displayed texts are in `app/src/main/res/values/strings.xml` (English, the default)
