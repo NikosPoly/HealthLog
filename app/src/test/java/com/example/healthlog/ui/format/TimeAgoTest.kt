@@ -1,4 +1,4 @@
-package com.example.healthlog.ui.chart
+package com.example.healthlog.ui.format
 
 import org.junit.Assert.assertEquals
 import org.junit.Test

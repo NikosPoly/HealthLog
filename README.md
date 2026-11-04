@@ -50,10 +50,12 @@ healthlog/
 └── ui/               navigation (HealthLogNavHost)
     ├── home/         home screen: picking a type and entering a value
     ├── history/      history screen: tabs, list or chart, deleting measurements
-    ├── chart/        charts: the chart page, periods, stats (Vico is only used here)
+    ├── chart/        charts: the chart page, periods, screen taps
+    │   ├── stats/    the stats below the chart: calculations, sections, one stat row
+    │   └── vico/     the chart itself, its tooltip and axes (the only place Vico is used)
     ├── components/   cards and dialogs, incl. the entry dialog and its state
     ├── input/        text input: one field, number input rules, focus helpers
-    ├── format/       display text: values, dates, messages, per-language formats
+    ├── format/       display text: values, dates, "time ago", messages, per-language formats
     └── theme/        colors, typography and theme
 ```
 
@@ -91,7 +93,7 @@ There are two kinds of tests:
 - `ValidationMessagesTest`: how range limits are shown in error messages
 - `MeasurementRepositoryTest`: what is stored when a measurement is saved
 - `ChartPeriodTest`: which measurements each chart period includes
-- `MeasurementStatsTest`: count, highest, lowest, average and their rounding
+- `PeriodStatsCalculationTest`: count, highest, lowest, average and their rounding
 - `TimeAgoTest`: the "time ago" of the last measurement (hours, yesterday, days, months, years)
 
 **Instrumented tests** (`app/src/androidTest`, run on an emulator or device):

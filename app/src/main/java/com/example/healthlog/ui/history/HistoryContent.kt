@@ -1,26 +1,13 @@
 package com.example.healthlog.ui.history
 
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -34,17 +21,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.LayoutCoordinates
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -56,8 +35,8 @@ import com.example.healthlog.ui.chart.ChartPage
 import com.example.healthlog.ui.chart.ChartPeriod
 import com.example.healthlog.ui.chart.PeriodChips
 import com.example.healthlog.ui.chart.ScreenTap
+import com.example.healthlog.ui.chart.watchTaps
 import com.example.healthlog.ui.components.DeleteConfirmationDialog
-import com.example.healthlog.ui.components.MeasurementHistoryCard
 import com.example.healthlog.ui.format.decimalSeparator
 import com.example.healthlog.ui.format.formatMeasurementValue
 import com.example.healthlog.ui.theme.HealthLogTheme
@@ -176,7 +155,7 @@ fun HistoryContent(
                         screenTap = screenTap
                     )
                 } else {
-                    MeasurementList(
+                    MeasurementHistoryList(
                         measurements = measurements,
                         onRequestDelete = onRequestDelete
                     )
@@ -196,111 +175,6 @@ fun HistoryContent(
             onConfirm = onConfirmDelete,
             onDismiss = onCancelDelete
         )
-    }
-}
-
-// Reports every tap on this element or anything inside it, with its position relative to
-// the whole screen. It only watches: the buttons, tabs and chart underneath still get
-// their taps as usual. A swipe is not a tap.
-// composed: so the element's position is remembered across recompositions, like
-// clearFocusOnTap in ui/input.
-private fun Modifier.watchTaps(onTap: (Offset) -> Unit): Modifier = composed {
-    val position = remember { ElementPosition() }
-    val currentOnTap by rememberUpdatedState(onTap)
-
-    onGloballyPositioned { position.coordinates = it }
-        .pointerInput(Unit) {
-            awaitEachGesture {
-                // Initial pass: sees the touch before the elements underneath, without
-                // taking it from them.
-                val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
-                val up = waitForUpOrCancellation(pass = PointerEventPass.Initial)
-                val moved = up != null &&
-                    (up.position - down.position).getDistance() > viewConfiguration.touchSlop
-                val element = position.coordinates
-
-                if (up != null && !moved && element != null && element.isAttached) {
-                    currentOnTap(element.localToRoot(up.position))
-                }
-            }
-        }
-}
-
-// Where an element is on the screen. A plain field, not state: nothing is redrawn from it.
-private class ElementPosition {
-    var coordinates: LayoutCoordinates? = null
-}
-
-// The button at the top center that switches between the list and the chart.
-// It shows what it switches to: "See trend" on the list, "See history" on the chart.
-@Composable
-private fun TrendToggle(
-    showTrend: Boolean,
-    onToggle: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 8.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        OutlinedButton(onClick = onToggle) {
-            Icon(
-                painter = painterResource(
-                    if (showTrend) R.drawable.ic_history else R.drawable.ic_trend
-                ),
-                // The text next to it already says what the button does.
-                contentDescription = null,
-                modifier = Modifier.size(ButtonDefaults.IconSize)
-            )
-            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-            Text(
-                stringResource(
-                    if (showTrend) R.string.chart_show_history else R.string.chart_show_trend
-                )
-            )
-        }
-    }
-}
-
-// The list of one page: the cards of one type, or the empty text in the middle.
-@Composable
-private fun MeasurementList(
-    measurements: List<Measurement>,
-    onRequestDelete: (Measurement) -> Unit
-) {
-    if (measurements.isEmpty()) {
-        Box(
-            modifier = Modifier.fillMaxSize()
-            .padding(top = 16.dp),
-            contentAlignment = Alignment.TopCenter
-        ) {
-            Text(stringResource(R.string.history_empty))
-        }
-        return
-    }
-
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = PaddingValues(
-            top = 16.dp,
-            bottom = 16.dp
-        )
-    ) {
-        items(
-            items = measurements,
-            key = { it.id }
-        ) { measurement ->
-            MeasurementHistoryCard(
-                measurement = measurement,
-                onDelete = {
-                    onRequestDelete(measurement)
-                }
-            )
-        }
     }
 }
 
