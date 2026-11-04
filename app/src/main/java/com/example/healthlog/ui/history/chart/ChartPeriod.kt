@@ -1,4 +1,4 @@
-package com.example.healthlog.ui.chart
+package com.example.healthlog.ui.history.chart
 
 import com.example.healthlog.database.Measurement
 import java.time.ZonedDateTime

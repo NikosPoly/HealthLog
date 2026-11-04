@@ -11,7 +11,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalResources
 import com.example.healthlog.model.MeasurementType
-import com.example.healthlog.ui.chart.ChartPeriod
+import com.example.healthlog.ui.history.chart.ChartPeriod
 
 // Connector: reads the HistoryViewModel's state, shows its messages,
 // and hands everything to the layout as plain values and callbacks.

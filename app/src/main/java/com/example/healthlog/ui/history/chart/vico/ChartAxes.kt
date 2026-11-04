@@ -1,4 +1,4 @@
-package com.example.healthlog.ui.chart.vico
+package com.example.healthlog.ui.history.chart.vico
 
 import android.text.format.DateFormat
 import com.patrykandpatrick.vico.compose.cartesian.CartesianMeasuringContext

@@ -2,6 +2,8 @@ package com.example.healthlog.ui.chart
 
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType
+import com.example.healthlog.ui.history.chart.ChartPeriod
+import com.example.healthlog.ui.history.chart.inPeriod
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.time.ZoneId

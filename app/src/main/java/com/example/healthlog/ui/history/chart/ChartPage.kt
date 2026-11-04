@@ -1,4 +1,4 @@
-package com.example.healthlog.ui.chart
+package com.example.healthlog.ui.history.chart
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -21,9 +21,9 @@ import androidx.compose.ui.unit.dp
 import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType
-import com.example.healthlog.ui.chart.stats.NonPeriodStatsSection
-import com.example.healthlog.ui.chart.stats.PeriodStatsSection
-import com.example.healthlog.ui.chart.vico.MeasurementChart
+import com.example.healthlog.ui.history.chart.stats.NonPeriodStatsSection
+import com.example.healthlog.ui.history.chart.stats.PeriodStatsSection
+import com.example.healthlog.ui.history.chart.vico.MeasurementChart
 import java.time.ZonedDateTime
 
 // The trend page of one type: its chart, and its stats below it.

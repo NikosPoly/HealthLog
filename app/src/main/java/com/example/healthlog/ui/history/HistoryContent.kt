@@ -31,11 +31,11 @@ import androidx.compose.ui.unit.dp
 import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType
-import com.example.healthlog.ui.chart.ChartPage
-import com.example.healthlog.ui.chart.ChartPeriod
-import com.example.healthlog.ui.chart.PeriodChips
-import com.example.healthlog.ui.chart.ScreenTap
-import com.example.healthlog.ui.chart.watchTaps
+import com.example.healthlog.ui.history.chart.ChartPage
+import com.example.healthlog.ui.history.chart.ChartPeriod
+import com.example.healthlog.ui.history.chart.PeriodChips
+import com.example.healthlog.ui.history.chart.ScreenTap
+import com.example.healthlog.ui.history.chart.watchTaps
 import com.example.healthlog.ui.format.decimalSeparator
 import com.example.healthlog.ui.format.formatMeasurementValue
 import com.example.healthlog.ui.history.list.MeasurementHistoryList

@@ -1,4 +1,4 @@
-package com.example.healthlog.ui.chart
+package com.example.healthlog.ui.history.chart
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.horizontalScroll

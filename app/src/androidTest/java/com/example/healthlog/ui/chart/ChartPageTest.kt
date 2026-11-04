@@ -11,6 +11,8 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType
+import com.example.healthlog.ui.history.chart.ChartPage
+import com.example.healthlog.ui.history.chart.ChartPeriod
 import com.example.healthlog.ui.theme.HealthLogTheme
 import org.junit.Rule
 import org.junit.Test

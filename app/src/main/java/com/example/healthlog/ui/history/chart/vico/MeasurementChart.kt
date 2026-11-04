@@ -1,4 +1,4 @@
-package com.example.healthlog.ui.chart.vico
+package com.example.healthlog.ui.history.chart.vico
 
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
@@ -17,8 +17,8 @@ import androidx.compose.ui.unit.dp
 import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType
-import com.example.healthlog.ui.chart.ElementPosition
-import com.example.healthlog.ui.chart.ScreenTap
+import com.example.healthlog.ui.history.chart.ElementPosition
+import com.example.healthlog.ui.history.chart.ScreenTap
 import com.example.healthlog.ui.format.decimalSeparator
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
 import com.patrykandpatrick.vico.compose.cartesian.axis.HorizontalAxis
