@@ -1,5 +1,7 @@
 package com.example.healthlog.ui.chart
 
+import com.example.healthlog.ui.format.TimeAgo
+import com.example.healthlog.ui.format.timeAgo
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.time.ZoneId

@@ -13,6 +13,8 @@ import com.example.healthlog.ui.format.decimalSeparator
 import com.example.healthlog.ui.format.formatMeasurementValue
 import com.example.healthlog.ui.format.formatTimestamp
 import com.example.healthlog.ui.format.rememberDateTimeFormatter
+import com.example.healthlog.ui.format.timeAgo
+import com.example.healthlog.ui.format.timeAgoText
 import java.time.ZonedDateTime
 
 // The stats that don't depend on the period, below the period stats (or below the

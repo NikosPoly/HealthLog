@@ -1,8 +1,7 @@
-package com.example.healthlog.ui.chart
+package com.example.healthlog.ui.format
 
 import android.icu.text.RelativeDateTimeFormatter
 import androidx.compose.runtime.Composable
-import com.example.healthlog.ui.format.formatLocale
 import java.time.Duration
 import java.time.Instant
 import java.time.ZonedDateTime
