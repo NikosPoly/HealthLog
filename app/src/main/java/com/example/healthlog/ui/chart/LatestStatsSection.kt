@@ -10,7 +10,6 @@ import androidx.compose.ui.unit.dp
 import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.ui.format.decimalSeparator
-import com.example.healthlog.ui.format.formatMeasurementValue
 import com.example.healthlog.ui.format.formatTimestamp
 import com.example.healthlog.ui.format.rememberDateTimeFormatter
 import com.example.healthlog.ui.format.timeAgo
@@ -29,7 +28,7 @@ fun LatestStatsSection(
     val separator = decimalSeparator()
     val dateTimeFormatter = rememberDateTimeFormatter()
     val lastRecorded = timeAgoText(timeAgo(latest.timestamp, ZonedDateTime.now()))
-    val latestText = formatMeasurementValue(latest.copy(tertiaryValue = null), separator) +
+    val latestText = statValueText(latest, separator) +
         "\n" + formatTimestamp(latest.timestamp, dateTimeFormatter)
 
     Column(

@@ -15,7 +15,6 @@ import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.ui.format.decimalSeparator
-import com.example.healthlog.ui.format.formatMeasurementValue
 
 // The stats below the chart.
 // "In this period": count, highest, lowest and average of the measurements in the period.
@@ -36,7 +35,7 @@ fun PeriodStatsSection(
 
     fun valueText(measurement: Measurement?): String =
         measurement
-            ?.let { formatMeasurementValue(it.copy(tertiaryValue = null), separator) }
+            ?.let { statValueText(it, separator) }
             ?: NO_VALUE
 
     // The average is written like a measurement of the same type, e.g. "72.46 kg" or

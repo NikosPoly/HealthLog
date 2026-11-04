@@ -10,10 +10,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.LayoutCoordinates
-import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -65,7 +62,7 @@ fun MeasurementChart(
     // - closeCount goes up on every tap outside the chart
     val chartInstance = remember { Any() }
     var closeCount by remember { mutableIntStateOf(0) }
-    val chartPosition = remember { ChartPosition() }
+    val chartPosition = remember { ElementPosition() }
 
     // Taps on the chart itself are handled by the chart.
     LaunchedEffect(screenTap) {
@@ -143,17 +140,6 @@ private fun VicoLineChart(
     }
 }
 
-// Where the chart is on the screen, to tell whether a tap was on it.
-// A plain field, not state: it changes on every layout and nothing is redrawn from it.
-private class ChartPosition {
-    var coordinates: LayoutCoordinates? = null
-
-    fun contains(position: Offset): Boolean {
-        val chart = coordinates?.takeIf { it.isAttached } ?: return false
-        return chart.boundsInRoot().contains(position)
-    }
-}
-
 private const val LONG_PERIOD_DAYS = 180
 
 // The chart's data. x is the time in days, y the value.
@@ -189,4 +175,3 @@ private fun rememberDotLine(color: Color): LineCartesianLayer.Line {
         }
     )
 }
-

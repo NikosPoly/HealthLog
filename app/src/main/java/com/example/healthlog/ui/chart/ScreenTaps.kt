@@ -12,6 +12,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 
 // Taps anywhere on the screen, used to close the box of a tapped dot on the chart when
@@ -49,7 +50,15 @@ internal fun Modifier.watchTaps(onTap: (Offset) -> Unit): Modifier = composed {
         }
 }
 
-// Where an element is on the screen. A plain field, not state: nothing is redrawn from it.
-private class ElementPosition {
+// Where an element is on the screen: used by watchTaps to give taps a position on the
+// whole screen, and by the chart to tell whether a tap was on it (contains).
+// A plain field, not state: it changes on every layout and nothing is redrawn from it.
+internal class ElementPosition {
     var coordinates: LayoutCoordinates? = null
+
+    // Whether a position on the screen is inside the element.
+    fun contains(position: Offset): Boolean {
+        val element = coordinates?.takeIf { it.isAttached } ?: return false
+        return element.boundsInRoot().contains(position)
+    }
 }
