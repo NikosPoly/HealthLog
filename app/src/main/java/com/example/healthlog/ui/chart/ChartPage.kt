@@ -92,7 +92,7 @@ fun ChartPage(
                 )
             }
 
-            ChartStatsSection(type = type, inPeriod = inPeriod)
+            PeriodStatsSection(type = type, inPeriod = inPeriod)
             HorizontalDivider()
         }
 
