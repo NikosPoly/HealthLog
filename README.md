@@ -1,7 +1,7 @@
 # HealthLog
 
 HealthLog is an Android app for recording everyday health measurements (blood pressure, pulse,
-blood sugar, weight and height) and looking back at them in a simple history.
+blood sugar, weight and height) and looking back at them in a history and in charts.
 The app is available in Greek and English.
 
 ## Features
@@ -14,6 +14,13 @@ The app is available in Greek and English.
 - **Blood pressure includes the pulse:** saving a blood pressure also saves its pulse as a
   separate Pulse entry, so it appears in both histories. The two entries are independent:
   deleting one keeps the other
+- **Charts per measurement type:** a "See trend" button switches the history between the list
+  and a line chart over time (blood pressure: systolic and diastolic). Tapping a point shows its
+  value, date and time
+- **Chart periods:** 7 days, 30 days, 6 months, 1 year or all
+- **Stats below the chart:** count, highest, lowest and average for the period (for blood
+  pressure, the highest and lowest systolic and diastolic with their pairs), plus when the last
+  measurement was recorded (e.g. "3 hours ago", "yesterday", "2 months ago") and its value
 - **Delete with confirmation**
 - **Input validation:** every value is checked against a range; errors are shown under the field
   and saving is only possible when everything is valid
@@ -28,6 +35,7 @@ The app is available in Greek and English.
 - [Jetpack Compose](https://developer.android.com/compose) with Material 3
 - [Room](https://developer.android.com/training/data-storage/room) for local storage
 - [Navigation Compose](https://developer.android.com/develop/ui/compose/navigation)
+- [Vico](https://github.com/patrykandpatrick/vico) for the charts
 - MVVM: ViewModels with `StateFlow`, and a repository between the ViewModels and the database
 
 ## Project structure
@@ -41,7 +49,8 @@ healthlog/
 ├── model/            measurement types (fields, units, ranges) and validation rules
 └── ui/               navigation (HealthLogNavHost)
     ├── home/         home screen: picking a type and entering a value
-    ├── history/      history screen: the list of measurements and deleting them
+    ├── history/      history screen: tabs, list or chart, deleting measurements
+    ├── chart/        charts: the chart page, periods, stats (Vico is only used here)
     ├── components/   cards and dialogs, incl. the entry dialog and its state
     ├── input/        text input: one field, number input rules, focus helpers
     ├── format/       display text: values, dates, messages, per-language formats
@@ -81,18 +90,25 @@ There are two kinds of tests:
 - `DateFormattingTest`: the date format of each language
 - `ValidationMessagesTest`: how range limits are shown in error messages
 - `MeasurementRepositoryTest`: what is stored when a measurement is saved
+- `ChartPeriodTest`: which measurements each chart period includes
+- `MeasurementStatsTest`: count, highest, lowest, average and their rounding
+- `TimeAgoTest`: the "time ago" of the last measurement (hours, yesterday, days, months, years)
 
 **Instrumented tests** (`app/src/androidTest`, run on an emulator or device):
 - `MigrationTest`: the database migrations
 - `MeasurementEntryDialogTest`: the entry dialog's UI
-- `HistoryContentTest`: the history's tabs, swiping, empty pages and deleting
-There are two kinds of tests:
+- `HistoryContentTest`: the history's tabs, swiping, empty pages, deleting, the See trend
+  button and the period chips
+- `ChartPageTest`: the chart page: chart or empty message, stats and latest measurement
+
+To run them:
 
 - **Android Studio:** right-click the test file or folder → **Run**
 - **Terminal:** `./gradlew testDebugUnitTest` (unit tests), `./gradlew connectedDebugAndroidTest` (instrumented tests)
 
 **Note:** after instrumented tests, Gradle uninstalls the app from that device, including its data.
 Run them on a separate emulator, not on a device with data you want to keep.
+
 ## Database
 
 Measurements are stored locally with Room. The database is currently at **version 3**.
@@ -116,6 +132,7 @@ When changing the database:
 ## Roadmap
 
 - Own color theme and app icon
-- History: a chart over time, and filters (e.g. last 5, last month, out-of-range values)
+- History list: a filter for out-of-range values
+- Charts: normal ranges shown on the chart, and exporting a report
 - User profiles with sign-up and log-in (including choosing the language in the app)
 - Wider test coverage

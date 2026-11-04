@@ -20,6 +20,30 @@
     <string name="history_title">Ιστορικό μετρήσεων</string>
     <string name="history_empty">Δεν υπάρχουν ακόμη καταχωρίσεις.</string>
 
+    <!-- History charts. %1$s = measurement type -->
+    <string name="chart_show_trend">Δείτε την τάση</string>
+    <string name="chart_show_history">Δείτε το ιστορικό</string>
+    <string name="chart_period_7_days">7 ημέρες</string>
+    <string name="chart_period_30_days">30 ημέρες</string>
+    <string name="chart_period_6_months">6 μήνες</string>
+    <string name="chart_period_1_year">1 έτος</string>
+    <string name="chart_period_all">Όλα</string>
+    <string name="chart_empty">Το γράφημα χρειάζεται μετρήσεις από αυτή την περίοδο.</string>
+    <string name="chart_description">Γράφημα: %1$s</string>
+
+    <!-- Chart stats -->
+    <string name="stats_period_title">Σε αυτή την περίοδο</string>
+    <string name="stats_count">Μετρήσεις</string>
+    <string name="stats_highest">Μέγιστη</string>
+    <string name="stats_lowest">Ελάχιστη</string>
+    <string name="stats_average">Μέσος όρος</string>
+    <string name="stats_highest_systolic">Μέγιστη συστολική</string>
+    <string name="stats_lowest_systolic">Ελάχιστη συστολική</string>
+    <string name="stats_highest_diastolic">Μέγιστη διαστολική</string>
+    <string name="stats_lowest_diastolic">Ελάχιστη διαστολική</string>
+    <string name="stats_last_recorded">Τελευταία καταγραφή</string>
+    <string name="stats_latest_measurement">Πιο πρόσφατη μέτρηση</string>
+
     <!-- Buttons and actions used in several places -->
     <string name="action_back">Πίσω</string>
     <string name="action_save">Αποθήκευση</string>

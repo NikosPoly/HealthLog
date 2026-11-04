@@ -55,6 +55,8 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    // Charts in the history (only used in ui/chart/MeasurementChart.kt)
+    implementation(libs.vico.compose.m3)
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     // Keeps all kotlinx.serialization libraries (used by Navigation and by Room's test tools)

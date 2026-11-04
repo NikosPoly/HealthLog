@@ -19,13 +19,15 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType
+import com.example.healthlog.ui.chart.ChartPeriod
 import com.example.healthlog.ui.theme.HealthLogTheme
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-// Uses the history screen's layout with sample data: tabs, swiping, empty pages and deleting.
+// Uses the history screen's layout with sample data: tabs, swiping, empty pages, deleting,
+// the See trend / See history button and the period chips.
 // Runs on an emulator (it uninstalls the app afterwards, like every androidTest).
 @RunWith(AndroidJUnit4::class)
 class HistoryContentTest {
@@ -53,22 +55,34 @@ class HistoryContentTest {
 
     // What the screen reported.
     private var selectedType = MeasurementType.BLOOD_PRESSURE
+    private var selectedPeriod = ChartPeriod.ALL
     private var requestedDelete: Measurement? = null
 
+    // Keeps the tab, the mode and the period like the real screen does, so tapping
+    // the tabs, the button and the chips changes what is shown.
     private fun open(startType: MeasurementType) {
         selectedType = startType
         composeRule.setContent {
             var shownType by remember { mutableStateOf(startType) }
+            var showTrend by remember { mutableStateOf(false) }
+            var period by remember { mutableStateOf(ChartPeriod.ALL) }
             HealthLogTheme {
                 HistoryContent(
                     measurementsByType = sampleData,
                     selectedType = shownType,
+                    showTrend = showTrend,
+                    period = period,
                     measurementToDelete = null,
                     snackbarHostState = remember { SnackbarHostState() },
                     onBack = {},
                     onSelectType = {
                         shownType = it
                         selectedType = it
+                    },
+                    onToggleTrend = { showTrend = !showTrend },
+                    onSelectPeriod = {
+                        period = it
+                        selectedPeriod = it
                     },
                     onRequestDelete = { requestedDelete = it },
                     onConfirmDelete = {},
@@ -85,6 +99,8 @@ class HistoryContentTest {
 
     private val bloodPressureText = "120/80 mmHg · 72 bpm"
     private val pulseText = "70 bpm"
+
+    private fun text(id: Int) = composeRule.onNodeWithText(context.getString(id))
 
     @Test
     fun opensOnTheGivenType_andShowsOnlyItsCards() {
@@ -133,5 +149,63 @@ class HistoryContentTest {
         composeRule.onNodeWithText(context.getString(R.string.action_delete)).performClick()
 
         assertEquals(bloodPressure, requestedDelete)
+    }
+
+    @Test
+    fun listMode_hasNoChips() {
+        open(MeasurementType.BLOOD_PRESSURE)
+
+        text(R.string.chart_show_trend).assertExists()
+        text(R.string.chart_period_all).assertDoesNotExist()
+    }
+
+    @Test
+    fun seeTrend_showsTheChart_andSeeHistoryGoesBackToTheList() {
+        open(MeasurementType.BLOOD_PRESSURE)
+
+        text(R.string.chart_show_trend).performClick()
+        composeRule.waitForIdle()
+
+        // Chart mode: the card is gone, the chips and the period stats are there.
+        composeRule.onNodeWithText(bloodPressureText).assertDoesNotExist()
+        text(R.string.chart_period_all).assertExists()
+        text(R.string.stats_period_title).assertExists()
+        text(R.string.chart_show_history).assertExists()
+
+        text(R.string.chart_show_history).performClick()
+        composeRule.waitForIdle()
+
+        // Back to the list.
+        composeRule.onNodeWithText(bloodPressureText).assertExists()
+        text(R.string.chart_period_all).assertDoesNotExist()
+        text(R.string.chart_show_trend).assertExists()
+    }
+
+    @Test
+    fun chartMode_staysWhenChangingTab() {
+        open(MeasurementType.BLOOD_PRESSURE)
+
+        text(R.string.chart_show_trend).performClick()
+        tab(MeasurementType.PULSE).performClick()
+        composeRule.waitForIdle()
+
+        tab(MeasurementType.PULSE).assertIsSelected()
+        text(R.string.chart_show_history).assertExists()
+        text(R.string.chart_period_all).assertExists()
+        // The Pulse page shows its chart page (with stats), not its list.
+        text(R.string.stats_period_title).assertExists()
+    }
+
+    @Test
+    fun tappingAChip_reportsThatPeriod() {
+        open(MeasurementType.BLOOD_PRESSURE)
+
+        text(R.string.chart_show_trend).performClick()
+        text(R.string.chart_period_7_days).performClick()
+        composeRule.waitForIdle()
+
+        assertEquals(ChartPeriod.SEVEN_DAYS, selectedPeriod)
+        // The sample measurements are from now, so they are still in the last 7 days.
+        text(R.string.stats_period_title).assertExists()
     }
 }
