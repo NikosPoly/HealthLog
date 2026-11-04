@@ -1,4 +1,4 @@
-package com.example.healthlog.ui.components
+package com.example.healthlog.ui.home
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
