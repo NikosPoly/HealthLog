@@ -30,7 +30,6 @@ fun MeasurementPickerCard(
         Column(Modifier.padding(18.dp)) {
             Text(
                 title,
-
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )

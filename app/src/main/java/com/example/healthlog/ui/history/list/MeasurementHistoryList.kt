@@ -25,8 +25,9 @@ internal fun MeasurementHistoryList(
 ) {
     if (measurements.isEmpty()) {
         Box(
-            modifier = Modifier.fillMaxSize()
-            .padding(top = 16.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 16.dp),
             contentAlignment = Alignment.TopCenter
         ) {
             Text(stringResource(R.string.history_empty))

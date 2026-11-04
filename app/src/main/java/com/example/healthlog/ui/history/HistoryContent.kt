@@ -113,8 +113,8 @@ fun HistoryContent(
         ) {
             // One tab per type. The row scrolls sideways when the names don't fit.
             PrimaryScrollableTabRow(selectedTabIndex = pagerState.currentPage,
-                // No extra space before the first and after the last tab, so the row
-                // starts at the left edge and stops at the first and last tab.
+                // Only a small space (3 dp) before the first and after the last tab,
+                //instead of the default 52 dp, so the row starts near the left edge.
                 edgePadding = 3.dp) {
                 types.forEachIndexed { index, type ->
                     Tab(

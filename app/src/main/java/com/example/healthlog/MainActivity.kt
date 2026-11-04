@@ -1,4 +1,3 @@
-
 package com.example.healthlog
 
 import android.os.Bundle
@@ -22,7 +21,7 @@ class MainActivity : ComponentActivity() {
         val repository = MeasurementRepository(dao)
 
         setContent {
-            HealthLogTheme{
+            HealthLogTheme {
                 HealthLogNavHost(repository)
             }
         }
