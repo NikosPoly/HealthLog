@@ -1,12 +1,15 @@
 package com.example.healthlog.ui.chart
 
+import android.icu.text.RelativeDateTimeFormatter
+import androidx.compose.runtime.Composable
+import com.example.healthlog.ui.format.formatLocale
 import java.time.Duration
 import java.time.Instant
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 
 // How long ago something happened, e.g. 3 hours ago, yesterday, 5 days ago, 2 months ago.
-// The screen turns it into text in the app's language.
+// timeAgo works it out; timeAgoText turns it into text in the app's language.
 data class TimeAgo(val amount: Long, val span: Span) {
     enum class Span { NOW, MINUTES, HOURS, YESTERDAY, DAYS, MONTHS, YEARS }
 }
@@ -37,4 +40,31 @@ fun timeAgo(timestamp: Long, now: ZonedDateTime): TimeAgo {
         years == 0L -> TimeAgo(months, TimeAgo.Span.MONTHS)
         else -> TimeAgo(years, TimeAgo.Span.YEARS)
     }
+}
+
+// "2 days ago" / «πριν από 2 ημέρες», "yesterday" / «χθες», in the app's language,
+// written by Android's built-in formatter (ICU).
+@Composable
+internal fun timeAgoText(timeAgo: TimeAgo): String {
+    val formatter = RelativeDateTimeFormatter.getInstance(formatLocale())
+    val unit = when (timeAgo.span) {
+        TimeAgo.Span.NOW -> return formatter.format(
+            RelativeDateTimeFormatter.Direction.PLAIN,
+            RelativeDateTimeFormatter.AbsoluteUnit.NOW
+        )
+        TimeAgo.Span.YESTERDAY -> return formatter.format(
+            RelativeDateTimeFormatter.Direction.LAST,
+            RelativeDateTimeFormatter.AbsoluteUnit.DAY
+        )
+        TimeAgo.Span.MINUTES -> RelativeDateTimeFormatter.RelativeUnit.MINUTES
+        TimeAgo.Span.HOURS -> RelativeDateTimeFormatter.RelativeUnit.HOURS
+        TimeAgo.Span.DAYS -> RelativeDateTimeFormatter.RelativeUnit.DAYS
+        TimeAgo.Span.MONTHS -> RelativeDateTimeFormatter.RelativeUnit.MONTHS
+        TimeAgo.Span.YEARS -> RelativeDateTimeFormatter.RelativeUnit.YEARS
+    }
+    return formatter.format(
+        timeAgo.amount.toDouble(),
+        RelativeDateTimeFormatter.Direction.LAST,
+        unit
+    )
 }
