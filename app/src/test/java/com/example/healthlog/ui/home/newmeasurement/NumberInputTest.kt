@@ -1,6 +1,5 @@
-package com.example.healthlog.ui.input
+package com.example.healthlog.ui.home.newmeasurement
 
-import com.example.healthlog.ui.home.newmeasurement.isAllowedInput
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test

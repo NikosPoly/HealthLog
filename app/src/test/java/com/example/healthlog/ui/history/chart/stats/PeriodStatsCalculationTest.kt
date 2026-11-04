@@ -1,4 +1,4 @@
-package com.example.healthlog.ui.chart.stats
+package com.example.healthlog.ui.history.chart.stats
 
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType

@@ -1,4 +1,4 @@
-package com.example.healthlog.ui.chart
+package com.example.healthlog.ui.history.chart
 
 import android.icu.text.RelativeDateTimeFormatter
 import androidx.compose.ui.test.assertCountEquals

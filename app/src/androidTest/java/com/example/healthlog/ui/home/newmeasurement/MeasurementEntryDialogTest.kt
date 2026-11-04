@@ -1,4 +1,4 @@
-package com.example.healthlog.ui.components
+package com.example.healthlog.ui.home.newmeasurement
 
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
@@ -17,7 +17,6 @@ import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementField
 import com.example.healthlog.model.MeasurementType
-import com.example.healthlog.ui.home.newmeasurement.MeasurementEntryDialog
 import com.example.healthlog.ui.theme.HealthLogTheme
 import org.junit.Assert.assertEquals
 import org.junit.Rule

@@ -1,8 +1,7 @@
-package com.example.healthlog.ui.components
+package com.example.healthlog.ui.home.newmeasurement
 
 import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.model.ValidationError
-import com.example.healthlog.ui.home.newmeasurement.MeasurementEntryState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
