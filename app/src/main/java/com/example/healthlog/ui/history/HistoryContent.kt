@@ -39,6 +39,7 @@ import com.example.healthlog.ui.chart.watchTaps
 import com.example.healthlog.ui.components.DeleteConfirmationDialog
 import com.example.healthlog.ui.format.decimalSeparator
 import com.example.healthlog.ui.format.formatMeasurementValue
+import com.example.healthlog.ui.history.list.MeasurementHistoryList
 import com.example.healthlog.ui.theme.HealthLogTheme
 import kotlinx.coroutines.launch
 

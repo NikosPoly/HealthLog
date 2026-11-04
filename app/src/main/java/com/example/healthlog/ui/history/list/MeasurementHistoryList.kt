@@ -1,4 +1,4 @@
-package com.example.healthlog.ui.history
+package com.example.healthlog.ui.history.list
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,7 +15,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
-import com.example.healthlog.ui.components.MeasurementHistoryCard
 
 // The list mode of one history page: the cards of one type (MeasurementHistoryCard),
 // newest first, or the empty text in the middle.
