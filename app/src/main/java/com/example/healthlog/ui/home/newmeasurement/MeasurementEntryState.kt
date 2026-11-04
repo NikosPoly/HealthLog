@@ -1,4 +1,4 @@
-package com.example.healthlog.ui.components
+package com.example.healthlog.ui.home.newmeasurement
 
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType

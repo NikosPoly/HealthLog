@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.dp
 import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType
-import com.example.healthlog.ui.components.MeasurementEntryDialog
+import com.example.healthlog.ui.home.newmeasurement.MeasurementEntryDialog
 import com.example.healthlog.ui.theme.HealthLogTheme
 
 // Layout only: the home screen with the measurement picker,
