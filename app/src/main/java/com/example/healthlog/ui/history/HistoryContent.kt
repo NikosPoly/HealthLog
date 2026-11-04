@@ -36,7 +36,6 @@ import com.example.healthlog.ui.chart.ChartPeriod
 import com.example.healthlog.ui.chart.PeriodChips
 import com.example.healthlog.ui.chart.ScreenTap
 import com.example.healthlog.ui.chart.watchTaps
-import com.example.healthlog.ui.components.DeleteConfirmationDialog
 import com.example.healthlog.ui.format.decimalSeparator
 import com.example.healthlog.ui.format.formatMeasurementValue
 import com.example.healthlog.ui.history.list.MeasurementHistoryList
