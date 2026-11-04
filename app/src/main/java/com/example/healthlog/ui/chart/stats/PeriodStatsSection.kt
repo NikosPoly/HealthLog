@@ -1,4 +1,4 @@
-package com.example.healthlog.ui.chart
+package com.example.healthlog.ui.chart.stats
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement

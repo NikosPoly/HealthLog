@@ -21,6 +21,8 @@ import androidx.compose.ui.unit.dp
 import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType
+import com.example.healthlog.ui.chart.stats.NonPeriodStatsSection
+import com.example.healthlog.ui.chart.stats.PeriodStatsSection
 import java.time.ZonedDateTime
 
 // The trend page of one type: its chart, and its stats below it.

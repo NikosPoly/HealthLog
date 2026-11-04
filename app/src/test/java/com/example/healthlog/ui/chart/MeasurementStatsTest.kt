@@ -2,6 +2,8 @@ package com.example.healthlog.ui.chart
 
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType
+import com.example.healthlog.ui.chart.stats.periodStats
+import com.example.healthlog.ui.chart.stats.roundForStats
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test

@@ -1,4 +1,4 @@
-package com.example.healthlog.ui.chart
+package com.example.healthlog.ui.chart.stats
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
