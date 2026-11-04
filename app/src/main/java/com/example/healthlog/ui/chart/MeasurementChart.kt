@@ -44,7 +44,7 @@ import java.util.Locale
 // The box closes on a tap anywhere on the screen outside the chart (screenTap), and it
 // never comes back by itself: not after swiping to another tab and back, nor after
 // choosing another period.
-// The Vico chart library is only used here and in ChartMarker.kt (the tap box) and
+// The Vico chart library is only used here and in ChartTooltip.kt (the tap box) and
 // ChartAxes.kt (the axes).
 @Composable
 fun MeasurementChart(

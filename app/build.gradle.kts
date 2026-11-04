@@ -55,7 +55,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
-    // Charts in the history (only used in ui/chart: MeasurementChart, ChartMarker, ChartAxes)
+    // Charts in the history (only used in ui/chart: MeasurementChart, ChartTooltip, ChartAxes)
     implementation(libs.vico.compose.m3)
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))

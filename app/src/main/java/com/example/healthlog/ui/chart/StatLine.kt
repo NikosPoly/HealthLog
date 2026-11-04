@@ -18,7 +18,7 @@ import com.example.healthlog.ui.format.formatMeasurementValue
 internal enum class Emphasis { NONE, SYSTOLIC, DIASTOLIC }
 
 // One stat: the name on the left, the value on the right (on several lines if needed,
-// aligned to the right). Used by the period stats and the latest measurement stats.
+// aligned to the right). Used by the period stats and the non-period stats.
 // Values are medium weight; a value with an emphasis is regular, with that number bold,
 // so it stands out.
 @Composable
@@ -47,7 +47,7 @@ internal fun StatLine(label: String, value: String, emphasis: Emphasis) {
 }
 
 // A measurement's value as the stats show it: as in the history list, without the pulse
-// (it has its own tab). Used by the period stats and the latest measurement stats.
+// (it has its own tab). Used by the period stats and the non-period stats.
 internal fun statValueText(measurement: Measurement, decimalSeparator: Char): String =
     formatMeasurementValue(measurement.copy(tertiaryValue = null), decimalSeparator)
 

@@ -20,7 +20,7 @@ import java.time.ZonedDateTime
 // "needs measurements" message): when the last measurement was recorded, e.g. "2 days ago",
 // and that measurement with its date and time.
 @Composable
-fun LatestStatsSection(
+fun NonPeriodStatsSection(
     // The most recent measurement of the type.
     latest: Measurement,
     modifier: Modifier = Modifier

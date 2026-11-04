@@ -71,7 +71,7 @@ fun ChartPage(
 
         // The list is newest first. A type without any measurement shows only the message.
         measurements.firstOrNull()?.let { latest ->
-            LatestStatsSection(latest = latest)
+            NonPeriodStatsSection(latest = latest)
         }
     }
 }
