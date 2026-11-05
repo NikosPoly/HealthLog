@@ -31,14 +31,14 @@ import androidx.compose.ui.unit.dp
 import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType
-import com.example.healthlog.ui.chart.ChartPage
-import com.example.healthlog.ui.chart.ChartPeriod
-import com.example.healthlog.ui.chart.PeriodChips
-import com.example.healthlog.ui.chart.ScreenTap
-import com.example.healthlog.ui.chart.watchTaps
-import com.example.healthlog.ui.components.DeleteConfirmationDialog
+import com.example.healthlog.ui.history.chart.ChartPage
+import com.example.healthlog.ui.history.chart.ChartPeriod
+import com.example.healthlog.ui.history.chart.PeriodChips
+import com.example.healthlog.ui.history.chart.ScreenTap
+import com.example.healthlog.ui.history.chart.watchTaps
 import com.example.healthlog.ui.format.decimalSeparator
 import com.example.healthlog.ui.format.formatMeasurementValue
+import com.example.healthlog.ui.history.list.MeasurementHistoryList
 import com.example.healthlog.ui.theme.HealthLogTheme
 import kotlinx.coroutines.launch
 
@@ -113,8 +113,8 @@ fun HistoryContent(
         ) {
             // One tab per type. The row scrolls sideways when the names don't fit.
             PrimaryScrollableTabRow(selectedTabIndex = pagerState.currentPage,
-                // No extra space before the first and after the last tab, so the row
-                // starts at the left edge and stops at the first and last tab.
+                // Only a small space (3 dp) before the first and after the last tab,
+                //instead of the default 52 dp, so the row starts near the left edge.
                 edgePadding = 3.dp) {
                 types.forEachIndexed { index, type ->
                     Tab(
