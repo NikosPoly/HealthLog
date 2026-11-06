@@ -13,11 +13,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType
-import com.example.healthlog.ui.history.chart.stats.NonPeriodStatsSection
 import java.time.ZonedDateTime
 
 // The chart page of one type: the period card (stats and chart, see PeriodCard), and the
-// latest entry below it, which is always shown, whatever the period.
+// non-period stats card below it, which is always shown, whatever the period.
 // Scrolls up and down when it doesn't fit (small screens, landscape).
 @Composable
 fun ChartPage(
@@ -45,7 +44,7 @@ fun ChartPage(
 
         // The list is newest first. A type without any measurement shows only the message.
         measurements.firstOrNull()?.let { latest ->
-            NonPeriodStatsSection(latest = latest)
+            NonPeriodStatsCard(latest = latest)
         }
     }
 }

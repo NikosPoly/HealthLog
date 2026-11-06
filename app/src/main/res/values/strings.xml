@@ -47,7 +47,7 @@
     <string name="stats_highest_diastolic">Highest Diastolic</string>
     <string name="stats_lowest_diastolic">Lowest Diastolic</string>
     <string name="stats_last_recorded">Last Recorded</string>
-    <string name="stats_latest_measurement">Latest Entry</string>
+    <string name="stats_latest_measurement">Last Entry</string>
 
     <!-- Buttons and actions used in several places -->
     <string name="action_back">Back</string>
