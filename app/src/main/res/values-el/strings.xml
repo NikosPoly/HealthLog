@@ -32,7 +32,6 @@
     <string name="chart_description">Γράφημα: %1$s</string>
 
     <!-- Chart stats -->
-    <string name="stats_period_title">Σε αυτή την περίοδο</string>
     <string name="stats_count">Καταχωρίσεις</string>
     <string name="stats_highest">Μέγιστη</string>
     <string name="stats_lowest">Ελάχιστη</string>
@@ -41,7 +40,6 @@
     <string name="stats_lowest_systolic">Ελάχιστη Συστολική</string>
     <string name="stats_highest_diastolic">Μέγιστη Διαστολική</string>
     <string name="stats_lowest_diastolic">Ελάχιστη Διαστολική</string>
-    <string name="stats_last_recorded">Τελευταία Καταγραφή</string>
     <string name="stats_latest_measurement">Τελευταία Καταχώριση</string>
 
     <!-- Buttons and actions used in several places -->

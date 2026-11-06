@@ -170,7 +170,7 @@ class HistoryContentTest {
         // Chart mode: the card is gone, the chips and the period stats are there.
         composeRule.onNodeWithText(bloodPressureText).assertDoesNotExist()
         text(R.string.chart_period_all).assertExists()
-        text(R.string.stats_period_title).assertExists()
+        text(R.string.stats_average).assertExists()
         text(R.string.chart_show_history).assertExists()
 
         text(R.string.chart_show_history).performClick()
@@ -194,7 +194,7 @@ class HistoryContentTest {
         text(R.string.chart_show_history).assertExists()
         text(R.string.chart_period_all).assertExists()
         // The Pulse page shows its chart page (with stats), not its list.
-        text(R.string.stats_period_title).assertExists()
+        text(R.string.stats_average).assertExists()
     }
 
     @Test
@@ -207,6 +207,6 @@ class HistoryContentTest {
 
         assertEquals(ChartPeriod.SEVEN_DAYS, selectedPeriod)
         // The sample measurements are from now, so they are still in the last 7 days.
-        text(R.string.stats_period_title).assertExists()
+        text(R.string.stats_average).assertExists()
     }
 }

@@ -37,7 +37,6 @@
     <string name="chart_description">Chart of %1$s</string>
 
     <!-- Chart stats -->
-    <string name="stats_period_title">In this period</string>
     <string name="stats_count">Entries</string>
     <string name="stats_highest">Highest</string>
     <string name="stats_lowest">Lowest</string>
@@ -46,7 +45,6 @@
     <string name="stats_lowest_systolic">Lowest Systolic</string>
     <string name="stats_highest_diastolic">Highest Diastolic</string>
     <string name="stats_lowest_diastolic">Lowest Diastolic</string>
-    <string name="stats_last_recorded">Last Recorded</string>
     <string name="stats_latest_measurement">Last Entry</string>
 
     <!-- Buttons and actions used in several places -->
