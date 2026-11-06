@@ -39,6 +39,7 @@ import com.example.healthlog.ui.history.chart.ScreenTap
 import com.example.healthlog.ui.history.chart.watchTaps
 import com.example.healthlog.ui.history.list.MeasurementHistoryList
 import com.example.healthlog.ui.theme.HealthLogTheme
+import com.example.healthlog.ui.theme.TypeTheme
 import kotlinx.coroutines.launch
 
 // Layout only: the history screen, drawn from the values it receives;
@@ -46,6 +47,8 @@ import kotlinx.coroutines.launch
 // One page per measurement type, chosen with the tabs or by swiping left and right.
 // The button above the pages switches every page between the list and the chart.
 // In chart mode, the chips below it choose the period of the chart.
+// Everything is in the color of the shown type (see TypeTheme): red for blood pressure,
+// green for weight, and so on.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryContent(
@@ -85,90 +88,99 @@ fun HistoryContent(
         }
     }
 
-    Scaffold(
-        modifier = Modifier.watchTaps { screenTap = ScreenTap(it) },
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.history_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_arrow_back),
-                            contentDescription = stringResource(R.string.action_back),
-                            // Multicolored icon: keep its own colors.
-                            tint = Color.Unspecified
-                        )
+    // The type whose page is shown. It changes halfway through a swipe.
+    val shownType = types[pagerState.currentPage]
+
+    // The whole screen takes the shown type's color. Each page below also has its own
+    // type's color, so while swiping the two pages show their own colors side by side.
+    TypeTheme(shownType) {
+        Scaffold(
+            modifier = Modifier.watchTaps { screenTap = ScreenTap(it) },
+            topBar = {
+                TopAppBar(
+                    title = { Text(stringResource(R.string.history_title)) },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_arrow_back),
+                                contentDescription = stringResource(R.string.action_back),
+                                // Multicolored icon: keep its own colors.
+                                tint = Color.Unspecified
+                            )
+                        }
+                    }
+                )
+            },
+            snackbarHost = {
+                SnackbarHost(snackbarHostState)
+            }
+        ) { padding ->
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            ) {
+                // One tab per type (see TypeTabs).
+                TypeTabs(
+                    types = types,
+                    selectedIndex = pagerState.currentPage,
+                    onSelect = { index -> scope.launch { pagerState.animateScrollToPage(index) } }
+                )
+
+                // Outside the pages, so it stays in place while swiping.
+                TrendToggle(
+                    showTrend = showTrend,
+                    onToggle = onToggleTrend
+                )
+
+                // Only for the chart; the list always shows every measurement.
+                if (showTrend) {
+                    PeriodChips(
+                        selected = period,
+                        onSelect = onSelectPeriod,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxSize()
+                ) { page ->
+                    val type = types[page]
+                    val measurements = measurementsByType[type].orEmpty()
+
+                    TypeTheme(type) {
+                        if (showTrend) {
+                            ChartPage(
+                                type = type,
+                                measurements = measurements,
+                                period = period,
+                                screenTap = screenTap
+                            )
+                        } else {
+                            MeasurementHistoryList(
+                                measurements = measurements,
+                                onRequestDelete = onRequestDelete
+                            )
+                        }
                     }
                 }
-            )
-        },
-        snackbarHost = {
-            SnackbarHost(snackbarHostState)
-        }
-    ) { padding ->
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            // One tab per type (see TypeTabs).
-            TypeTabs(
-                types = types,
-                selectedIndex = pagerState.currentPage,
-                onSelect = { index -> scope.launch { pagerState.animateScrollToPage(index) } }
-            )
-
-            // Outside the pages, so it stays in place while swiping.
-            TrendToggle(
-                showTrend = showTrend,
-                onToggle = onToggleTrend
-            )
-
-            // Only for the chart; the list always shows every measurement.
-            if (showTrend) {
-                PeriodChips(
-                    selected = period,
-                    onSelect = onSelectPeriod,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-            }
-
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier.fillMaxSize()
-            ) { page ->
-                val type = types[page]
-                val measurements = measurementsByType[type].orEmpty()
-
-                if (showTrend) {
-                    ChartPage(
-                        type = type,
-                        measurements = measurements,
-                        period = period,
-                        screenTap = screenTap
-                    )
-                } else {
-                    MeasurementHistoryList(
-                        measurements = measurements,
-                        onRequestDelete = onRequestDelete
-                    )
-                }
             }
         }
-    }
 
-    // Shown outside the list, so it doesn't depend on the card being visible.
-    measurementToDelete?.let { measurement ->
-        DeleteConfirmationDialog(
-            details = stringResource(
-                R.string.delete_dialog_details,
-                stringResource(measurement.type.label),
-                formatMeasurementValue(measurement, decimalSeparator())
-            ),
-            onConfirm = onConfirmDelete,
-            onDismiss = onCancelDelete
-        )
+        // Shown outside the list, so it doesn't depend on the card being visible.
+        measurementToDelete?.let { measurement ->
+            DeleteConfirmationDialog(
+                details = stringResource(
+                    R.string.delete_dialog_details,
+                    stringResource(measurement.type.label),
+                    formatMeasurementValue(measurement, decimalSeparator())
+                ),
+                onConfirm = onConfirmDelete,
+                onDismiss = onCancelDelete
+            )
+        }
     }
 }
 

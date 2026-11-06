@@ -26,8 +26,7 @@ import com.example.healthlog.ui.history.chart.vico.MeasurementChart
 
 // Everything that depends on the chosen period, in one rounded card: entries and average
 // above the chart, highest and lowest below it.
-// Without measurements in the period, the card keeps its place and shows a message instead,
-// so the page doesn't jump when the period changes.
+// Without measurements in the period, only the message, without the card around it.
 @Composable
 fun PeriodCard(
     type: MeasurementType,
@@ -37,6 +36,11 @@ fun PeriodCard(
     screenTap: ScreenTap?,
     modifier: Modifier = Modifier
 ) {
+    if (inPeriod.isEmpty()) {
+        Text(stringResource(R.string.chart_empty), modifier = modifier)
+        return
+    }
+
     Card(
         modifier = modifier.fillMaxWidth(),
         // Rounder than the other cards, to set the period apart. Still being tried out.
@@ -53,28 +57,24 @@ fun PeriodCard(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            if (inPeriod.isEmpty()) {
-                Text(stringResource(R.string.chart_empty))
-            } else {
-                val items = periodStatItems(type, inPeriod)
-                // Read aloud by screen readers, e.g. "Chart of Weight".
-                val description = stringResource(R.string.chart_description, stringResource(type.label))
+            val items = periodStatItems(type, inPeriod)
+            // Read aloud by screen readers, e.g. "Chart of Weight".
+            val description = stringResource(R.string.chart_description, stringResource(type.label))
 
-                StatPair(items.above.first, items.above.second)
+            StatPair(items.above.first, items.above.second)
 
-                MeasurementChart(
-                    type = type,
-                    measurements = inPeriod,
-                    screenTap = screenTap,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(240.dp)
-                        .semantics { contentDescription = description }
-                )
+            MeasurementChart(
+                type = type,
+                measurements = inPeriod,
+                screenTap = screenTap,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(240.dp)
+                    .semantics { contentDescription = description }
+            )
 
-                items.below.forEach { (start, end) ->
-                    StatPair(start, end)
-                }
+            items.below.forEach { (start, end) ->
+                StatPair(start, end)
             }
         }
     }
