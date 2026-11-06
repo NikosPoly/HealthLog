@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Average: a dashed line through the middle of a few dots. Shown next to the label of that stat in the period card.
+     Drawn for HealthLog. Multi-colored: show it with tint = Color.Unspecified, so the colors are kept. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:strokeColor="#FB8C00"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M2,12H5M7,12H10M12,12H15M17,12H20" />
+    <path
+        android:fillColor="#1E88E5"
+        android:pathData="M2,17A2,2 0 1 1 6,17A2,2 0 1 1 2,17Z" />
+    <path
+        android:fillColor="#1E88E5"
+        android:pathData="M6.5,6.5A2,2 0 1 1 10.5,6.5A2,2 0 1 1 6.5,6.5Z" />
+    <path
+        android:fillColor="#1E88E5"
+        android:pathData="M11.5,17.5A2,2 0 1 1 15.5,17.5A2,2 0 1 1 11.5,17.5Z" />
+    <path
+        android:fillColor="#1E88E5"
+        android:pathData="M17,7.5A2,2 0 1 1 21,7.5A2,2 0 1 1 17,7.5Z" />
+</vector>
