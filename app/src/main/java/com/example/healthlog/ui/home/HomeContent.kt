@@ -31,6 +31,7 @@ import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.ui.home.newmeasurement.MeasurementEntryDialog
 import com.example.healthlog.ui.theme.HealthLogTheme
 import com.example.healthlog.ui.theme.TypeTheme
+import com.example.healthlog.ui.theme.icon
 
 // Layout only: the home screen with the measurement picker,
 // drawn from the values it receives; user actions are reported through the callbacks.
@@ -96,7 +97,7 @@ fun HomeContent(
             // and is in the type's color (see TypeTheme).
             items(MeasurementType.entries) { type ->
                 TypeTheme(type) {
-                    MeasurementPickerCard(stringResource(type.label), type.fields.first().unit) {
+                    MeasurementPickerCard(type.icon, stringResource(type.label), type.fields.first().unit) {
                         onOpenEntry(type)
                     }
                 }

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Weight: a bathroom scale with its dial. Shown on the type's home card and in its entry dialog.
+     Drawn for HealthLog. Multi-colored: show it with tint = Color.Unspecified, so the colors are kept. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#C8E6C9"
+        android:strokeColor="#2E7D32"
+        android:strokeWidth="1.4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M7,3H17A4,4 0 0 1 21,7V17A4,4 0 0 1 17,21H7A4,4 0 0 1 3,17V7A4,4 0 0 1 7,3Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M7.5,11A4.5,4.5 0 0 1 16.5,11Z" />
+    <path
+        android:strokeColor="#2E7D32"
+        android:strokeWidth="1.4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M7.5,11A4.5,4.5 0 0 1 16.5,11Z" />
+    <path
+        android:strokeColor="#2E7D32"
+        android:strokeWidth="1.4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M12,11L13.6,8" />
+    <path
+        android:strokeColor="#81C784"
+        android:strokeWidth="1.6"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M8.5,17H15.5" />
+</vector>
