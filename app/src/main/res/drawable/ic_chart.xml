@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Chart: three rising bars on a baseline, with an arrow going up. Used on the "See Chart" button.
+     Drawn for HealthLog. Multi-colored: show it with tint = Color.Unspecified, so the colors are kept. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#4FC3F7"
+        android:pathData="M4.8,13.5H7.2A0.8,0.8 0 0 1 8,14.3V19.2A0.8,0.8 0 0 1 7.2,20.0H4.8A0.8,0.8 0 0 1 4,19.2V14.3A0.8,0.8 0 0 1 4.8,13.5Z" />
+    <path
+        android:fillColor="#29B6F6"
+        android:pathData="M10.8,10.5H13.2A0.8,0.8 0 0 1 14,11.3V19.2A0.8,0.8 0 0 1 13.2,20.0H10.8A0.8,0.8 0 0 1 10,19.2V11.3A0.8,0.8 0 0 1 10.8,10.5Z" />
+    <path
+        android:fillColor="#0288D1"
+        android:pathData="M16.8,7.5H19.2A0.8,0.8 0 0 1 20,8.3V19.2A0.8,0.8 0 0 1 19.2,20.0H16.8A0.8,0.8 0 0 1 16,19.2V8.3A0.8,0.8 0 0 1 16.8,7.5Z" />
+    <path
+        android:strokeColor="#546E7A"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M2.5,21H21.5" />
+    <path
+        android:strokeColor="#FF7043"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M3,11.5L8,7.5L12,9.5L18.6,4.2" />
+    <path
+        android:fillColor="#FF7043"
+        android:pathData="M21,2.2L16.4,3.1L20,6.7Z" />
+</vector>

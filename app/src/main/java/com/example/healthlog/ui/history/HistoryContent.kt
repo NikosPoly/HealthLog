@@ -24,6 +24,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -31,13 +32,13 @@ import androidx.compose.ui.unit.dp
 import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType
+import com.example.healthlog.ui.format.decimalSeparator
+import com.example.healthlog.ui.format.formatMeasurementValue
 import com.example.healthlog.ui.history.chart.ChartPage
 import com.example.healthlog.ui.history.chart.ChartPeriod
 import com.example.healthlog.ui.history.chart.PeriodChips
 import com.example.healthlog.ui.history.chart.ScreenTap
 import com.example.healthlog.ui.history.chart.watchTaps
-import com.example.healthlog.ui.format.decimalSeparator
-import com.example.healthlog.ui.format.formatMeasurementValue
 import com.example.healthlog.ui.history.list.MeasurementHistoryList
 import com.example.healthlog.ui.theme.HealthLogTheme
 import kotlinx.coroutines.launch
@@ -95,7 +96,9 @@ fun HistoryContent(
                     IconButton(onClick = onBack) {
                         Icon(
                             painter = painterResource(R.drawable.ic_arrow_back),
-                            contentDescription = stringResource(R.string.action_back)
+                            contentDescription = stringResource(R.string.action_back),
+                            // Multicolored icon: keep its own colors.
+                            tint = Color.Unspecified
                         )
                     }
                 }

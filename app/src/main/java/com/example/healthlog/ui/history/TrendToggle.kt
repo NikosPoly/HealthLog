@@ -12,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -33,11 +34,14 @@ internal fun TrendToggle(
         OutlinedButton(onClick = onToggle) {
             Icon(
                 painter = painterResource(
-                    if (showTrend) R.drawable.ic_history else R.drawable.ic_trend
+                    if (showTrend) R.drawable.ic_entries else R.drawable.ic_chart
                 ),
                 // The text next to it already says what the button does.
                 contentDescription = null,
-                modifier = Modifier.size(ButtonDefaults.IconSize)
+                // Multicolored icons: keep their own colors instead of the button's color.
+                tint = Color.Unspecified,
+                // A little bigger than the default 18 dp, so the details stay readable.
+                modifier = Modifier.size(20.dp)
             )
             Spacer(Modifier.size(ButtonDefaults.IconSpacing))
             Text(

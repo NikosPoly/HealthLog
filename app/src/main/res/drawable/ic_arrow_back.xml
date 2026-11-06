@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Material "arrow back" icon. Used for the back button on the history screen. -->
+<!-- Back: an arrow pointing left, inside a soft circle. Used for the back button on the history screen.
+     Drawn for HealthLog. Multi-colored: show it with tint = Color.Unspecified, so the colors are kept.
+     autoMirrored: in right-to-left languages the arrow points the other way. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
@@ -7,6 +9,24 @@
     android:viewportWidth="24"
     android:viewportHeight="24">
     <path
-        android:fillColor="@android:color/black"
-        android:pathData="M20,11H7.83l5.59,-5.59L12,4l-8,8 8,8 1.41,-1.41L7.83,13H20v-2z" />
+        android:fillColor="#E3F2FD"
+        android:pathData="M2,12A10,10 0 1 1 22,12A10,10 0 1 1 2,12Z" />
+    <path
+        android:strokeColor="#90CAF9"
+        android:strokeWidth="1.2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M2,12A10,10 0 1 1 22,12A10,10 0 1 1 2,12Z" />
+    <path
+        android:strokeColor="#1E88E5"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M17,12H7.5" />
+    <path
+        android:strokeColor="#1E88E5"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M11.5,7.5L7,12L11.5,16.5" />
 </vector>
