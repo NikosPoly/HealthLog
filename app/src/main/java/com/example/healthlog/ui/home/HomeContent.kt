@@ -30,6 +30,7 @@ import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.ui.home.newmeasurement.MeasurementEntryDialog
 import com.example.healthlog.ui.theme.HealthLogTheme
+import com.example.healthlog.ui.theme.TypeTheme
 
 // Layout only: the home screen with the measurement picker,
 // drawn from the values it receives; user actions are reported through the callbacks.
@@ -91,21 +92,27 @@ fun HomeContent(
             }
 
             // One card per measurement type, in the order they are declared in the enum.
-            // The card shows the unit of the first value (mmHg for blood pressure).
+            // The card shows the unit of the first value (mmHg for blood pressure),
+            // and is in the type's color (see TypeTheme).
             items(MeasurementType.entries) { type ->
-                MeasurementPickerCard(stringResource(type.label), type.fields.first().unit) {
-                    onOpenEntry(type)
+                TypeTheme(type) {
+                    MeasurementPickerCard(stringResource(type.label), type.fields.first().unit) {
+                        onOpenEntry(type)
+                    }
                 }
             }
         }
     }
 
     selectedType?.let { type ->
-        MeasurementEntryDialog(
-            type = type,
-            onDismiss = onDismissEntry,
-            onSave = onSave
-        )
+        // In the color of the chosen type, like its card.
+        TypeTheme(type) {
+            MeasurementEntryDialog(
+                type = type,
+                onDismiss = onDismissEntry,
+                onSave = onSave
+            )
+        }
     }
 }
 
