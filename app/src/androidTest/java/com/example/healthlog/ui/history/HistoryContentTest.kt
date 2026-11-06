@@ -9,6 +9,7 @@ import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
@@ -28,7 +29,7 @@ import org.junit.runner.RunWith
 
 // Uses the history screen's layout with sample data: tabs, swiping, empty pages, deleting,
 // the See trend / See history button and the period chips.
-// Runs on an emulator (it uninstalls the app afterwards, like every androidTest).
+// Runs on an emulator (it uninstalls the app afterward, like every androidTest).
 @RunWith(AndroidJUnit4::class)
 class HistoryContentTest {
 
@@ -146,7 +147,7 @@ class HistoryContentTest {
     fun deleteOnACard_reportsThatMeasurement() {
         open(MeasurementType.BLOOD_PRESSURE)
 
-        composeRule.onNodeWithText(context.getString(R.string.action_delete)).performClick()
+        composeRule.onNodeWithContentDescription(context.getString(R.string.action_delete)).performClick()
 
         assertEquals(bloodPressure, requestedDelete)
     }
@@ -169,7 +170,7 @@ class HistoryContentTest {
         // Chart mode: the card is gone, the chips and the period stats are there.
         composeRule.onNodeWithText(bloodPressureText).assertDoesNotExist()
         text(R.string.chart_period_all).assertExists()
-        text(R.string.stats_period_title).assertExists()
+        text(R.string.stats_average).assertExists()
         text(R.string.chart_show_history).assertExists()
 
         text(R.string.chart_show_history).performClick()
@@ -193,7 +194,7 @@ class HistoryContentTest {
         text(R.string.chart_show_history).assertExists()
         text(R.string.chart_period_all).assertExists()
         // The Pulse page shows its chart page (with stats), not its list.
-        text(R.string.stats_period_title).assertExists()
+        text(R.string.stats_average).assertExists()
     }
 
     @Test
@@ -206,6 +207,6 @@ class HistoryContentTest {
 
         assertEquals(ChartPeriod.SEVEN_DAYS, selectedPeriod)
         // The sample measurements are from now, so they are still in the last 7 days.
-        text(R.string.stats_period_title).assertExists()
+        text(R.string.stats_average).assertExists()
     }
 }

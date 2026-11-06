@@ -1,4 +1,5 @@
 [versions]
+materialKolor = "6.0.0"
 agp = "9.5.1"
 coreKtx = "1.19.1"
 junit = "4.13.2"
@@ -20,6 +21,8 @@ androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = 
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-room-testing = { group = "androidx.room", name = "room-testing", version.ref = "room" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
+# Builds a full color scheme from one color (used for the type colors).
+material-kolor = { group = "com.materialkolor", name = "material-kolor-material3", version.ref = "materialKolor" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycle" }
 androidx-lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycle" }

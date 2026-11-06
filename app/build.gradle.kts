@@ -55,6 +55,8 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    // Color schemes from one color per type (ui/theme/TypeTheme.kt)
+    implementation(libs.material.kolor)
     // Charts in the history (only used in ui/history/chart/vico)
     implementation(libs.vico.compose.m3)
     testImplementation(libs.junit)
