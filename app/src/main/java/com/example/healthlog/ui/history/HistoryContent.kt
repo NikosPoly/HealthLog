@@ -8,11 +8,9 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -114,19 +112,12 @@ fun HistoryContent(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // One tab per type. The row scrolls sideways when the names don't fit.
-            PrimaryScrollableTabRow(selectedTabIndex = pagerState.currentPage,
-                // Only a small space (3 dp) before the first and after the last tab,
-                //instead of the default 52 dp, so the row starts near the left edge.
-                edgePadding = 3.dp) {
-                types.forEachIndexed { index, type ->
-                    Tab(
-                        selected = pagerState.currentPage == index,
-                        onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
-                        text = { Text(stringResource(type.label)) }
-                    )
-                }
-            }
+            // One tab per type (see TypeTabs).
+            TypeTabs(
+                types = types,
+                selectedIndex = pagerState.currentPage,
+                onSelect = { index -> scope.launch { pagerState.animateScrollToPage(index) } }
+            )
 
             // Outside the pages, so it stays in place while swiping.
             TrendToggle(
