@@ -7,14 +7,14 @@ import java.util.Locale
 // The value text of a measurement, e.g. "120/80 mmHg · 72 bpm" or "78.00 kg" ("78,00 kg" in Greek).
 // Used by the history card and the delete confirmation, so both show the same text.
 // decimalSeparator comes from the current language (see LocaleFormats.kt).
-fun formatEntryValue(measurement: Measurement, decimalSeparator: Char): String {
+fun formatMeasurementValue(measurement: Measurement, decimalSeparator: Char): String {
     val fields = measurement.type.fields
 
     return if (measurement.type == MeasurementType.BLOOD_PRESSURE) {
         val pressure = "${measurement.value.toInt()}/" +
                 "${measurement.secondaryValue?.toInt() ?: "?"} ${fields[0].unit}"
 
-        // Older entries have no pulse, so show it only when present.
+        // Older measurements have no pulse, so show it only when present.
         val pulse = measurement.tertiaryValue?.let { " · ${it.toInt()} ${fields[2].unit}" } ?: ""
 
         pressure + pulse
@@ -33,6 +33,6 @@ fun formatEntryValue(measurement: Measurement, decimalSeparator: Char): String {
     }
 }
 
-// Whole numbers without ".0" (180 cm); older entries with real decimals keep them (5.6).
+// Whole numbers without ".0" (180 cm); older measurements with real decimals keep them (5.6).
 private fun formatNumber(value: Double): String =
     if (value % 1.0 == 0.0) value.toLong().toString() else value.toString()

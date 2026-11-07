@@ -30,7 +30,7 @@ import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.ui.format.decimalSeparator
-import com.example.healthlog.ui.format.formatEntryValue
+import com.example.healthlog.ui.format.formatMeasurementValue
 import com.example.healthlog.ui.history.chart.ChartPage
 import com.example.healthlog.ui.history.chart.ChartPeriod
 import com.example.healthlog.ui.history.chart.PeriodChips
@@ -174,7 +174,7 @@ fun HistoryContent(
                 details = stringResource(
                     R.string.delete_dialog_details,
                     stringResource(measurement.type.label),
-                    formatEntryValue(measurement, decimalSeparator())
+                    formatMeasurementValue(measurement, decimalSeparator())
                 ),
                 onConfirm = onConfirmDelete,
                 onDismiss = onCancelDelete

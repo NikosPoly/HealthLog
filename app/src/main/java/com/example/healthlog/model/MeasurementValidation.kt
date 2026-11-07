@@ -34,7 +34,7 @@ fun validateField(field: MeasurementField, text: String): ValidationError? {
 }
 
 // Checks all fields of a measurement type.
-// Returns one entry per field, in the order of type.fields: null = valid.
+// Returns one result per field, in the order of type.fields: its error, or null = valid.
 // Each field is checked on its own first; the blood pressure comparison runs
 // only when systolic and diastolic are both valid, and its error goes on the diastolic field.
 fun validateMeasurement(type: MeasurementType, texts: List<String>): List<ValidationError?> {

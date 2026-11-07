@@ -30,7 +30,7 @@ data class NewEntryState(
     // switching the language is still read correctly.
     val normalizedTexts: List<String> by lazy { texts.map { it.replace(',', '.') } }
 
-    // One entry per field: null = valid.
+    // One result per field: its error, or null = valid.
     val errors: List<ValidationError?> by lazy { validateMeasurement(type, normalizedTexts) }
 
     // Save is possible only when every field passes every check.

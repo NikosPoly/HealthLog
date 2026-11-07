@@ -20,7 +20,7 @@ abstract class HealthDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: HealthDatabase? = null
 
-        // Version 1 → 2: add the pulse column for blood pressure entries.
+        // Version 1 → 2: add the pulse column for blood pressure measurements.
         // Existing rows keep their data; the new column is empty (null) for them.
         internal val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {

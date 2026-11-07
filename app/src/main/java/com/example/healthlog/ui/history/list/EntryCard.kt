@@ -23,7 +23,7 @@ import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.ui.format.decimalSeparator
-import com.example.healthlog.ui.format.formatEntryValue
+import com.example.healthlog.ui.format.formatMeasurementValue
 import com.example.healthlog.ui.format.formatTimestamp
 import com.example.healthlog.ui.format.rememberDateTimeFormatter
 import com.example.healthlog.ui.theme.HealthLogTheme
@@ -36,7 +36,7 @@ fun EntryCard(
     onDelete: () -> Unit
 ) {
     // Value and date in the formats of the current language.
-    val displayedValue = formatEntryValue(measurement, decimalSeparator())
+    val displayedValue = formatMeasurementValue(measurement, decimalSeparator())
     val dateFormatter = rememberDateTimeFormatter()
 
     Card(

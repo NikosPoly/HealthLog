@@ -35,7 +35,7 @@ import com.example.healthlog.ui.theme.HealthLogTheme
 import com.example.healthlog.ui.theme.TypeTheme
 import com.example.healthlog.ui.theme.icon
 
-// Layout only: the home screen with the measurement picker,
+// Layout only: the home screen with the type picker,
 // drawn from the values it receives; user actions are reported through the callbacks.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

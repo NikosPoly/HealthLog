@@ -11,7 +11,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.ui.format.decimalSeparator
-import com.example.healthlog.ui.format.formatEntryValue
+import com.example.healthlog.ui.format.formatMeasurementValue
 import com.example.healthlog.ui.format.formatTimestamp
 import com.example.healthlog.ui.format.rememberDateTimeFormatter
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisGuidelineComponent
@@ -46,7 +46,7 @@ internal fun rememberEntryMarker(
             if (measurement == null) {
                 ""
             } else {
-                formatEntryValue(measurement, separator) + "\n" +
+                formatMeasurementValue(measurement, separator) + "\n" +
                     formatTimestamp(measurement.timestamp, dateTimeFormatter)
             }
         }
