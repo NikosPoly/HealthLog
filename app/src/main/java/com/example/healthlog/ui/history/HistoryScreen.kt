@@ -33,7 +33,7 @@ fun HistoryScreen(
     // List or chart. Kept here, inside the history screen: it stays while the history
     // is open (also on rotation and when changing tabs), and the history always opens
     // on the list.
-    var showTrend by rememberSaveable { mutableStateOf(false) }
+    var showChart by rememberSaveable { mutableStateOf(false) }
 
     // The period of the chart. All when the history opens; back to All when another tab
     // is shown (selectedType is its key), but kept on rotation.
@@ -51,13 +51,13 @@ fun HistoryScreen(
     HistoryContent(
         measurementsByType = measurementsByType,
         selectedType = selectedType,
-        showTrend = showTrend,
+        showChart = showChart,
         period = period,
         measurementToDelete = measurementToDelete,
         snackbarHostState = snackbarHostState,
         onBack = onBack,
         onSelectType = onSelectType,
-        onToggleTrend = { showTrend = !showTrend },
+        onToggleChart = { showChart = !showChart },
         onSelectPeriod = { period = it },
         onRequestDelete = viewModel::requestDelete,
         onConfirmDelete = viewModel::confirmDelete,

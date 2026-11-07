@@ -56,7 +56,7 @@ fun HistoryContent(
     // The type whose page is shown.
     selectedType: MeasurementType,
     // True: the pages show the chart; false: the list. The same for every tab.
-    showTrend: Boolean,
+    showChart: Boolean,
     // How far back the chart looks. Only used in chart mode.
     period: ChartPeriod,
     measurementToDelete: Measurement?,
@@ -65,7 +65,7 @@ fun HistoryContent(
     // Called when another page is shown, by tapping a tab or by swiping.
     onSelectType: (MeasurementType) -> Unit,
     // Called by the button that switches between the list and the chart.
-    onToggleTrend: () -> Unit,
+    onToggleChart: () -> Unit,
     onSelectPeriod: (ChartPeriod) -> Unit,
     onRequestDelete: (Measurement) -> Unit,
     onConfirmDelete: () -> Unit,
@@ -128,13 +128,13 @@ fun HistoryContent(
                 )
 
                 // Outside the pages, so it stays in place while swiping.
-                TrendToggle(
-                    showTrend = showTrend,
-                    onToggle = onToggleTrend
+                ChartToggle(
+                    showChart = showChart,
+                    onToggle = onToggleChart
                 )
 
                 // Only for the chart; the list always shows every measurement.
-                if (showTrend) {
+                if (showChart) {
                     PeriodChips(
                         selected = period,
                         onSelect = onSelectPeriod,
@@ -150,7 +150,7 @@ fun HistoryContent(
                     val measurements = measurementsByType[type].orEmpty()
 
                     TypeTheme(type) {
-                        if (showTrend) {
+                        if (showChart) {
                             ChartPage(
                                 type = type,
                                 measurements = measurements,
@@ -207,13 +207,13 @@ private fun HistoryContentPreview() {
                 )
             ),
             selectedType = MeasurementType.BLOOD_PRESSURE,
-            showTrend = false,
+            showChart = false,
             period = ChartPeriod.ALL,
             measurementToDelete = null,
             snackbarHostState = remember { SnackbarHostState() },
             onBack = {},
             onSelectType = {},
-            onToggleTrend = {},
+            onToggleChart = {},
             onSelectPeriod = {},
             onRequestDelete = {},
             onConfirmDelete = {},

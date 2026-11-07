@@ -21,10 +21,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 
 // The button at the top center that switches between the list and the chart.
-// It shows what it switches to: "See trend" on the list, "See history" on the chart.
+// It shows what it switches to: "See chart" on the list, "See history" on the chart.
 @Composable
-internal fun TrendToggle(
-    showTrend: Boolean,
+internal fun ChartToggle(
+    showChart: Boolean,
     onToggle: () -> Unit
 ) {
     Box(
@@ -45,7 +45,7 @@ internal fun TrendToggle(
         ) {
             Icon(
                 painter = painterResource(
-                    if (showTrend) R.drawable.ic_entries else R.drawable.ic_chart
+                    if (showChart) R.drawable.ic_entries else R.drawable.ic_chart
                 ),
                 // The text next to it already says what the button does.
                 contentDescription = null,
@@ -57,7 +57,7 @@ internal fun TrendToggle(
             Spacer(Modifier.size(ButtonDefaults.IconSpacing))
             Text(
                 stringResource(
-                    if (showTrend) R.string.history_show_entries else R.string.history_show_chart
+                    if (showChart) R.string.history_show_entries else R.string.history_show_chart
                 )
             )
         }

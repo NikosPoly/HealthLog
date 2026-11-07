@@ -28,7 +28,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 // Uses the history screen's layout with sample data: tabs, swiping, empty pages, deleting,
-// the See trend / See history button and the period chips.
+// the See chart / See history button and the period chips.
 // Runs on an emulator (it uninstalls the app afterward, like every androidTest).
 @RunWith(AndroidJUnit4::class)
 class HistoryContentTest {
@@ -65,13 +65,13 @@ class HistoryContentTest {
         selectedType = startType
         composeRule.setContent {
             var shownType by remember { mutableStateOf(startType) }
-            var showTrend by remember { mutableStateOf(false) }
+            var showChart by remember { mutableStateOf(false) }
             var period by remember { mutableStateOf(ChartPeriod.ALL) }
             HealthLogTheme {
                 HistoryContent(
                     measurementsByType = sampleData,
                     selectedType = shownType,
-                    showTrend = showTrend,
+                    showChart = showChart,
                     period = period,
                     measurementToDelete = null,
                     snackbarHostState = remember { SnackbarHostState() },
@@ -80,7 +80,7 @@ class HistoryContentTest {
                         shownType = it
                         selectedType = it
                     },
-                    onToggleTrend = { showTrend = !showTrend },
+                    onToggleChart = { showChart = !showChart },
                     onSelectPeriod = {
                         period = it
                         selectedPeriod = it
@@ -161,7 +161,7 @@ class HistoryContentTest {
     }
 
     @Test
-    fun seeTrend_showsTheChart_andSeeHistoryGoesBackToTheList() {
+    fun seeChart_showsTheChart_andSeeHistoryGoesBackToTheList() {
         open(MeasurementType.BLOOD_PRESSURE)
 
         text(R.string.history_show_chart).performClick()
