@@ -155,7 +155,7 @@ class ChartPageTest {
         text(R.string.chart_empty).assertExists()
         chart(MeasurementType.WEIGHT).assertDoesNotExist()
         text(R.string.stats_average).assertDoesNotExist()
-        text(R.string.stats_latest_measurement).assertExists()
+        text(R.string.stats_last_entry).assertExists()
     }
 
     @Test
@@ -164,7 +164,7 @@ class ChartPageTest {
 
         text(R.string.chart_empty).assertExists()
         text(R.string.stats_average).assertDoesNotExist()
-        text(R.string.stats_latest_measurement).assertDoesNotExist()
+        text(R.string.stats_last_entry).assertDoesNotExist()
     }
 
     @Test

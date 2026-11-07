@@ -66,7 +66,7 @@ class HistoryViewModel(
     private fun delete(measurement: Measurement) {
         viewModelScope.launch {
             repository.delete(measurement)
-            _messages.send(R.string.message_measurement_deleted)
+            _messages.send(R.string.message_entry_deleted)
         }
     }
 

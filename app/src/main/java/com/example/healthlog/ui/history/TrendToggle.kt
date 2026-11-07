@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -58,7 +57,7 @@ internal fun TrendToggle(
             Spacer(Modifier.size(ButtonDefaults.IconSpacing))
             Text(
                 stringResource(
-                    if (showTrend) R.string.chart_show_history else R.string.chart_show_trend
+                    if (showTrend) R.string.history_show_entries else R.string.history_show_chart
                 )
             )
         }

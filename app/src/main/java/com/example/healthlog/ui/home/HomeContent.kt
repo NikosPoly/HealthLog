@@ -55,7 +55,7 @@ fun HomeContent(
                     IconButton(onClick = onOpenHistory) {
                         Icon(
                             painter = painterResource(R.drawable.ic_history),
-                            contentDescription = stringResource(R.string.history_title),
+                            contentDescription = stringResource(R.string.action_history),
                             // Multicolored icon: keep its own colors.
                             tint = Color.Unspecified
                         )
@@ -88,7 +88,7 @@ fun HomeContent(
         ) {
             item {
                 Text(
-                    stringResource(R.string.home_new_measurement),
+                    stringResource(R.string.home_new_entry),
                     // Centered, like the title above.
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center,

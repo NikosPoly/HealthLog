@@ -156,7 +156,7 @@ class HistoryContentTest {
     fun listMode_hasNoChips() {
         open(MeasurementType.BLOOD_PRESSURE)
 
-        text(R.string.chart_show_trend).assertExists()
+        text(R.string.history_show_chart).assertExists()
         text(R.string.chart_period_all).assertDoesNotExist()
     }
 
@@ -164,34 +164,34 @@ class HistoryContentTest {
     fun seeTrend_showsTheChart_andSeeHistoryGoesBackToTheList() {
         open(MeasurementType.BLOOD_PRESSURE)
 
-        text(R.string.chart_show_trend).performClick()
+        text(R.string.history_show_chart).performClick()
         composeRule.waitForIdle()
 
         // Chart mode: the card is gone, the chips and the period stats are there.
         composeRule.onNodeWithText(bloodPressureText).assertDoesNotExist()
         text(R.string.chart_period_all).assertExists()
         text(R.string.stats_average).assertExists()
-        text(R.string.chart_show_history).assertExists()
+        text(R.string.history_show_entries).assertExists()
 
-        text(R.string.chart_show_history).performClick()
+        text(R.string.history_show_entries).performClick()
         composeRule.waitForIdle()
 
         // Back to the list.
         composeRule.onNodeWithText(bloodPressureText).assertExists()
         text(R.string.chart_period_all).assertDoesNotExist()
-        text(R.string.chart_show_trend).assertExists()
+        text(R.string.history_show_chart).assertExists()
     }
 
     @Test
     fun chartMode_staysWhenChangingTab() {
         open(MeasurementType.BLOOD_PRESSURE)
 
-        text(R.string.chart_show_trend).performClick()
+        text(R.string.history_show_chart).performClick()
         tab(MeasurementType.PULSE).performClick()
         composeRule.waitForIdle()
 
         tab(MeasurementType.PULSE).assertIsSelected()
-        text(R.string.chart_show_history).assertExists()
+        text(R.string.history_show_entries).assertExists()
         text(R.string.chart_period_all).assertExists()
         // The Pulse page shows its chart page (with stats), not its list.
         text(R.string.stats_average).assertExists()
@@ -201,7 +201,7 @@ class HistoryContentTest {
     fun tappingAChip_reportsThatPeriod() {
         open(MeasurementType.BLOOD_PRESSURE)
 
-        text(R.string.chart_show_trend).performClick()
+        text(R.string.history_show_chart).performClick()
         text(R.string.chart_period_7_days).performClick()
         composeRule.waitForIdle()
 

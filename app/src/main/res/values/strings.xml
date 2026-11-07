@@ -19,17 +19,17 @@
 
     <!-- Home screen -->
     <string name="home_title">Health Log</string>
-    <string name="home_new_measurement">New Entry</string>
+    <string name="home_new_entry">New Entry</string>
 
     <!-- History screen -->
-    <string name="history_title">History</string>
+    <string name="action_history">History</string>
     <string name="history_empty">No entries yet.</string>
 
     <!-- History charts. %1$s = measurement type -->
-    <string name="chart_show_trend">See Chart</string>
-    <string name="chart_show_history">See Entries</string>
+    <string name="history_show_chart">See Chart</string>
+    <string name="history_show_entries">See Entries</string>
     <string name="chart_period_7_days">7d</string>
-    <string name="chart_period_30_days">1m</string>
+    <string name="chart_period_1_month">1m</string>
     <string name="chart_period_6_months">6m</string>
     <string name="chart_period_1_year">1y</string>
     <string name="chart_period_all">All</string>
@@ -45,7 +45,7 @@
     <string name="stats_lowest_systolic">Lowest Systolic</string>
     <string name="stats_highest_diastolic">Highest Diastolic</string>
     <string name="stats_lowest_diastolic">Lowest Diastolic</string>
-    <string name="stats_latest_measurement">Last Entry</string>
+    <string name="stats_last_entry">Last Entry</string>
 
     <!-- Buttons and actions used in several places -->
     <string name="action_back">Back</string>
@@ -70,13 +70,13 @@
     <string name="delete_dialog_message">Are you sure you want to delete this entry?</string>
 
     <!-- Snackbar messages -->
-    <string name="message_measurement_saved">Entry saved</string>
-    <string name="message_measurement_deleted">Entry deleted</string>
+    <string name="message_entry_saved">Entry saved</string>
+    <string name="message_entry_deleted">Entry deleted</string>
 
     <!-- Measurement types (single-value types also use these as their field label) -->
     <string name="type_blood_pressure">Blood Pressure</string>
     <string name="type_pulse">Pulse</string>
-    <string name="type_blood_sugar">Blood Sugar</string>
+    <string name="type_blood_glucose">Blood Glucose</string>
     <string name="type_weight">Weight</string>
     <string name="type_height">Height</string>
 

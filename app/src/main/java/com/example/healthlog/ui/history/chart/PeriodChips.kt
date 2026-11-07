@@ -70,7 +70,7 @@ fun PeriodChips(
 private val ChartPeriod.label: Int
     get() = when (this) {
         ChartPeriod.SEVEN_DAYS -> R.string.chart_period_7_days
-        ChartPeriod.THIRTY_DAYS -> R.string.chart_period_30_days
+        ChartPeriod.THIRTY_DAYS -> R.string.chart_period_1_month
         ChartPeriod.SIX_MONTHS -> R.string.chart_period_6_months
         ChartPeriod.ONE_YEAR -> R.string.chart_period_1_year
         ChartPeriod.ALL -> R.string.chart_period_all
