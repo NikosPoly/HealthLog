@@ -30,7 +30,7 @@ import com.example.healthlog.ui.theme.icon
 // One type on the home screen: its icon, its name and its unit. Tapping it opens the
 // entry dialog of that type.
 @Composable
-fun MeasurementPickerCard(
+fun TypePickerCard(
     @DrawableRes icon: Int,
     title: String,
     unit: String,
@@ -76,10 +76,10 @@ fun MeasurementPickerCard(
 
 @Preview(showBackground = true)
 @Composable
-private fun MeasurementPickerCardPreview() {
+private fun TypePickerCardPreview() {
     HealthLogTheme {
         TypeTheme(MeasurementType.BLOOD_PRESSURE) {
-            MeasurementPickerCard(
+            TypePickerCard(
                 MeasurementType.BLOOD_PRESSURE.icon,
                 stringResource(MeasurementType.BLOOD_PRESSURE.label),
                 MeasurementType.BLOOD_PRESSURE.fields.first().unit

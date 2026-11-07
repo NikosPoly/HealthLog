@@ -5,7 +5,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import com.example.healthlog.database.Measurement
-import com.example.healthlog.ui.format.formatMeasurementValue
+import com.example.healthlog.ui.format.formatEntryValue
 
 // Which number of a blood pressure value ("140/80 mmHg") is bold.
 internal enum class Emphasis { NONE, SYSTOLIC, DIASTOLIC }
@@ -13,7 +13,7 @@ internal enum class Emphasis { NONE, SYSTOLIC, DIASTOLIC }
 // A measurement's value as the stats show it: as in the history list, without the pulse
 // (it has its own tab).
 internal fun statValueText(measurement: Measurement, decimalSeparator: Char): String =
-    formatMeasurementValue(measurement.copy(tertiaryValue = null), decimalSeparator)
+    formatEntryValue(measurement.copy(tertiaryValue = null), decimalSeparator)
 
 // The value with the emphasized number in bold, e.g. the systolic in "140/80 mmHg".
 // Without an emphasis, the value is returned as it is.

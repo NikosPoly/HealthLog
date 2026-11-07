@@ -23,7 +23,7 @@ import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.ui.format.decimalSeparator
-import com.example.healthlog.ui.format.formatMeasurementValue
+import com.example.healthlog.ui.format.formatEntryValue
 import com.example.healthlog.ui.format.formatTimestamp
 import com.example.healthlog.ui.format.rememberDateTimeFormatter
 import com.example.healthlog.ui.theme.HealthLogTheme
@@ -31,12 +31,12 @@ import com.example.healthlog.ui.theme.HealthLogTheme
 // One entry in the history list: its date and time, its value, and a bin to delete it.
 // The type isn't repeated on the card, since the tab above already shows it.
 @Composable
-fun MeasurementHistoryCard(
+fun EntryCard(
     measurement: Measurement,
     onDelete: () -> Unit
 ) {
     // Value and date in the formats of the current language.
-    val displayedValue = formatMeasurementValue(measurement, decimalSeparator())
+    val displayedValue = formatEntryValue(measurement, decimalSeparator())
     val dateFormatter = rememberDateTimeFormatter()
 
     Card(
@@ -83,13 +83,13 @@ fun MeasurementHistoryCard(
 // Previews: blood pressure with pulse, and weight with decimals.
 @Preview(showBackground = true)
 @Composable
-private fun MeasurementHistoryCardPreview() {
+private fun EntryCardPreview() {
     HealthLogTheme {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            MeasurementHistoryCard(
+            EntryCard(
                 measurement = Measurement(
                     type = MeasurementType.BLOOD_PRESSURE,
                     value = 120.0,
@@ -99,7 +99,7 @@ private fun MeasurementHistoryCardPreview() {
                 onDelete = {}
             )
 
-            MeasurementHistoryCard(
+            EntryCard(
                 measurement = Measurement(type = MeasurementType.WEIGHT, value = 72.5),
                 onDelete = {}
             )

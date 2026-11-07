@@ -5,33 +5,33 @@ import com.example.healthlog.model.MeasurementType
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-// The value text shown in the history and the delete confirmation (formatMeasurementValue).
-class MeasurementFormattingTest {
+// The value text shown in the history and the delete confirmation (formatEntryValue).
+class EntryFormattingTest {
 
     // ---- weight: always two decimals, with the language's separator ----
 
     @Test
     fun weight_inEnglish_hasTwoDecimalsWithDot() {
         val weight = Measurement(type = MeasurementType.WEIGHT, value = 72.5)
-        assertEquals("72.50 kg", formatMeasurementValue(weight, '.'))
+        assertEquals("72.50 kg", formatEntryValue(weight, '.'))
     }
 
     @Test
     fun weight_inGreek_hasTwoDecimalsWithComma() {
         val weight = Measurement(type = MeasurementType.WEIGHT, value = 72.5)
-        assertEquals("72,50 kg", formatMeasurementValue(weight, ','))
+        assertEquals("72,50 kg", formatEntryValue(weight, ','))
     }
 
     @Test
     fun weight_wholeNumber_stillHasTwoDecimals() {
         val weight = Measurement(type = MeasurementType.WEIGHT, value = 80.0)
-        assertEquals("80.00 kg", formatMeasurementValue(weight, '.'))
+        assertEquals("80.00 kg", formatEntryValue(weight, '.'))
     }
 
     @Test
     fun weight_twoDecimals_areKept() {
         val weight = Measurement(type = MeasurementType.WEIGHT, value = 80.55)
-        assertEquals("80,55 kg", formatMeasurementValue(weight, ','))
+        assertEquals("80,55 kg", formatEntryValue(weight, ','))
     }
 
     // ---- whole-number types: no ".0" ----
@@ -39,18 +39,18 @@ class MeasurementFormattingTest {
     @Test
     fun height_wholeNumber_hasNoDecimals() {
         val height = Measurement(type = MeasurementType.HEIGHT, value = 180.0)
-        assertEquals("180 cm", formatMeasurementValue(height, '.'))
+        assertEquals("180 cm", formatEntryValue(height, '.'))
     }
 
     @Test
     fun pulseAndBloodSugar_showTheirUnits() {
         assertEquals(
             "72 bpm",
-            formatMeasurementValue(Measurement(type = MeasurementType.PULSE, value = 72.0), '.')
+            formatEntryValue(Measurement(type = MeasurementType.PULSE, value = 72.0), '.')
         )
         assertEquals(
             "95 mg/dL",
-            formatMeasurementValue(Measurement(type = MeasurementType.BLOOD_SUGAR, value = 95.0), '.')
+            formatEntryValue(Measurement(type = MeasurementType.BLOOD_SUGAR, value = 95.0), '.')
         )
     }
 
@@ -58,8 +58,8 @@ class MeasurementFormattingTest {
     fun olderEntryWithDecimals_keepsThemWithTheLanguagesSeparator() {
         // Saved before whole-number fields stopped accepting decimals.
         val height = Measurement(type = MeasurementType.HEIGHT, value = 175.5)
-        assertEquals("175.5 cm", formatMeasurementValue(height, '.'))
-        assertEquals("175,5 cm", formatMeasurementValue(height, ','))
+        assertEquals("175.5 cm", formatEntryValue(height, '.'))
+        assertEquals("175,5 cm", formatEntryValue(height, ','))
     }
 
     // ---- blood pressure ----
@@ -72,7 +72,7 @@ class MeasurementFormattingTest {
             secondaryValue = 80.0,
             tertiaryValue = 72.0
         )
-        assertEquals("120/80 mmHg · 72 bpm", formatMeasurementValue(bloodPressure, '.'))
+        assertEquals("120/80 mmHg · 72 bpm", formatEntryValue(bloodPressure, '.'))
     }
 
     @Test
@@ -82,13 +82,13 @@ class MeasurementFormattingTest {
             value = 120.0,
             secondaryValue = 80.0
         )
-        assertEquals("120/80 mmHg", formatMeasurementValue(bloodPressure, '.'))
+        assertEquals("120/80 mmHg", formatEntryValue(bloodPressure, '.'))
     }
 
     @Test
     fun bloodPressure_withoutDiastolic_showsQuestionMark() {
         val bloodPressure = Measurement(type = MeasurementType.BLOOD_PRESSURE, value = 120.0)
-        assertEquals("120/? mmHg", formatMeasurementValue(bloodPressure, '.'))
+        assertEquals("120/? mmHg", formatEntryValue(bloodPressure, '.'))
     }
 
     @Test
@@ -100,8 +100,8 @@ class MeasurementFormattingTest {
             tertiaryValue = 72.0
         )
         assertEquals(
-            formatMeasurementValue(bloodPressure, '.'),
-            formatMeasurementValue(bloodPressure, ',')
+            formatEntryValue(bloodPressure, '.'),
+            formatEntryValue(bloodPressure, ',')
         )
     }
 }

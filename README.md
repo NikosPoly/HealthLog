@@ -76,7 +76,7 @@ Each screen is split into a **Screen** (connects the ViewModel to the UI) and a 
 
 Larger components are split by responsibility. For example, the entry dialog consists of
 `MeasurementEntryDialog` (layout) and `MeasurementEntryState` (its state and rules, unit-tested)
-plus `MeasurementFieldInput`, `NumberInput` and `FocusModifiers`, all in `ui/home/newmeasurement/`.
+plus `EntryFieldInput`, `NumberInput` and `FocusModifiers`, all in `ui/home/newmeasurement/`.
 Most components have a `@Preview` (dialogs can't be shown in the preview).
 
 Each type's color scheme comes from `TypeTheme` in `ui/theme/`: wrapping a part of the screen in

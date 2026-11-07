@@ -7,7 +7,7 @@ import java.util.Locale
 // The value text of a measurement, e.g. "120/80 mmHg · 72 bpm" or "78.00 kg" ("78,00 kg" in Greek).
 // Used by the history card and the delete confirmation, so both show the same text.
 // decimalSeparator comes from the current language (see LocaleFormats.kt).
-fun formatMeasurementValue(measurement: Measurement, decimalSeparator: Char): String {
+fun formatEntryValue(measurement: Measurement, decimalSeparator: Char): String {
     val fields = measurement.type.fields
 
     return if (measurement.type == MeasurementType.BLOOD_PRESSURE) {

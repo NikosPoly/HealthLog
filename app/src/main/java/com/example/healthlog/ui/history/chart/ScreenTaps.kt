@@ -27,7 +27,7 @@ class ScreenTap(val position: Offset)
 // the whole screen. It only watches: the buttons, tabs and chart underneath still get
 // their taps as usual. A swipe is not a tap.
 // composed: so the element's position is remembered across recompositions, like
-// clearFocusOnTap in ui/home/newmeasurement.
+// clearFocusOnTap in ui/home/newentry.
 internal fun Modifier.watchTaps(onTap: (Offset) -> Unit): Modifier = composed {
     val position = remember { ElementPosition() }
     val currentOnTap by rememberUpdatedState(onTap)

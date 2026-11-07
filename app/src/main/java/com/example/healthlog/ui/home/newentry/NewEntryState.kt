@@ -1,4 +1,4 @@
-package com.example.healthlog.ui.home.newmeasurement
+package com.example.healthlog.ui.home.newentry
 
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType
@@ -8,7 +8,7 @@ import com.example.healthlog.model.validateMeasurement
 // The state of the entry dialog: what is typed, which fields the user has left,
 // and which field the user is in. Immutable: every action returns a new state.
 // No Compose in here, so all the dialog's rules can be checked with plain unit tests.
-data class MeasurementEntryState(
+data class NewEntryState(
     val type: MeasurementType,
 
     // The typed text of each field, in the order of type.fields,
@@ -41,13 +41,13 @@ data class MeasurementEntryState(
         errors[index]?.takeIf { isErrorVisible(it, normalizedTexts[index], leftFields[index]) }
 
     // The user typed (an allowed) text into a field.
-    fun withText(index: Int, text: String): MeasurementEntryState =
+    fun withText(index: Int, text: String): NewEntryState =
         copy(texts = texts.toMutableList().also { it[index] = text })
 
     // The user leaves the field they were in: from now on its errors are shown.
     // Only used for the user's own actions, never when focus is lost by itself
     // (e.g. on rotation), so rotating doesn't trigger errors.
-    fun leaveFocusedField(): MeasurementEntryState {
+    fun leaveFocusedField(): NewEntryState {
         val index = focusedIndex ?: return this
         return copy(
             leftFields = if (leftFields[index]) leftFields
@@ -59,13 +59,13 @@ data class MeasurementEntryState(
     // A field gained focus. Moving here from another field leaves that one;
     // focusing the same field again (e.g. tapping back in after rotation)
     // doesn't count as leaving it.
-    fun focusField(index: Int): MeasurementEntryState =
+    fun focusField(index: Int): NewEntryState =
         if (focusedIndex == index) this
         else leaveFocusedField().copy(focusedIndex = index)
 
     // The language changed while the dialog is open: convert what is already typed
     // to the new separator (e.g. "82.56" → "82,56"), so it can still be edited.
-    fun withSeparator(separator: Char): MeasurementEntryState =
+    fun withSeparator(separator: Char): NewEntryState =
         copy(texts = texts.map { text -> text.replace(',', separator).replace('.', separator) })
 
     // The measurement to save, or null while any field is invalid.
@@ -85,8 +85,8 @@ data class MeasurementEntryState(
 
     companion object {
         // The state when the dialog opens: all fields empty, none left, none focused.
-        fun initial(type: MeasurementType): MeasurementEntryState =
-            MeasurementEntryState(
+        fun initial(type: MeasurementType): NewEntryState =
+            NewEntryState(
                 type = type,
                 texts = List(type.fields.size) { "" },
                 leftFields = List(type.fields.size) { false },

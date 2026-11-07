@@ -11,7 +11,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.ui.format.decimalSeparator
-import com.example.healthlog.ui.format.formatMeasurementValue
+import com.example.healthlog.ui.format.formatEntryValue
 import com.example.healthlog.ui.format.formatTimestamp
 import com.example.healthlog.ui.format.rememberDateTimeFormatter
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisGuidelineComponent
@@ -28,12 +28,12 @@ import com.patrykandpatrick.vico.compose.common.component.rememberTextComponent
 import kotlin.math.abs
 
 // The box shown when a dot is tapped: how it looks, what it says, and when it opens.
-// Used by MeasurementChart; it must be called inside its ProvideVicoTheme.
+// Used by EntryChart; it must be called inside its ProvideVicoTheme.
 
 // The box's text: the value as in the history list, then date and time.
 // Blood pressure shows systolic and diastolic together (with the pulse).
 @Composable
-internal fun rememberMeasurementMarker(
+internal fun rememberEntryMarker(
     // The chart's measurements, oldest first.
     oldestFirst: List<Measurement>
 ): DefaultCartesianMarker {
@@ -46,7 +46,7 @@ internal fun rememberMeasurementMarker(
             if (measurement == null) {
                 ""
             } else {
-                formatMeasurementValue(measurement, separator) + "\n" +
+                formatEntryValue(measurement, separator) + "\n" +
                     formatTimestamp(measurement.timestamp, dateTimeFormatter)
             }
         }

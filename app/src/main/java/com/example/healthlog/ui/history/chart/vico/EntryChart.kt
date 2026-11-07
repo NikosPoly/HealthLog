@@ -49,7 +49,7 @@ import java.util.Locale
 // The Vico chart library is only used here and in ChartTooltip.kt (the tap box) and
 // ChartAxes.kt (the axes).
 @Composable
-fun MeasurementChart(
+fun EntryChart(
     type: MeasurementType,
     // The measurements to draw, in any order. Must not be empty.
     measurements: List<Measurement>,
@@ -119,7 +119,7 @@ private fun VicoLineChart(
             rememberDotLine(MaterialTheme.colorScheme.primary),
             rememberDotLine(MaterialTheme.colorScheme.tertiary)
         )
-        val marker = rememberMeasurementMarker(oldestFirst)
+        val marker = rememberEntryMarker(oldestFirst)
 
         CartesianChartHost(
             chart = rememberCartesianChart(

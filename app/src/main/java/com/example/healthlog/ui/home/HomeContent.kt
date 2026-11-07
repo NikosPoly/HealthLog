@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.dp
 import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType
-import com.example.healthlog.ui.home.newmeasurement.MeasurementEntryDialog
+import com.example.healthlog.ui.home.newentry.NewEntryDialog
 import com.example.healthlog.ui.theme.HealthLogTheme
 import com.example.healthlog.ui.theme.TypeTheme
 import com.example.healthlog.ui.theme.icon
@@ -102,7 +102,7 @@ fun HomeContent(
             // and is in the type's color (see TypeTheme).
             items(MeasurementType.entries) { type ->
                 TypeTheme(type) {
-                    MeasurementPickerCard(type.icon, stringResource(type.label), type.fields.first().unit) {
+                    TypePickerCard(type.icon, stringResource(type.label), type.fields.first().unit) {
                         onOpenEntry(type)
                     }
                 }
@@ -113,7 +113,7 @@ fun HomeContent(
     selectedType?.let { type ->
         // In the color of the chosen type, like its card.
         TypeTheme(type) {
-            MeasurementEntryDialog(
+            NewEntryDialog(
                 type = type,
                 onDismiss = onDismissEntry,
                 onSave = onSave

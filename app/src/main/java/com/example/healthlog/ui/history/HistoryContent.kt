@@ -30,13 +30,13 @@ import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.ui.format.decimalSeparator
-import com.example.healthlog.ui.format.formatMeasurementValue
+import com.example.healthlog.ui.format.formatEntryValue
 import com.example.healthlog.ui.history.chart.ChartPage
 import com.example.healthlog.ui.history.chart.ChartPeriod
 import com.example.healthlog.ui.history.chart.PeriodChips
 import com.example.healthlog.ui.history.chart.ScreenTap
 import com.example.healthlog.ui.history.chart.watchTaps
-import com.example.healthlog.ui.history.list.MeasurementHistoryList
+import com.example.healthlog.ui.history.list.EntryList
 import com.example.healthlog.ui.theme.HealthLogTheme
 import com.example.healthlog.ui.theme.TypeTheme
 import kotlinx.coroutines.launch
@@ -158,7 +158,7 @@ fun HistoryContent(
                                 screenTap = screenTap
                             )
                         } else {
-                            MeasurementHistoryList(
+                            EntryList(
                                 measurements = measurements,
                                 onRequestDelete = onRequestDelete
                             )
@@ -174,7 +174,7 @@ fun HistoryContent(
                 details = stringResource(
                     R.string.delete_dialog_details,
                     stringResource(measurement.type.label),
-                    formatMeasurementValue(measurement, decimalSeparator())
+                    formatEntryValue(measurement, decimalSeparator())
                 ),
                 onConfirm = onConfirmDelete,
                 onDismiss = onCancelDelete

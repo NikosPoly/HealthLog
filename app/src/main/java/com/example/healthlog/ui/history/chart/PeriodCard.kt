@@ -22,7 +22,7 @@ import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.ui.history.chart.stats.StatPair
 import com.example.healthlog.ui.history.chart.stats.periodStatItems
-import com.example.healthlog.ui.history.chart.vico.MeasurementChart
+import com.example.healthlog.ui.history.chart.vico.EntryChart
 
 // Everything that depends on the chosen period, in one rounded card: entries and average
 // above the chart, highest and lowest below it.
@@ -63,7 +63,7 @@ fun PeriodCard(
 
             StatPair(items.above.first, items.above.second)
 
-            MeasurementChart(
+            EntryChart(
                 type = type,
                 measurements = inPeriod,
                 screenTap = screenTap,
