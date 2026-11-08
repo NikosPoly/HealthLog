@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The app icon: the picture (mipmap/ic_launcher_art, a heart with a heartbeat line in a
+     ring), a dark back layer behind it, and a one-color version for themed icons.
+     Android 8+ cuts it into each launcher's shape. -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@drawable/ic_launcher_background" />
+    <foreground android:drawable="@mipmap/ic_launcher_art" />
+    <monochrome android:drawable="@drawable/ic_launcher_monochrome" />
+</adaptive-icon>
