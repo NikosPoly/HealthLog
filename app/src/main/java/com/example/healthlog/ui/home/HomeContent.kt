@@ -9,7 +9,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -65,13 +64,6 @@ fun HomeContent(
         },
         snackbarHost = {
             SnackbarHost(snackbarHostState)
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { onOpenEntry(MeasurementType.BLOOD_PRESSURE) }
-            ) {
-                Text("+", style = MaterialTheme.typography.headlineMedium)
-            }
         }
     ) { padding ->
 
@@ -83,7 +75,7 @@ fun HomeContent(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             contentPadding = PaddingValues(
                 top = 16.dp,
-                bottom = 90.dp
+                bottom = 16.dp
             )
         ) {
             item {
