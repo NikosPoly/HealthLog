@@ -1,4 +1,4 @@
-package com.example.healthlog.ui.home.newmeasurement
+package com.example.healthlog.ui.home.newentry
 
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown

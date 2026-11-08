@@ -1,4 +1,4 @@
-package com.example.healthlog.ui.home.newmeasurement
+package com.example.healthlog.ui.home.newentry
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -26,7 +26,7 @@ import com.example.healthlog.ui.theme.HealthLogTheme
 // and the red mandatory marker next to it. The dialog decides the text, which error to show
 // and what happens on focus and Done; this only draws the field and reports what the user does.
 @Composable
-fun MeasurementFieldInput(
+fun EntryFieldInput(
     field: MeasurementField,
     text: String,
     // The error shown under the field; null = no error shown.
@@ -92,13 +92,13 @@ fun MeasurementFieldInput(
 // Previews: a field without an error, and one with an error under it.
 @Preview(showBackground = true)
 @Composable
-private fun MeasurementFieldInputPreview() {
+private fun EntryFieldInputPreview() {
     HealthLogTheme {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            MeasurementFieldInput(
+            EntryFieldInput(
                 field = MeasurementType.WEIGHT.fields[0],
                 text = "72.5",
                 error = null,
@@ -109,7 +109,7 @@ private fun MeasurementFieldInputPreview() {
                 onDone = {}
             )
 
-            MeasurementFieldInput(
+            EntryFieldInput(
                 field = MeasurementType.HEIGHT.fields[0],
                 text = "18",
                 error = ValidationError.OutOfRange(30.0, 250.0),

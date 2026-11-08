@@ -14,17 +14,17 @@
 
     <!-- Home screen -->
     <string name="home_title">Ημερολόγιο Υγείας</string>
-    <string name="home_new_measurement">Νέα Καταχώριση</string>
+    <string name="home_new_entry">Νέα Καταχώριση</string>
 
     <!-- History screen -->
-    <string name="history_title">Ιστορικό</string>
+    <string name="action_history">Ιστορικό</string>
     <string name="history_empty">Δεν υπάρχουν ακόμη καταχωρίσεις.</string>
 
     <!-- History charts. %1$s = measurement type -->
-    <string name="chart_show_trend">Δείτε το Γράφημα</string>
-    <string name="chart_show_history">Δείτε τις Καταχωρίσεις</string>
+    <string name="history_show_chart">Δείτε το Γράφημα</string>
+    <string name="history_show_entries">Δείτε τις Καταχωρίσεις</string>
     <string name="chart_period_7_days">7η</string>
-    <string name="chart_period_30_days">1μ</string>
+    <string name="chart_period_1_month">1μ</string>
     <string name="chart_period_6_months">6μ</string>
     <string name="chart_period_1_year">1ε</string>
     <string name="chart_period_all">Όλα</string>
@@ -40,7 +40,7 @@
     <string name="stats_lowest_systolic">Ελάχιστη Συστολική</string>
     <string name="stats_highest_diastolic">Μέγιστη Διαστολική</string>
     <string name="stats_lowest_diastolic">Ελάχιστη Διαστολική</string>
-    <string name="stats_latest_measurement">Τελευταία Καταχώριση</string>
+    <string name="stats_last_entry">Τελευταία Καταχώριση</string>
 
     <!-- Buttons and actions used in several places -->
     <string name="action_back">Πίσω</string>
@@ -65,13 +65,13 @@
     <string name="delete_dialog_message">Θέλετε σίγουρα να διαγράψετε αυτή την καταχώριση;</string>
 
     <!-- Snackbar messages -->
-    <string name="message_measurement_saved">Η καταχώριση αποθηκεύτηκε</string>
-    <string name="message_measurement_deleted">Η καταχώριση διαγράφηκε</string>
+    <string name="message_entry_saved">Η καταχώριση αποθηκεύτηκε</string>
+    <string name="message_entry_deleted">Η καταχώριση διαγράφηκε</string>
 
     <!-- Measurement types (single-value types also use these as their field label) -->
     <string name="type_blood_pressure">Αρτηριακή Πίεση</string>
     <string name="type_pulse">Παλμοί</string>
-    <string name="type_blood_sugar">Σάκχαρο</string>
+    <string name="type_blood_glucose">Σάκχαρο Αίματος</string>
     <string name="type_weight">Βάρος</string>
     <string name="type_height">Ύψος</string>
 

@@ -1,4 +1,4 @@
-package com.example.healthlog.ui.home.newmeasurement
+package com.example.healthlog.ui.home.newentry
 
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

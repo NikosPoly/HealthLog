@@ -1,4 +1,4 @@
-package com.example.healthlog.ui.home.newmeasurement
+package com.example.healthlog.ui.home.newentry
 
 import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.model.ValidationError
@@ -8,12 +8,12 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-// The rules of the entry dialog (MeasurementEntryState), step by step as a user would act.
-class MeasurementEntryStateTest {
+// The rules of the entry dialog (NewEntryState), step by step as a user would act.
+class NewEntryStateTest {
 
-    private val height = MeasurementEntryState.initial(MeasurementType.HEIGHT)
-    private val weight = MeasurementEntryState.initial(MeasurementType.WEIGHT)
-    private val bloodPressure = MeasurementEntryState.initial(MeasurementType.BLOOD_PRESSURE)
+    private val height = NewEntryState.initial(MeasurementType.HEIGHT)
+    private val weight = NewEntryState.initial(MeasurementType.WEIGHT)
+    private val bloodPressure = NewEntryState.initial(MeasurementType.BLOOD_PRESSURE)
 
     // ---- when the dialog opens ----
 

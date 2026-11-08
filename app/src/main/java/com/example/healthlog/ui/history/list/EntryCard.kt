@@ -31,7 +31,7 @@ import com.example.healthlog.ui.theme.HealthLogTheme
 // One entry in the history list: its date and time, its value, and a bin to delete it.
 // The type isn't repeated on the card, since the tab above already shows it.
 @Composable
-fun MeasurementHistoryCard(
+fun EntryCard(
     measurement: Measurement,
     onDelete: () -> Unit
 ) {
@@ -83,13 +83,13 @@ fun MeasurementHistoryCard(
 // Previews: blood pressure with pulse, and weight with decimals.
 @Preview(showBackground = true)
 @Composable
-private fun MeasurementHistoryCardPreview() {
+private fun EntryCardPreview() {
     HealthLogTheme {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            MeasurementHistoryCard(
+            EntryCard(
                 measurement = Measurement(
                     type = MeasurementType.BLOOD_PRESSURE,
                     value = 120.0,
@@ -99,7 +99,7 @@ private fun MeasurementHistoryCardPreview() {
                 onDelete = {}
             )
 
-            MeasurementHistoryCard(
+            EntryCard(
                 measurement = Measurement(type = MeasurementType.WEIGHT, value = 72.5),
                 onDelete = {}
             )

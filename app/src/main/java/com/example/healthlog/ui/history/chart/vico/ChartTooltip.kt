@@ -28,12 +28,12 @@ import com.patrykandpatrick.vico.compose.common.component.rememberTextComponent
 import kotlin.math.abs
 
 // The box shown when a dot is tapped: how it looks, what it says, and when it opens.
-// Used by MeasurementChart; it must be called inside its ProvideVicoTheme.
+// Used by EntryChart; it must be called inside its ProvideVicoTheme.
 
 // The box's text: the value as in the history list, then date and time.
 // Blood pressure shows systolic and diastolic together (with the pulse).
 @Composable
-internal fun rememberMeasurementMarker(
+internal fun rememberEntryMarker(
     // The chart's measurements, oldest first.
     oldestFirst: List<Measurement>
 ): DefaultCartesianMarker {

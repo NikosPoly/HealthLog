@@ -16,10 +16,10 @@ import androidx.compose.ui.unit.dp
 import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
 
-// The list mode of one history page: the cards of one type (MeasurementHistoryCard),
+// The list mode of one history page: the cards of one type (EntryCard),
 // newest first, or the empty text in the middle.
 @Composable
-internal fun MeasurementHistoryList(
+internal fun EntryList(
     measurements: List<Measurement>,
     onRequestDelete: (Measurement) -> Unit
 ) {
@@ -49,7 +49,7 @@ internal fun MeasurementHistoryList(
             items = measurements,
             key = { it.id }
         ) { measurement ->
-            MeasurementHistoryCard(
+            EntryCard(
                 measurement = measurement,
                 onDelete = {
                     onRequestDelete(measurement)

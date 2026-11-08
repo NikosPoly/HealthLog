@@ -1,4 +1,4 @@
-package com.example.healthlog.ui.home.newmeasurement
+package com.example.healthlog.ui.home.newentry
 
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
@@ -27,7 +27,7 @@ import org.junit.runner.RunWith
 // shown. The texts come from strings.xml, so the test works in the emulator's language.
 // Runs on an emulator (it uninstalls the app afterwards, like every androidTest).
 @RunWith(AndroidJUnit4::class)
-class MeasurementEntryDialogTest {
+class NewEntryDialogTest {
 
     @get:Rule
     val composeRule = createComposeRule()
@@ -42,7 +42,7 @@ class MeasurementEntryDialogTest {
     private fun open(type: MeasurementType) {
         composeRule.setContent {
             HealthLogTheme {
-                MeasurementEntryDialog(type = type, onDismiss = {}, onSave = { saved = it })
+                NewEntryDialog(type = type, onDismiss = {}, onSave = { saved = it })
             }
         }
     }
@@ -124,7 +124,7 @@ class MeasurementEntryDialogTest {
         val restorationTester = StateRestorationTester(composeRule)
         restorationTester.setContent {
             HealthLogTheme {
-                MeasurementEntryDialog(type = height, onDismiss = {}, onSave = { saved = it })
+                NewEntryDialog(type = height, onDismiss = {}, onSave = { saved = it })
             }
         }
         field(heightField).performTextInput("18")

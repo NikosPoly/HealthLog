@@ -82,7 +82,7 @@ fun NonPeriodStatsCard(
                     tint = Color.Unspecified
                 )
                 Text(
-                    text = stringResource(R.string.stats_latest_measurement),
+                    text = stringResource(R.string.stats_last_entry),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

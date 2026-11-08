@@ -30,12 +30,12 @@ import androidx.compose.ui.unit.dp
 import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType
-import com.example.healthlog.ui.home.newmeasurement.MeasurementEntryDialog
+import com.example.healthlog.ui.home.newentry.NewEntryDialog
 import com.example.healthlog.ui.theme.HealthLogTheme
 import com.example.healthlog.ui.theme.TypeTheme
 import com.example.healthlog.ui.theme.icon
 
-// Layout only: the home screen with the measurement picker,
+// Layout only: the home screen with the type picker,
 // drawn from the values it receives; user actions are reported through the callbacks.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,7 +55,7 @@ fun HomeContent(
                     IconButton(onClick = onOpenHistory) {
                         Icon(
                             painter = painterResource(R.drawable.ic_history),
-                            contentDescription = stringResource(R.string.history_title),
+                            contentDescription = stringResource(R.string.action_history),
                             // Multicolored icon: keep its own colors.
                             tint = Color.Unspecified
                         )
@@ -88,7 +88,7 @@ fun HomeContent(
         ) {
             item {
                 Text(
-                    stringResource(R.string.home_new_measurement),
+                    stringResource(R.string.home_new_entry),
                     // Centered, like the title above.
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center,
@@ -102,7 +102,7 @@ fun HomeContent(
             // and is in the type's color (see TypeTheme).
             items(MeasurementType.entries) { type ->
                 TypeTheme(type) {
-                    MeasurementPickerCard(type.icon, stringResource(type.label), type.fields.first().unit) {
+                    TypePickerCard(type.icon, stringResource(type.label), type.fields.first().unit) {
                         onOpenEntry(type)
                     }
                 }
@@ -113,7 +113,7 @@ fun HomeContent(
     selectedType?.let { type ->
         // In the color of the chosen type, like its card.
         TypeTheme(type) {
-            MeasurementEntryDialog(
+            NewEntryDialog(
                 type = type,
                 onDismiss = onDismissEntry,
                 onSave = onSave

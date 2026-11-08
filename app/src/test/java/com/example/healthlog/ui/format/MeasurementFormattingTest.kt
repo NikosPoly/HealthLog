@@ -55,7 +55,7 @@ class MeasurementFormattingTest {
     }
 
     @Test
-    fun olderEntryWithDecimals_keepsThemWithTheLanguagesSeparator() {
+    fun olderMeasurementWithDecimals_keepsThemWithTheLanguagesSeparator() {
         // Saved before whole-number fields stopped accepting decimals.
         val height = Measurement(type = MeasurementType.HEIGHT, value = 175.5)
         assertEquals("175.5 cm", formatMeasurementValue(height, '.'))

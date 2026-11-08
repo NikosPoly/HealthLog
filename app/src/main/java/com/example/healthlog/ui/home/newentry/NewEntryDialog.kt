@@ -1,4 +1,4 @@
-package com.example.healthlog.ui.home.newmeasurement
+package com.example.healthlog.ui.home.newentry
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,15 +33,15 @@ import com.example.healthlog.ui.format.decimalSeparator
 import com.example.healthlog.ui.theme.icon
 
 @Composable
-fun MeasurementEntryDialog(
+fun NewEntryDialog(
     type: MeasurementType,
     onDismiss: () -> Unit,
     onSave: (Measurement) -> Unit
 ) {
     // Everything the user has typed and done in the dialog, with the dialog's rules
-    // (see MeasurementEntryState.kt). rememberSaveable keeps it when the screen is rotated.
+    // (see NewEntryState.kt). rememberSaveable keeps it when the screen is rotated.
     var state by rememberSaveable(stateSaver = entryStateSaver) {
-        mutableStateOf(MeasurementEntryState.initial(type))
+        mutableStateOf(NewEntryState.initial(type))
     }
 
     // The decimal separator of the current language: "," in Greek, "." in English.
@@ -90,7 +90,7 @@ fun MeasurementEntryDialog(
             ) {
                 // One text field per value of the type.
                 type.fields.forEachIndexed { index, field ->
-                    MeasurementFieldInput(
+                    EntryFieldInput(
                         field = field,
                         text = state.texts[index],
                         error = state.visibleError(index),
@@ -146,11 +146,11 @@ fun MeasurementEntryDialog(
 
 // Saves the dialog's state across rotation: the type by name, plus the typed texts,
 // the left fields and the focused field, which Android can store as they are.
-private val entryStateSaver = listSaver<MeasurementEntryState, Any?>(
+private val entryStateSaver = listSaver<NewEntryState, Any?>(
     save = { listOf(it.type.name, it.texts, it.leftFields, it.focusedIndex) },
     restore = {
         @Suppress("UNCHECKED_CAST")
-        MeasurementEntryState(
+        NewEntryState(
             type = MeasurementType.valueOf(it[0] as String),
             texts = it[1] as List<String>,
             leftFields = it[2] as List<Boolean>,

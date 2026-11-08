@@ -13,8 +13,8 @@ The app is available in Greek and English.
   right; newest first. Each entry is a card with its date and time, its value and a bin to
   delete it. The last selected type is remembered while the app is open
 - **Blood pressure includes the pulse:** saving a blood pressure also saves its pulse as a
-  separate Pulse entry, so it appears in both histories. The two entries are independent:
-  deleting one keeps the other
+  separate Pulse measurement, so it appears in both histories. The two measurements are
+  independent: deleting one keeps the other
 - **Charts per measurement type:** a "See Chart" / "See Entries" button switches the history
   between the list and a line chart over time (blood pressure: systolic and diastolic). Tapping a
   point shows its value, date and time
@@ -58,8 +58,8 @@ healthlog/
 ├── repository/              MeasurementRepository, the single access point to the data
 ├── model/                   measurement types (fields, units, ranges) and validation rules
 └── ui/                      navigation (HealthLogNavHost)
-    ├── home/                home screen: the measurement type cards, with their icons
-    │   └── newmeasurement/  adding a measurement: the entry dialog, its state and inputs
+    ├── home/                home screen: the type picker cards, with their icons
+    │   └── newentry/        adding an entry: the new-entry dialog, its state and inputs
     ├── history/             history screen: the type tabs, the list/chart switch, deleting
     │   ├── list/            the list mode: the entry cards
     │   └── chart/           the chart mode: the chart page, the period card, the last entry card,
@@ -74,9 +74,9 @@ healthlog/
 Each screen is split into a **Screen** (connects the ViewModel to the UI) and a **Content**
 (layout only, previewable in Android Studio).
 
-Larger components are split by responsibility. For example, the entry dialog consists of
-`MeasurementEntryDialog` (layout) and `MeasurementEntryState` (its state and rules, unit-tested)
-plus `MeasurementFieldInput`, `NumberInput` and `FocusModifiers`, all in `ui/home/newmeasurement/`.
+Larger components are split by responsibility. For example, the new-entry dialog consists of
+`NewEntryDialog` (layout) and `NewEntryState` (its state and rules, unit-tested)
+plus `EntryFieldInput`, `NumberInput` and `FocusModifiers`, all in `ui/home/newentry/`.
 Most components have a `@Preview` (dialogs can't be shown in the preview).
 
 Each type's color scheme comes from `TypeTheme` in `ui/theme/`: wrapping a part of the screen in
@@ -85,6 +85,18 @@ themselves. The seed color of each type and the style of the schemes are set the
 
 The icons in `app/src/main/res/drawable/` were drawn for HealthLog. Most are multicolored, so
 they are shown with `tint = Color.Unspecified` to keep their colors.
+
+### Naming: measurement and entry
+
+- A **measurement** is the values themselves, e.g. 130/80 mmHg with a pulse of 72, taken at a
+  certain time. It is what gets stored, so the data side uses this word: `Measurement`,
+  `MeasurementType`, `MeasurementRepository`, `validateMeasurement`, and code that works on the
+  values, such as `formatMeasurementValue` and the stats.
+- An **entry** is how the screens show a measurement: the entry cards, the entries list, the
+  new-entry dialog. So these components are named `Entry…` (`EntryCard`, `EntryList`,
+  `NewEntryDialog`, `NewEntryState`, `EntryFieldInput`, `EntryChart`), and the texts say "entry".
+
+So a line like `EntryCard(measurement: Measurement)` reads as "an entry card showing a measurement".
 
 All displayed texts are in `app/src/main/res/values/strings.xml` (English, the default)
 and `app/src/main/res/values-el/strings.xml` (Greek). Each language also defines its own
@@ -106,7 +118,7 @@ There are two kinds of tests:
 - `MeasurementValidationTest`: the validation rules
 - `MeasurementTypeTest`: the rules of the measurement types (stored names, fields, ranges)
 - `NumberInputTest`: what can be typed into number fields
-- `MeasurementEntryStateTest`: the entry dialog's state and rules
+- `NewEntryStateTest`: the new-entry dialog's state and rules
 - `MeasurementFormattingTest`: how measurement values are shown (units, decimals, separator)
 - `DateFormattingTest`: the date format of each language
 - `ValidationMessagesTest`: how range limits are shown in error messages
@@ -117,7 +129,7 @@ There are two kinds of tests:
 
 **Instrumented tests** (`app/src/androidTest`, run on an emulator or device):
 - `MigrationTest`: the database migrations
-- `MeasurementEntryDialogTest`: the entry dialog's UI
+- `NewEntryDialogTest`: the new-entry dialog's UI
 - `HistoryContentTest`: the history's tabs, swiping, empty pages, deleting, the See Chart
   button and the period chips
 - `ChartPageTest`: the chart page: the period card (chart or empty message, stats) and the last

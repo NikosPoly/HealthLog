@@ -14,7 +14,7 @@ fun formatMeasurementValue(measurement: Measurement, decimalSeparator: Char): St
         val pressure = "${measurement.value.toInt()}/" +
                 "${measurement.secondaryValue?.toInt() ?: "?"} ${fields[0].unit}"
 
-        // Older entries have no pulse, so show it only when present.
+        // Older measurements have no pulse, so show it only when present.
         val pulse = measurement.tertiaryValue?.let { " · ${it.toInt()} ${fields[2].unit}" } ?: ""
 
         pressure + pulse
@@ -33,6 +33,6 @@ fun formatMeasurementValue(measurement: Measurement, decimalSeparator: Char): St
     }
 }
 
-// Whole numbers without ".0" (180 cm); older entries with real decimals keep them (5.6).
+// Whole numbers without ".0" (180 cm); older measurements with real decimals keep them (5.6).
 private fun formatNumber(value: Double): String =
     if (value % 1.0 == 0.0) value.toLong().toString() else value.toString()

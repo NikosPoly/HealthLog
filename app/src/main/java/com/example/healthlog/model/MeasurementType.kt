@@ -41,8 +41,8 @@ enum class MeasurementType(
         listOf(MeasurementField(R.string.type_pulse, "bpm", minValue = 30.0, maxValue = 300.0))
     ),
     BLOOD_SUGAR(
-        R.string.type_blood_sugar,
-        listOf(MeasurementField(R.string.type_blood_sugar, "mg/dL", minValue = 30.0, maxValue = 650.0))
+        R.string.type_blood_glucose,
+        listOf(MeasurementField(R.string.type_blood_glucose, "mg/dL", minValue = 30.0, maxValue = 650.0))
     ),
     WEIGHT(
         R.string.type_weight,
