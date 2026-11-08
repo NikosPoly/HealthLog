@@ -1,6 +1,6 @@
 <resources>
     <!-- Greek. The default language (English) is in values/strings.xml. -->
-    <!-- app_name is not repeated here: it is the same in every language. -->
+    <!-- app_name and home_title are not repeated here: they are the same in every language. -->
 
     <!-- Number and date formats of this language (see values/strings.xml). -->
     <string name="format_locale">el</string>
@@ -13,7 +13,6 @@
     <string name="delete_dialog_details">%1$s: %2$s</string>
 
     <!-- Home screen -->
-    <string name="home_title">Ημερολόγιο Υγείας</string>
     <string name="home_new_entry">Νέα Καταχώριση</string>
 
     <!-- History screen -->

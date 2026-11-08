@@ -18,7 +18,7 @@
     <string name="delete_dialog_details">%1$s: %2$s</string>
 
     <!-- Home screen -->
-    <string name="home_title">Health Log</string>
+    <string name="home_title" translatable="false">HealthLog</string>
     <string name="home_new_entry">New Entry</string>
 
     <!-- History screen -->
