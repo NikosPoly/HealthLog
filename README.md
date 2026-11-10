@@ -25,9 +25,13 @@ The app is available in Greek and English.
   message
 - **Last entry card:** below the period card, whatever the period: the last entry's value and when
   it was recorded (e.g. "3 hours ago", "yesterday", "2 months ago") with its date and time
-- **A color per type:** red for blood pressure, pink for pulse, orange for blood sugar, green for
+- **A color per type and fixed brand identity:** red for blood pressure, pink for pulse, orange for blood sugar, green for
   weight and blue for height. Each type's history page, home card and entry dialog are in its
-  color, in light and dark mode. The rest of the app follows the phone's colors (Android 12+)
+  color, in light and dark mode. The app's overall theme is built around a dedicated brand pink
+  (`BrandSeedColor`), matching the app icon across all devices
+- **Brand identity & icon:** custom adaptive app icon (ring, heart outline, heartbeat line)
+  with support for Android 13+ themed icons. The home screen features a polished top bar with
+  the brand icon and a two-tone "HealthLog" title
 - **Own icons:** each type, each stat and the buttons have their own multicolored icons
 - **Delete with confirmation:** the bin on a card asks before deleting
 - **Input validation:** every value is checked against a range; errors are shown under the field
@@ -74,17 +78,19 @@ healthlog/
 Each screen is split into a **Screen** (connects the ViewModel to the UI) and a **Content**
 (layout only, previewable in Android Studio).
 
-Larger components are split by responsibility. For example, the new-entry dialog consists of
-`NewEntryDialog` (layout) and `NewEntryState` (its state and rules, unit-tested)
-plus `EntryFieldInput`, `NumberInput` and `FocusModifiers`, all in `ui/home/newentry/`.
-Most components have a `@Preview` (dialogs can't be shown in the preview).
+The Home screen provides direct entry creation from each metric card without a redundant floating action button.
+In the History screen, tab switching and page swipes are decoupled so swipe transitions remain fluid, updating
+the selected type state only once the gesture settles.
 
 Each type's color scheme comes from `TypeTheme` in `ui/theme/`: wrapping a part of the screen in
 `TypeTheme(type)` gives it that type's colors, so its cards, chips, buttons and chart follow by
 themselves. The seed color of each type and the style of the schemes are set there.
+The overall app theme (`HealthLogTheme`) uses `BrandSeedColor` as its seed color, providing a consistent brand
+appearance across light and dark modes.
 
 The icons in `app/src/main/res/drawable/` were drawn for HealthLog. Most are multicolored, so
-they are shown with `tint = Color.Unspecified` to keep their colors.
+they are shown with `tint = Color.Unspecified` to keep their colors. The app launcher icon and in-app brand logo
+(`ic_brand_logo.xml`) represent the core identity.
 
 ### Naming: measurement and entry
 
@@ -163,9 +169,21 @@ When changing the database:
 2. build the project, which creates the new schema file in `app/schemas/`
 3. add a test for the new migration in `MigrationTest`
 
+## Build Variants & Performance Testing
+
+The project defines three build types:
+- **`debug`:** default debuggable variant used during day-to-day development.
+- **`release`:** full R8 optimization and code shrinking enabled for production.
+- **`benchmark`:** mirrors the release configuration (full R8 optimization and shrinking) but is signed with the debug keystore. This allows testing real production performance and speed on any device without requiring a release signing key.
+
+To assemble the benchmark build:
+```bash
+./gradlew :app:assembleBenchmark
+```
+
 ## Roadmap
 
-- Own app colors and app icon (the type colors are done)
+- [x] Own app colors, branding and app icon
 - History list: a filter for out-of-range values
 - Charts: normal ranges shown on the chart, and exporting a report
 - User profiles with sign-up and log-in (including choosing the language in the app)

@@ -80,9 +80,11 @@ fun HistoryContent(
     // a tapped dot when the tap is outside the chart.
     var screenTap by remember { mutableStateOf<ScreenTap?>(null) }
 
-    // Reports the shown page, whether it changed by swiping or by tapping a tab.
+    // Reports the shown page once it has settled, whether it changed by swiping or by
+    // tapping a tab. Not halfway through a swipe: the ViewModel only hears about it at
+    // the end, so its update doesn't add work to the swipe.
     LaunchedEffect(pagerState) {
-        snapshotFlow { pagerState.currentPage }.collect { page ->
+        snapshotFlow { pagerState.settledPage }.collect { page ->
             onSelectType(types[page])
         }
     }

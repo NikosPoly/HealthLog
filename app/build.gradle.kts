@@ -23,10 +23,19 @@ android {
 
     buildTypes {
         release {
+            // R8 optimizes the whole app (code and libraries). The experimental packageScope
+            // (only androidx, kotlin, kotlinx) made the release build crash on start.
             optimization {
                 enable = true
-                packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
             }
+        }
+        // Like release (fast, optimized, not debuggable), but signed with the debug key,
+        // so it installs on any device without the release key. For trying the app's real
+        // speed: pick "benchmark" in Build Variants. Not for publishing.
+        create("benchmark") {
+            initWith(getByName("release"))
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += listOf("release")
         }
     }
     compileOptions {
