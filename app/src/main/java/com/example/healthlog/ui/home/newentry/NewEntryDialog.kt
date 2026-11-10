@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -114,32 +115,35 @@ fun NewEntryDialog(
                         OptionSelectorGroup(
                             title = stringResource(R.string.section_arm),
                             options = listOf(
-                                SelectorOption(com.example.healthlog.model.MeasurementArm.LEFT, stringResource(R.string.arm_left)),
-                                SelectorOption(com.example.healthlog.model.MeasurementArm.RIGHT, stringResource(R.string.arm_right))
+                                SelectorOption(com.example.healthlog.model.MeasurementArm.LEFT, stringResource(R.string.arm_left), R.drawable.ic_arm_left),
+                                SelectorOption(com.example.healthlog.model.MeasurementArm.RIGHT, stringResource(R.string.arm_right), R.drawable.ic_arm_right)
                             ),
                             selectedValue = state.arm,
-                            onSelect = { state = state.withArm(it) }
+                            onSelect = { state = state.withArm(it) },
+                            modifier = Modifier.padding(vertical = 4.dp)
                         )
 
                         OptionSelectorGroup(
                             title = stringResource(R.string.section_position),
                             options = listOf(
-                                SelectorOption(com.example.healthlog.model.BodyPosition.SITTING, stringResource(R.string.position_sitting)),
-                                SelectorOption(com.example.healthlog.model.BodyPosition.STANDING, stringResource(R.string.position_standing)),
-                                SelectorOption(com.example.healthlog.model.BodyPosition.LYING_DOWN, stringResource(R.string.position_lying_down))
+                                SelectorOption(com.example.healthlog.model.BodyPosition.SITTING, stringResource(R.string.position_sitting), R.drawable.ic_position_sitting),
+                                SelectorOption(com.example.healthlog.model.BodyPosition.LYING_DOWN, stringResource(R.string.position_lying_down), R.drawable.ic_position_lying),
+                                SelectorOption(com.example.healthlog.model.BodyPosition.STANDING, stringResource(R.string.position_standing), R.drawable.ic_position_standing)
                             ),
                             selectedValue = state.bodyPosition,
-                            onSelect = { state = state.withBodyPosition(it) }
+                            onSelect = { state = state.withBodyPosition(it) },
+                            modifier = Modifier.padding(vertical = 4.dp)
                         )
 
                         OptionSelectorGroup(
                             title = stringResource(R.string.section_arrhythmia),
                             options = listOf(
-                                SelectorOption(false, stringResource(R.string.arrhythmia_no)),
-                                SelectorOption(true, stringResource(R.string.arrhythmia_yes))
+                                SelectorOption(false, stringResource(R.string.arrhythmia_no), R.drawable.ic_arrhythmia_no),
+                                SelectorOption(true, stringResource(R.string.arrhythmia_yes), R.drawable.ic_arrhythmia_yes)
                             ),
                             selectedValue = state.hasArrhythmia,
-                            onSelect = { state = state.withArrhythmia(it) }
+                            onSelect = { state = state.withArrhythmia(it) },
+                            modifier = Modifier.padding(vertical = 4.dp)
                         )
                     }
 
@@ -147,11 +151,12 @@ fun NewEntryDialog(
                         OptionSelectorGroup(
                             title = stringResource(R.string.section_arrhythmia),
                             options = listOf(
-                                SelectorOption(false, stringResource(R.string.arrhythmia_no)),
-                                SelectorOption(true, stringResource(R.string.arrhythmia_yes))
+                                SelectorOption(false, stringResource(R.string.arrhythmia_no), R.drawable.ic_arrhythmia_no),
+                                SelectorOption(true, stringResource(R.string.arrhythmia_yes), R.drawable.ic_arrhythmia_yes)
                             ),
                             selectedValue = state.hasArrhythmia,
-                            onSelect = { state = state.withArrhythmia(it) }
+                            onSelect = { state = state.withArrhythmia(it) },
+                            modifier = Modifier.padding(vertical = 4.dp)
                         )
                     }
 
@@ -159,11 +164,12 @@ fun NewEntryDialog(
                         OptionSelectorGroup(
                             title = stringResource(R.string.section_meal_context),
                             options = listOf(
-                                SelectorOption(com.example.healthlog.model.MealContext.BEFORE_MEAL, stringResource(R.string.meal_before)),
-                                SelectorOption(com.example.healthlog.model.MealContext.AFTER_MEAL_2H, stringResource(R.string.meal_after_2h))
+                                SelectorOption(com.example.healthlog.model.MealContext.BEFORE_MEAL, stringResource(R.string.meal_before), R.drawable.ic_meal_before),
+                                SelectorOption(com.example.healthlog.model.MealContext.AFTER_MEAL_2H, stringResource(R.string.meal_after_2h), R.drawable.ic_meal_after)
                             ),
                             selectedValue = state.mealContext,
-                            onSelect = { state = state.withMealContext(it) }
+                            onSelect = { state = state.withMealContext(it) },
+                            modifier = Modifier.padding(vertical = 4.dp)
                         )
                     }
 

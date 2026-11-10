@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Morning rising sun / waking up fasting: "Before meal" (fasting state). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Horizon / bed surface line -->
+    <path
+        android:strokeColor="#78909C"
+        android:strokeWidth="1.6"
+        android:strokeLineCap="round"
+        android:pathData="M2,18h20" />
+    <!-- Rising morning sun half-circle above horizon -->
+    <path
+        android:fillColor="#FFA726"
+        android:strokeColor="#FB8C00"
+        android:strokeWidth="1.2"
+        android:pathData="M7,18a5,5 0 0,1 10,0z" />
+    <!-- Morning sun rays radiating upward -->
+    <path
+        android:strokeColor="#FB8C00"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:pathData="M12,7v3M6.5,9.5l2,2M17.5,9.5l-2,2M3.5,14.5l3,1M20.5,14.5l-3,1" />
+    <!-- Small coffee/tea cup silhouette on horizon (fasting start of day) -->
+    <path
+        android:fillColor="#546E7A"
+        android:pathData="M18.5,15h3v2c0,0.5 -0.5,1 -1,1h-1.5c-0.5,0 -0.5,-0.5 -0.5,-1v-2z" />
+</vector>

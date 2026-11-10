@@ -86,14 +86,14 @@
     <string name="arm_left">Left</string>
     <string name="arm_right">Right</string>
 
-    <string name="section_position">Body Position</string>
-    <string name="position_sitting">Sitting</string>
-    <string name="position_standing">Standing</string>
-    <string name="position_lying_down">Lying down</string>
+    <string name="section_position">Position</string>
+    <string name="position_sitting">Sit</string>
+    <string name="position_standing">Stand</string>
+    <string name="position_lying_down">Lie</string>
 
-    <string name="section_meal_context">Meal Context</string>
-    <string name="meal_before">Before meal</string>
-    <string name="meal_after_2h">~2 hours after meal</string>
+    <string name="section_meal_context">Meal</string>
+    <string name="meal_before">Before</string>
+    <string name="meal_after_2h">After 2h</string>
 
     <!-- Measurement types (single-value types also use these as their field label) -->
     <string name="type_blood_pressure">Blood Pressure</string>

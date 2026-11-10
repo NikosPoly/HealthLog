@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Heart with regular, calm rhythm ECG wave for "No" arrhythmia (normal sinus rhythm). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="20dp"
+    android:height="20dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Heart body in calm, healthy green -->
+    <path
+        android:fillColor="#81C784"
+        android:strokeColor="#2E7D32"
+        android:strokeWidth="1.2"
+        android:strokeLineJoin="round"
+        android:pathData="M12,4.5c-1.5,-2.5 -5,-2 -6.5,0.5 -1.8,3 0,6.5 6.5,13.5 6.5,-7 8.3,-10.5 6.5,-13.5 -1.5,-2.5 -5,-3 -6.5,-0.5z" />
+    <!-- Aorta and pulmonary vessels at top -->
+    <path
+        android:fillColor="#81C784"
+        android:strokeColor="#2E7D32"
+        android:strokeWidth="1.2"
+        android:strokeLineCap="round"
+        android:pathData="M10,4.5V2h2.5v2M13.5,4.5l1,-2.2 2,0.8 -0.8,2" />
+    <!-- Normal, steady regular heartbeat pulse line (single clean QRS peak) -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M1.5,12.5H8l1.5,-4.5 2,9 1.8,-5.5 1,1.5H22.5" />
+    <path
+        android:strokeColor="#1B5E20"
+        android:strokeWidth="1.0"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M1.5,12.5H8l1.5,-4.5 2,9 1.8,-5.5 1,1.5H22.5" />
+</vector>

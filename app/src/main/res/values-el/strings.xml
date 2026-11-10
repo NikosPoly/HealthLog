@@ -80,14 +80,14 @@
     <string name="arm_left">Αριστερό</string>
     <string name="arm_right">Δεξί</string>
 
-    <string name="section_position">Θέση Σώματος</string>
+    <string name="section_position">Θέση</string>
     <string name="position_sitting">Καθιστή</string>
     <string name="position_standing">Όρθια</string>
     <string name="position_lying_down">Ξαπλωτή</string>
 
-    <string name="section_meal_context">Σχέση με Γεύμα</string>
-    <string name="meal_before">Πριν το γεύμα</string>
-    <string name="meal_after_2h">~2 ώρες μετά το γεύμα</string>
+    <string name="section_meal_context">Γεύμα</string>
+    <string name="meal_before">Πριν</string>
+    <string name="meal_after_2h">Μετά 2ω</string>
 
     <!-- Measurement types (single-value types also use these as their field label) -->
     <string name="type_blood_pressure">Αρτηριακή Πίεση</string>
