@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Multi-colored calendar icon for HealthLog datetime picker.
+     Tint should be Color.Unspecified so its custom colors are preserved. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Calendar body background -->
+    <path
+        android:fillColor="#ECEFF1"
+        android:pathData="M19,4H5C3.9,4 3,4.9 3,6v14c0,1.1 0.9,2 2,2h14c1.1,0 2,-0.9 2,-2V6C21,4.9 20.1,4 19,4z" />
+    <!-- Top red/coral header -->
+    <path
+        android:fillColor="#E53935"
+        android:pathData="M19,4H5C3.9,4 3,4.9 3,6v3h18V6C21,4.9 20.1,4 19,4z" />
+    <!-- Ring binders -->
+    <path
+        android:fillColor="#78909C"
+        android:pathData="M7,2h2v4H7V2zM15,2h2v4h-2V2z" />
+    <!-- Date grid dots / squares -->
+    <path
+        android:fillColor="#1E88E5"
+        android:pathData="M6,11h3v3H6V11z" />
+    <path
+        android:fillColor="#43A047"
+        android:pathData="M10.5,11h3v3h-3V11z" />
+    <path
+        android:fillColor="#FB8C00"
+        android:pathData="M15,11h3v3h-3V11z" />
+    <path
+        android:fillColor="#8E24AA"
+        android:pathData="M6,15.5h3v3H6V15.5z" />
+    <path
+        android:fillColor="#E53935"
+        android:pathData="M10.5,15.5h3v3h-3V15.5z" />
+    <path
+        android:fillColor="#00ACC1"
+        android:pathData="M15,15.5h3v3h-3V15.5z" />
+</vector>

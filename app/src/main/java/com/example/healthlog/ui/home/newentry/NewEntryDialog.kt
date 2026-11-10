@@ -108,9 +108,77 @@ fun NewEntryDialog(
                     )
                 }
 
-                Text(
-                    stringResource(R.string.entry_timestamp_note),
-                    style = MaterialTheme.typography.bodySmall
+                // Measurement options depending on type
+                when (type) {
+                    MeasurementType.BLOOD_PRESSURE -> {
+                        OptionSelectorGroup(
+                            title = stringResource(R.string.section_arm),
+                            options = listOf(
+                                SelectorOption(com.example.healthlog.model.MeasurementArm.LEFT, stringResource(R.string.arm_left)),
+                                SelectorOption(com.example.healthlog.model.MeasurementArm.RIGHT, stringResource(R.string.arm_right))
+                            ),
+                            selectedValue = state.arm,
+                            onSelect = { state = state.withArm(it) }
+                        )
+
+                        OptionSelectorGroup(
+                            title = stringResource(R.string.section_position),
+                            options = listOf(
+                                SelectorOption(com.example.healthlog.model.BodyPosition.SITTING, stringResource(R.string.position_sitting)),
+                                SelectorOption(com.example.healthlog.model.BodyPosition.STANDING, stringResource(R.string.position_standing)),
+                                SelectorOption(com.example.healthlog.model.BodyPosition.LYING_DOWN, stringResource(R.string.position_lying_down))
+                            ),
+                            selectedValue = state.bodyPosition,
+                            onSelect = { state = state.withBodyPosition(it) }
+                        )
+
+                        OptionSelectorGroup(
+                            title = stringResource(R.string.section_arrhythmia),
+                            options = listOf(
+                                SelectorOption(false, stringResource(R.string.arrhythmia_no)),
+                                SelectorOption(true, stringResource(R.string.arrhythmia_yes))
+                            ),
+                            selectedValue = state.hasArrhythmia,
+                            onSelect = { state = state.withArrhythmia(it) }
+                        )
+                    }
+
+                    MeasurementType.PULSE -> {
+                        OptionSelectorGroup(
+                            title = stringResource(R.string.section_arrhythmia),
+                            options = listOf(
+                                SelectorOption(false, stringResource(R.string.arrhythmia_no)),
+                                SelectorOption(true, stringResource(R.string.arrhythmia_yes))
+                            ),
+                            selectedValue = state.hasArrhythmia,
+                            onSelect = { state = state.withArrhythmia(it) }
+                        )
+                    }
+
+                    MeasurementType.BLOOD_SUGAR -> {
+                        OptionSelectorGroup(
+                            title = stringResource(R.string.section_meal_context),
+                            options = listOf(
+                                SelectorOption(com.example.healthlog.model.MealContext.BEFORE_MEAL, stringResource(R.string.meal_before)),
+                                SelectorOption(com.example.healthlog.model.MealContext.AFTER_MEAL_2H, stringResource(R.string.meal_after_2h))
+                            ),
+                            selectedValue = state.mealContext,
+                            onSelect = { state = state.withMealContext(it) }
+                        )
+                    }
+
+                    MeasurementType.WEIGHT,
+                    MeasurementType.HEIGHT -> {
+                        // No extra clinical context options
+                    }
+                }
+
+                // Date and time selection (automatic or custom)
+                DateTimePickerSection(
+                    useCurrentDateTime = state.useCurrentDateTime,
+                    timestamp = state.customTimestamp,
+                    onUseCurrentChange = { state = state.withUseCurrentDateTime(it) },
+                    onTimestampChange = { state = state.withCustomTimestamp(it) }
                 )
 
                 Text(

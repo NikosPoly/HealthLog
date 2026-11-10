@@ -150,4 +150,53 @@ class NewEntryDialogTest {
         ).assertExists()
         saveButton().assertIsNotEnabled()
     }
+
+    @Test
+    fun bloodPressure_enablesSaveOnlyWhenAllOptionsSelected() {
+        val bp = MeasurementType.BLOOD_PRESSURE
+        open(bp)
+        field(bp.fields[0]).performTextInput("120")
+        field(bp.fields[1]).performTextInput("80")
+        field(bp.fields[2]).performTextInput("72")
+
+        // Numbers are valid, but options are not selected yet -> Save disabled
+        saveButton().assertIsNotEnabled()
+
+        // Select Left arm
+        composeRule.onNodeWithText(text(R.string.arm_left)).performClick()
+        saveButton().assertIsNotEnabled()
+
+        // Select Sitting
+        composeRule.onNodeWithText(text(R.string.position_sitting)).performClick()
+        saveButton().assertIsNotEnabled()
+
+        // Select No arrhythmia
+        composeRule.onNodeWithText(text(R.string.arrhythmia_no)).performClick()
+
+        // Now all required fields and options are selected -> Save enabled
+        saveButton().assertIsEnabled()
+        saveButton().performClick()
+
+        assertEquals(MeasurementType.BLOOD_PRESSURE, saved?.type)
+        assertEquals("LEFT", saved?.arm)
+        assertEquals("SITTING", saved?.bodyPosition)
+        assertEquals(false, saved?.hasArrhythmia)
+    }
+
+    @Test
+    fun customDateTime_checkboxTogglesDateTimeButtons() {
+        open(height)
+
+        val checkboxText = text(R.string.entry_use_current_datetime)
+        val selectDateText = text(R.string.entry_select_date)
+
+        // Checkbox is checked by default
+        composeRule.onNodeWithText(checkboxText).assertExists()
+
+        // Uncheck to show date/time pickers
+        composeRule.onNodeWithText(checkboxText).performClick()
+
+        // After unchecking, the date and time picker buttons exist
+        composeRule.onNodeWithText(selectDateText, substring = true).assertDoesNotExist() // buttons have formatted date
+    }
 }
