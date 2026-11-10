@@ -20,5 +20,17 @@ data class Measurement(
     // Nullable because measurements saved before this column existed have no pulse.
     val tertiaryValue: Double? = null,
 
+    // Whether an arrhythmia / irregular heartbeat was detected (for BP and Pulse).
+    val hasArrhythmia: Boolean? = null,
+
+    // Meal context for blood glucose (e.g. BEFORE_MEAL, AFTER_MEAL_2H).
+    val mealContext: String? = null,
+
+    // Arm used for blood pressure (e.g. LEFT, RIGHT).
+    val arm: String? = null,
+
+    // Body position during blood pressure measurement (e.g. SITTING, STANDING, LYING_DOWN).
+    val bodyPosition: String? = null,
+
     val timestamp: Long = System.currentTimeMillis()
 )

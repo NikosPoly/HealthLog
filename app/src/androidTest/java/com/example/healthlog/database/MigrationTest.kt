@@ -107,7 +107,7 @@ class MigrationTest {
         }
 
         helper.runMigrationsAndValidate(
-            testDatabase, 3, true, HealthDatabase.MIGRATION_1_2, HealthDatabase.MIGRATION_2_3
+            testDatabase, 4, true, HealthDatabase.MIGRATION_1_2, HealthDatabase.MIGRATION_2_3, HealthDatabase.MIGRATION_3_4
         ).close()
 
         val database = Room.databaseBuilder(
@@ -115,7 +115,7 @@ class MigrationTest {
             HealthDatabase::class.java,
             testDatabase
         )
-            .addMigrations(HealthDatabase.MIGRATION_1_2, HealthDatabase.MIGRATION_2_3)
+            .addMigrations(HealthDatabase.MIGRATION_1_2, HealthDatabase.MIGRATION_2_3, HealthDatabase.MIGRATION_3_4)
             .build()
 
         try {
@@ -132,8 +132,64 @@ class MigrationTest {
             assertEquals(1, bloodPressures.size)
             assertEquals(85.0, bloodPressures[0].secondaryValue!!, 0.0)
             assertEquals(null, bloodPressures[0].tertiaryValue)
+            assertEquals(null, bloodPressures[0].hasArrhythmia)
+            assertEquals(null, bloodPressures[0].arm)
+            assertEquals(null, bloodPressures[0].bodyPosition)
+            assertEquals(null, bloodPressures[0].mealContext)
         } finally {
             database.close()
+        }
+    }
+
+    // Version 3 → 4: the clinical context columns (hasArrhythmia, mealContext, arm, bodyPosition)
+    // are added as nullable columns; existing rows are preserved with null for the new columns.
+    @Test
+    fun migrate3To4_keepsDataAndAddsEmptyContextColumns() {
+        helper.createDatabase(testDatabase, 3).apply {
+            execSQL(
+                "INSERT INTO measurements (id, type, value, secondaryValue, tertiaryValue, timestamp) " +
+                        "VALUES (1, 'BLOOD_PRESSURE', 120, 80, 72, 1000)"
+            )
+            execSQL(
+                "INSERT INTO measurements (id, type, value, timestamp) " +
+                        "VALUES (2, 'BLOOD_SUGAR', 95, 2000)"
+            )
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(
+            testDatabase, 4, true, HealthDatabase.MIGRATION_3_4
+        )
+
+        db.query(
+            "SELECT id, type, value, secondaryValue, tertiaryValue, timestamp, " +
+                    "hasArrhythmia, mealContext, arm, bodyPosition FROM measurements ORDER BY id"
+        ).use { cursor ->
+            assertEquals(2, cursor.count)
+
+            cursor.moveToFirst()
+            assertEquals(1L, cursor.getLong(0))
+            assertEquals("BLOOD_PRESSURE", cursor.getString(1))
+            assertEquals(120.0, cursor.getDouble(2), 0.0)
+            assertEquals(80.0, cursor.getDouble(3), 0.0)
+            assertEquals(72.0, cursor.getDouble(4), 0.0)
+            assertEquals(1000L, cursor.getLong(5))
+            assertTrue(cursor.isNull(6))
+            assertTrue(cursor.isNull(7))
+            assertTrue(cursor.isNull(8))
+            assertTrue(cursor.isNull(9))
+
+            cursor.moveToNext()
+            assertEquals(2L, cursor.getLong(0))
+            assertEquals("BLOOD_SUGAR", cursor.getString(1))
+            assertEquals(95.0, cursor.getDouble(2), 0.0)
+            assertTrue(cursor.isNull(3))
+            assertTrue(cursor.isNull(4))
+            assertEquals(2000L, cursor.getLong(5))
+            assertTrue(cursor.isNull(6))
+            assertTrue(cursor.isNull(7))
+            assertTrue(cursor.isNull(8))
+            assertTrue(cursor.isNull(9))
         }
     }
 }

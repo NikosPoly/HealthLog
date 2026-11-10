@@ -9,7 +9,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [Measurement::class],
-    version = 3,
+    version = 4,
     exportSchema = true
 )
 abstract class HealthDatabase : RoomDatabase() {
@@ -40,6 +40,21 @@ abstract class HealthDatabase : RoomDatabase() {
             }
         }
 
+        // Version 3 → 4: add clinical context columns:
+        // - hasArrhythmia: 0/1 integer (boolean) for arrhythmia detection
+        // - mealContext: text name of MealContext enum
+        // - arm: text name of MeasurementArm enum
+        // - bodyPosition: text name of BodyPosition enum
+        // Older records have null for all new columns.
+        internal val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE measurements ADD COLUMN hasArrhythmia INTEGER")
+                db.execSQL("ALTER TABLE measurements ADD COLUMN mealContext TEXT")
+                db.execSQL("ALTER TABLE measurements ADD COLUMN arm TEXT")
+                db.execSQL("ALTER TABLE measurements ADD COLUMN bodyPosition TEXT")
+            }
+        }
+
         fun getDatabase(context: Context): HealthDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -47,7 +62,7 @@ abstract class HealthDatabase : RoomDatabase() {
                     HealthDatabase::class.java,
                     "health_database"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                     .build()
 
                 INSTANCE = instance
