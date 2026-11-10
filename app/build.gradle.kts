@@ -38,6 +38,7 @@ android {
             matchingFallbacks += listOf("release")
         }
     }
+    testBuildType = "debug"
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11

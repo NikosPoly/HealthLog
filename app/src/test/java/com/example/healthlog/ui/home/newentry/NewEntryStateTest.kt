@@ -117,13 +117,65 @@ class NewEntryStateTest {
     }
 
     @Test
-    fun bloodPressure_isSavedInThreeColumns() {
-        val measurement = bloodPressure
+    fun bloodPressure_requiresArmPositionAndArrhythmia() {
+        val numbersOnly = bloodPressure
             .withText(0, "120").withText(1, "80").withText(2, "72")
-            .toMeasurement()!!
+        assertFalse(numbersOnly.isValid)
+        assertNull(numbersOnly.toMeasurement())
+
+        val withArmOnly = numbersOnly.withArm(com.example.healthlog.model.MeasurementArm.LEFT)
+        assertFalse(withArmOnly.isValid)
+
+        val withPositionOnly = withArmOnly.withBodyPosition(com.example.healthlog.model.BodyPosition.SITTING)
+        assertFalse(withPositionOnly.isValid)
+
+        val complete = withPositionOnly.withArrhythmia(false)
+        assertTrue(complete.isValid)
+
+        val measurement = complete.toMeasurement()!!
         assertEquals(120.0, measurement.value, 0.0)
         assertEquals(80.0, measurement.secondaryValue!!, 0.0)
         assertEquals(72.0, measurement.tertiaryValue!!, 0.0)
+        assertEquals("LEFT", measurement.arm)
+        assertEquals("SITTING", measurement.bodyPosition)
+        assertEquals(false, measurement.hasArrhythmia)
+    }
+
+    @Test
+    fun pulse_requiresArrhythmiaSelection() {
+        val pulse = NewEntryState.initial(MeasurementType.PULSE)
+        val withNumber = pulse.withText(0, "75")
+        assertFalse(withNumber.isValid)
+
+        val withArrhythmia = withNumber.withArrhythmia(true)
+        assertTrue(withArrhythmia.isValid)
+        val measurement = withArrhythmia.toMeasurement()!!
+        assertEquals(75.0, measurement.value, 0.0)
+        assertEquals(true, measurement.hasArrhythmia)
+    }
+
+    @Test
+    fun bloodSugar_requiresMealContext() {
+        val sugar = NewEntryState.initial(MeasurementType.BLOOD_SUGAR)
+        val withNumber = sugar.withText(0, "105")
+        assertFalse(withNumber.isValid)
+
+        val withMeal = withNumber.withMealContext(com.example.healthlog.model.MealContext.BEFORE_MEAL)
+        assertTrue(withMeal.isValid)
+        val measurement = withMeal.toMeasurement()!!
+        assertEquals(105.0, measurement.value, 0.0)
+        assertEquals("BEFORE_MEAL", measurement.mealContext)
+    }
+
+    @Test
+    fun customDateTime_isUsedWhenUseCurrentDateTimeIsFalse() {
+        val customTime = 1700000000000L
+        val measurement = weight
+            .withText(0, "70")
+            .withUseCurrentDateTime(false)
+            .withCustomTimestamp(customTime)
+            .toMeasurement()!!
+        assertEquals(customTime, measurement.timestamp)
     }
 
     @Test

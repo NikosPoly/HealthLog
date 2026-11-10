@@ -144,17 +144,36 @@ fun NewEntryDialog(
     )
 }
 
-// Saves the dialog's state across rotation: the type by name, plus the typed texts,
-// the left fields and the focused field, which Android can store as they are.
+// Saves the dialog's state across rotation: the type by name, the typed texts,
+// the left fields, focused field, and all clinical options and custom datetime.
 private val entryStateSaver = listSaver<NewEntryState, Any?>(
-    save = { listOf(it.type.name, it.texts, it.leftFields, it.focusedIndex) },
+    save = {
+        listOf(
+            it.type.name,
+            it.texts,
+            it.leftFields,
+            it.focusedIndex,
+            it.hasArrhythmia,
+            it.arm?.name,
+            it.bodyPosition?.name,
+            it.mealContext?.name,
+            it.useCurrentDateTime,
+            it.customTimestamp
+        )
+    },
     restore = {
         @Suppress("UNCHECKED_CAST")
         NewEntryState(
             type = MeasurementType.valueOf(it[0] as String),
             texts = it[1] as List<String>,
             leftFields = it[2] as List<Boolean>,
-            focusedIndex = it[3] as Int?
+            focusedIndex = it[3] as Int?,
+            hasArrhythmia = it[4] as Boolean?,
+            arm = (it[5] as String?)?.let { armName -> com.example.healthlog.model.MeasurementArm.valueOf(armName) },
+            bodyPosition = (it[6] as String?)?.let { posName -> com.example.healthlog.model.BodyPosition.valueOf(posName) },
+            mealContext = (it[7] as String?)?.let { mealName -> com.example.healthlog.model.MealContext.valueOf(mealName) },
+            useCurrentDateTime = it[8] as Boolean,
+            customTimestamp = it[9] as Long
         )
     }
 )
