@@ -22,6 +22,7 @@ fun HistoryScreen(
     // Kept by HealthLogNavHost, so it is remembered when the history is opened again.
     selectedType: MeasurementType,
     onSelectType: (MeasurementType) -> Unit,
+    onOpenDetails: (Long) -> Unit = {},
     onBack: () -> Unit
 ) {
     // The list of every type, for the pages of the history.
