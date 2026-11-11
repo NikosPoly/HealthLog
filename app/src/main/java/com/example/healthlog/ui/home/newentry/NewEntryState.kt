@@ -38,7 +38,11 @@ data class NewEntryState(
     val useCurrentDateTime: Boolean = true,
 
     // Custom date/time in milliseconds, used when useCurrentDateTime is false.
-    val customTimestamp: Long = System.currentTimeMillis()
+    val customTimestamp: Long = System.currentTimeMillis(),
+
+    // Whether option errors have been revealed (by attempting to save or tapping elsewhere).
+    // Once true, it stays true until each option is selected.
+    val showOptionErrors: Boolean = false,
 ) {
     // The typed texts with "." as separator, e.g. "72,5" → "72.5". The validation and
     // the saved values always work with "."; only what is typed and shown uses the
@@ -62,9 +66,27 @@ data class NewEntryState(
             MeasurementType.HEIGHT -> true
         }
 
+    // Whether all numeric fields are filled and valid.
+    val isNumbersValid: Boolean get() = errors.all { it == null }
+
     // Save is possible only when every numeric field passes every check AND
     // all required option selections are made.
-    val isValid: Boolean get() = errors.all { it == null } && isOptionsValid
+    val isValid: Boolean get() = isNumbersValid && isOptionsValid
+
+    // Individual option error flags (true when option errors are revealed and this option is still unselected).
+    // Stays true until the user selects an option in this row.
+    val isArmError: Boolean
+        get() = type == MeasurementType.BLOOD_PRESSURE && showOptionErrors && arm == null
+
+    val isBodyPositionError: Boolean
+        get() = type == MeasurementType.BLOOD_PRESSURE && showOptionErrors && bodyPosition == null
+
+    val isArrhythmiaError: Boolean
+        get() = (type == MeasurementType.BLOOD_PRESSURE || type == MeasurementType.PULSE) &&
+                showOptionErrors && hasArrhythmia == null
+
+    val isMealContextError: Boolean
+        get() = type == MeasurementType.BLOOD_SUGAR && showOptionErrors && mealContext == null
 
     // The error of a field, only if it should be shown right now (see isErrorVisible).
     fun visibleError(index: Int): ValidationError? =
@@ -75,14 +97,17 @@ data class NewEntryState(
         copy(texts = texts.toMutableList().also { it[index] = text })
 
     // The user leaves the field they were in: from now on its errors are shown.
-    // Only used for the user's own actions, never when focus is lost by itself
-    // (e.g. on rotation), so rotating doesn't trigger errors.
+    // If all numbers are valid when leaving a field, option errors are permanently revealed
+    // until selected.
     fun leaveFocusedField(): NewEntryState {
         val index = focusedIndex ?: return this
+        val newLeftFields = if (leftFields[index]) leftFields
+        else leftFields.toMutableList().also { it[index] = true }
+        val shouldShowOptions = showOptionErrors || isNumbersValid
         return copy(
-            leftFields = if (leftFields[index]) leftFields
-            else leftFields.toMutableList().also { it[index] = true },
-            focusedIndex = null
+            leftFields = newLeftFields,
+            focusedIndex = null,
+            showOptionErrors = shouldShowOptions
         )
     }
 
@@ -92,6 +117,16 @@ data class NewEntryState(
     fun focusField(index: Int): NewEntryState =
         if (focusedIndex == index) this
         else leaveFocusedField().copy(focusedIndex = index)
+
+    // Called when the user attempts to save. Leaves any focused field, marks all fields
+    // as left so their validation messages appear, and permanently reveals missing option
+    // selection errors until each option is selected.
+    fun attemptSave(): NewEntryState =
+        copy(
+            leftFields = List(texts.size) { true },
+            focusedIndex = null,
+            showOptionErrors = true
+        )
 
     // Option selectors
     fun withArrhythmia(hasArrhythmia: Boolean): NewEntryState =

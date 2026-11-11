@@ -125,6 +125,7 @@ fun NewEntryDialog(
                                     SelectorOption(com.example.healthlog.model.MeasurementArm.RIGHT, stringResource(R.string.arm_right), R.drawable.ic_arm_right)
                                 ),
                                 selectedValue = state.arm,
+                                isError = state.isArmError,
                                 onSelect = {
                                     state = state.leaveFocusedField().withArm(it)
                                     focusManager.clearFocus()
@@ -140,6 +141,7 @@ fun NewEntryDialog(
                                     SelectorOption(com.example.healthlog.model.BodyPosition.STANDING, stringResource(R.string.position_standing), R.drawable.ic_position_standing)
                                 ),
                                 selectedValue = state.bodyPosition,
+                                isError = state.isBodyPositionError,
                                 onSelect = {
                                     state = state.leaveFocusedField().withBodyPosition(it)
                                     focusManager.clearFocus()
@@ -154,6 +156,7 @@ fun NewEntryDialog(
                                     SelectorOption(true, stringResource(R.string.arrhythmia_yes), R.drawable.ic_arrhythmia_yes)
                                 ),
                                 selectedValue = state.hasArrhythmia,
+                                isError = state.isArrhythmiaError,
                                 onSelect = {
                                     state = state.leaveFocusedField().withArrhythmia(it)
                                     focusManager.clearFocus()
@@ -170,6 +173,7 @@ fun NewEntryDialog(
                                     SelectorOption(true, stringResource(R.string.arrhythmia_yes), R.drawable.ic_arrhythmia_yes)
                                 ),
                                 selectedValue = state.hasArrhythmia,
+                                isError = state.isArrhythmiaError,
                                 onSelect = {
                                     state = state.leaveFocusedField().withArrhythmia(it)
                                     focusManager.clearFocus()
@@ -186,6 +190,7 @@ fun NewEntryDialog(
                                     SelectorOption(com.example.healthlog.model.MealContext.AFTER_MEAL_2H, stringResource(R.string.meal_after_2h), R.drawable.ic_meal_after)
                                 ),
                                 selectedValue = state.mealContext,
+                                isError = state.isMealContextError,
                                 onSelect = {
                                     state = state.leaveFocusedField().withMealContext(it)
                                     focusManager.clearFocus()
@@ -224,7 +229,7 @@ fun NewEntryDialog(
         },
         confirmButton = {
             // A disabled button swallows taps, so this Box notices them first.
-            Box(modifier = Modifier.clearFocusOnPress(onPress = { state = state.leaveFocusedField() })) {
+            Box(modifier = Modifier.clearFocusOnPress(onPress = { state = state.attemptSave() })) {
                 TextButton(
                     // Save is possible only when every field passes every check.
                     enabled = state.isValid,
@@ -260,7 +265,8 @@ private val entryStateSaver = listSaver<NewEntryState, Any?>(
             it.bodyPosition?.name,
             it.mealContext?.name,
             it.useCurrentDateTime,
-            it.customTimestamp
+            it.customTimestamp,
+            it.showOptionErrors
         )
     },
     restore = {
@@ -275,7 +281,8 @@ private val entryStateSaver = listSaver<NewEntryState, Any?>(
             bodyPosition = (it[6] as String?)?.let { posName -> com.example.healthlog.model.BodyPosition.valueOf(posName) },
             mealContext = (it[7] as String?)?.let { mealName -> com.example.healthlog.model.MealContext.valueOf(mealName) },
             useCurrentDateTime = it[8] as Boolean,
-            customTimestamp = it[9] as Long
+            customTimestamp = it[9] as Long,
+            showOptionErrors = if (it.size > 10) it[10] as Boolean else false
         )
     }
 )

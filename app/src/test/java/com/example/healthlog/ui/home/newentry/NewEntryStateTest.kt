@@ -212,4 +212,92 @@ class NewEntryStateTest {
     fun invalidState_cannotBeSaved() {
         assertNull(bloodPressure.withText(0, "80").withText(1, "120").withText(2, "72").toMeasurement())
     }
+
+    @Test
+    fun optionErrors_notShownInitially_orWhileSwitchingFields() {
+        val bp = NewEntryState.initial(MeasurementType.BLOOD_PRESSURE)
+        assertFalse(bp.showOptionErrors)
+        assertFalse(bp.isArmError)
+        assertFalse(bp.isBodyPositionError)
+        assertFalse(bp.isArrhythmiaError)
+
+        // User enters systolic and moves to diastolic field
+        val movingToNext = bp.focusField(0).withText(0, "120").focusField(1)
+        assertFalse(movingToNext.showOptionErrors)
+        assertFalse(movingToNext.isArmError)
+        assertFalse(movingToNext.isBodyPositionError)
+        assertFalse(movingToNext.isArrhythmiaError)
+    }
+
+    @Test
+    fun optionErrors_shownOnAttemptSave_andStickyUntilSelected() {
+        val bp = NewEntryState.initial(MeasurementType.BLOOD_PRESSURE)
+            .focusField(0).withText(0, "120")
+            .focusField(1).withText(1, "80")
+            .focusField(2).withText(2, "72")
+
+        // Tapping Save or tapping elsewhere reveals all missing option errors
+        val revealed = bp.attemptSave()
+        assertTrue(revealed.showOptionErrors)
+        assertTrue(revealed.isArmError)
+        assertTrue(revealed.isBodyPositionError)
+        assertTrue(revealed.isArrhythmiaError)
+
+        // Selecting arm clears its error, while position and arrhythmia remain red
+        val withArm = revealed.withArm(com.example.healthlog.model.MeasurementArm.LEFT)
+        assertFalse(withArm.isArmError)
+        assertTrue(withArm.isBodyPositionError)
+        assertTrue(withArm.isArrhythmiaError)
+
+        // User goes back to systolic field and enters invalid number "8"
+        val editingSystolic = withArm.focusField(0).withText(0, "8")
+        assertTrue("showOptionErrors must remain true while editing", editingSystolic.showOptionErrors)
+        assertFalse(editingSystolic.isArmError)
+        assertTrue("body position must remain in error", editingSystolic.isBodyPositionError)
+        assertTrue("arrhythmia must remain in error", editingSystolic.isArrhythmiaError)
+
+        // User leaves the field (or taps elsewhere again)
+        val leftFieldAgain = editingSystolic.attemptSave()
+        assertTrue("showOptionErrors must remain true after leaving field", leftFieldAgain.showOptionErrors)
+        assertFalse(leftFieldAgain.isArmError)
+        assertTrue("body position must remain in error", leftFieldAgain.isBodyPositionError)
+        assertTrue("arrhythmia must remain in error", leftFieldAgain.isArrhythmiaError)
+
+        // Selecting remaining options clears their respective errors one by one
+        val withPosition = leftFieldAgain.withBodyPosition(com.example.healthlog.model.BodyPosition.SITTING)
+        assertFalse(withPosition.isBodyPositionError)
+        assertTrue(withPosition.isArrhythmiaError)
+
+        val withArrhythmia = withPosition.withArrhythmia(false)
+        assertFalse(withArrhythmia.isArrhythmiaError)
+    }
+
+    @Test
+    fun attemptSave_immediatelyRevealsAllFieldErrorsAndOptionErrors() {
+        val bp = NewEntryState.initial(MeasurementType.BLOOD_PRESSURE)
+
+        // Initially no errors visible
+        assertEquals(listOf(false, false, false), bp.leftFields)
+        assertNull(bp.visibleError(0))
+        assertNull(bp.visibleError(1))
+        assertNull(bp.visibleError(2))
+        assertFalse(bp.isArmError)
+        assertFalse(bp.isBodyPositionError)
+        assertFalse(bp.isArrhythmiaError)
+
+        // User immediately clicks save on empty dialog
+        val saved = bp.attemptSave()
+
+        // All fields marked left, all required errors visible
+        assertEquals(listOf(true, true, true), saved.leftFields)
+        assertEquals(ValidationError.Required, saved.visibleError(0))
+        assertEquals(ValidationError.Required, saved.visibleError(1))
+        assertEquals(ValidationError.Required, saved.visibleError(2))
+
+        // All option errors visible
+        assertTrue(saved.showOptionErrors)
+        assertTrue(saved.isArmError)
+        assertTrue(saved.isBodyPositionError)
+        assertTrue(saved.isArrhythmiaError)
+    }
 }
