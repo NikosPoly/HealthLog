@@ -54,7 +54,6 @@
     <string name="action_delete">Delete</string>
 
     <!-- Entry dialog -->
-    <string name="entry_timestamp_note">The date and time are saved automatically.</string>
     <string name="entry_required_note">* Required field</string>
 
     <!-- Validation errors in the entry dialog -->
@@ -75,8 +74,6 @@
 
     <!-- Entry dialog options and context -->
     <string name="entry_use_current_datetime">Use current date and time</string>
-    <string name="entry_select_date">Select date</string>
-    <string name="entry_select_time">Select time</string>
 
     <string name="section_arrhythmia">Arrhythmia</string>
     <string name="arrhythmia_no">No</string>
