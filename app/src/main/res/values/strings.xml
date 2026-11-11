@@ -106,4 +106,5 @@
     <!-- Measurement Details -->
     <string name="details_title">Measurement Details</string>
     <string name="details_not_found">Measurement not found</string>
+    <string name="action_view_details">Details</string>
 </resources>

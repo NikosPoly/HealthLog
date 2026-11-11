@@ -21,6 +21,7 @@ import com.example.healthlog.database.Measurement
 @Composable
 internal fun EntryList(
     measurements: List<Measurement>,
+    onOpenDetails: (Long) -> Unit,
     onRequestDelete: (Measurement) -> Unit
 ) {
     if (measurements.isEmpty()) {
@@ -51,6 +52,9 @@ internal fun EntryList(
         ) { measurement ->
             EntryCard(
                 measurement = measurement,
+                onViewDetails = {
+                    onOpenDetails(measurement.id)
+                },
                 onDelete = {
                     onRequestDelete(measurement)
                 }

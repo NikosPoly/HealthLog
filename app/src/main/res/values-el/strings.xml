@@ -100,4 +100,5 @@
     <!-- Measurement Details -->
     <string name="details_title">Λεπτομέρειες Καταχώρισης</string>
     <string name="details_not_found">Η καταχώριση δεν βρέθηκε</string>
+    <string name="action_view_details">Λεπτομέρειες</string>
 </resources>

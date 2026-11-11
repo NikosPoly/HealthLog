@@ -60,6 +60,7 @@ fun HistoryScreen(
         onSelectType = onSelectType,
         onToggleChart = { showChart = !showChart },
         onSelectPeriod = { period = it },
+        onOpenDetails = onOpenDetails,
         onRequestDelete = viewModel::requestDelete,
         onConfirmDelete = viewModel::confirmDelete,
         onCancelDelete = viewModel::cancelDelete

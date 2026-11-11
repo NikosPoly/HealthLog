@@ -27,7 +27,8 @@ internal class PeriodStatItems(
 internal fun periodStatItems(
     type: MeasurementType,
     // The measurements in the chosen period. Not empty.
-    inPeriod: List<Measurement>
+    inPeriod: List<Measurement>,
+    onOpenDetails: ((Long) -> Unit)? = null
 ): PeriodStatItems {
     val stats = remember(inPeriod, type) { periodStats(inPeriod, type) }
     val separator = decimalSeparator()
@@ -36,6 +37,13 @@ internal fun periodStatItems(
         measurement
             ?.let { statValueText(it, separator) }
             ?: NO_VALUE
+
+    fun clickAction(measurement: Measurement?): (() -> Unit)? =
+        if (measurement != null && onOpenDetails != null) {
+            { onOpenDetails(measurement.id) }
+        } else {
+            null
+        }
 
     // The average is written like a measurement of the same type, e.g. "72.46 kg" or
     // "130/85 mmHg".
@@ -60,29 +68,42 @@ internal fun periodStatItems(
                 R.drawable.ic_stat_highest,
                 stringResource(R.string.stats_highest_systolic),
                 valueText(stats.primary?.highest),
-                Emphasis.SYSTOLIC
+                Emphasis.SYSTOLIC,
+                onClick = clickAction(stats.primary?.highest)
             ) to StatItem(
                 R.drawable.ic_stat_lowest,
                 stringResource(R.string.stats_lowest_systolic),
                 valueText(stats.primary?.lowest),
-                Emphasis.SYSTOLIC
+                Emphasis.SYSTOLIC,
+                onClick = clickAction(stats.primary?.lowest)
             ),
             StatItem(
                 R.drawable.ic_stat_highest,
                 stringResource(R.string.stats_highest_diastolic),
                 valueText(stats.secondary?.highest),
-                Emphasis.DIASTOLIC
+                Emphasis.DIASTOLIC,
+                onClick = clickAction(stats.secondary?.highest)
             ) to StatItem(
                 R.drawable.ic_stat_lowest,
                 stringResource(R.string.stats_lowest_diastolic),
                 valueText(stats.secondary?.lowest),
-                Emphasis.DIASTOLIC
+                Emphasis.DIASTOLIC,
+                onClick = clickAction(stats.secondary?.lowest)
             )
         )
     } else {
         listOf(
-            StatItem(R.drawable.ic_stat_highest, stringResource(R.string.stats_highest), valueText(stats.primary?.highest)) to
-                StatItem(R.drawable.ic_stat_lowest, stringResource(R.string.stats_lowest), valueText(stats.primary?.lowest))
+            StatItem(
+                R.drawable.ic_stat_highest,
+                stringResource(R.string.stats_highest),
+                valueText(stats.primary?.highest),
+                onClick = clickAction(stats.primary?.highest)
+            ) to StatItem(
+                R.drawable.ic_stat_lowest,
+                stringResource(R.string.stats_lowest),
+                valueText(stats.primary?.lowest),
+                onClick = clickAction(stats.primary?.lowest)
+            )
         )
     }
 

@@ -34,7 +34,8 @@ fun PeriodCard(
     inPeriod: List<Measurement>,
     // Passed on to the chart (see ChartPage).
     screenTap: ScreenTap?,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onOpenDetails: ((Long) -> Unit)? = null
 ) {
     if (inPeriod.isEmpty()) {
         Text(stringResource(R.string.chart_empty), modifier = modifier)
@@ -57,7 +58,7 @@ fun PeriodCard(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            val items = periodStatItems(type, inPeriod)
+            val items = periodStatItems(type, inPeriod, onOpenDetails)
             // Read aloud by screen readers, e.g. "Chart of Weight".
             val description = stringResource(R.string.chart_description, stringResource(type.label))
 

@@ -67,6 +67,7 @@ fun HistoryContent(
     // Called by the button that switches between the list and the chart.
     onToggleChart: () -> Unit,
     onSelectPeriod: (ChartPeriod) -> Unit,
+    onOpenDetails: (Long) -> Unit = {},
     onRequestDelete: (Measurement) -> Unit,
     onConfirmDelete: () -> Unit,
     onCancelDelete: () -> Unit
@@ -157,11 +158,13 @@ fun HistoryContent(
                                 type = type,
                                 measurements = measurements,
                                 period = period,
-                                screenTap = screenTap
+                                screenTap = screenTap,
+                                onOpenDetails = onOpenDetails
                             )
                         } else {
                             EntryList(
                                 measurements = measurements,
+                                onOpenDetails = onOpenDetails,
                                 onRequestDelete = onRequestDelete
                             )
                         }
