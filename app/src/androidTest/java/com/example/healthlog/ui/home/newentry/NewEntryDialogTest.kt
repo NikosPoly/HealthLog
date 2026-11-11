@@ -3,6 +3,7 @@ package com.example.healthlog.ui.home.newentry
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.StateRestorationTester
@@ -10,6 +11,9 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performImeAction
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.text.AnnotatedString
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -60,6 +64,9 @@ class NewEntryDialogTest {
 
     private fun outOfRange(min: Int, max: Int) =
         text(R.string.error_value_out_of_range, min.toString(), max.toString())
+
+    private fun hasErrorMessage(message: String) =
+        SemanticsMatcher.expectValue(SemanticsProperties.Error, message)
 
     private val height = MeasurementType.HEIGHT
     private val heightField = height.fields[0]
@@ -164,15 +171,15 @@ class NewEntryDialogTest {
         saveButton().assertIsNotEnabled()
 
         // Select Left arm (found by icon's contentDescription)
-        composeRule.onNodeWithContentDescription(text(R.string.arm_left)).performClick()
+        composeRule.onNodeWithContentDescription(text(R.string.arm_left)).performScrollTo().performClick()
         saveButton().assertIsNotEnabled()
 
         // Select Sitting
-        composeRule.onNodeWithContentDescription(text(R.string.position_sitting)).performClick()
+        composeRule.onNodeWithContentDescription(text(R.string.position_sitting)).performScrollTo().performClick()
         saveButton().assertIsNotEnabled()
 
         // Select No arrhythmia
-        composeRule.onNodeWithContentDescription(text(R.string.arrhythmia_no)).performClick()
+        composeRule.onNodeWithContentDescription(text(R.string.arrhythmia_no)).performScrollTo().performClick()
 
         // Now all required fields and options are selected -> Save enabled
         saveButton().assertIsEnabled()
@@ -194,7 +201,7 @@ class NewEntryDialogTest {
         composeRule.onNodeWithText(checkboxText).assertExists()
 
         // Uncheck to show date/time picker button
-        composeRule.onNodeWithText(checkboxText).performClick()
+        composeRule.onNodeWithText(checkboxText).performScrollTo().performClick()
 
         // Checkbox is still present and clickable
         composeRule.onNodeWithText(checkboxText).assertExists()
@@ -208,7 +215,7 @@ class NewEntryDialogTest {
         composeRule.onNodeWithText(outOfRange(30, 300), substring = true).assertDoesNotExist()
 
         // Tap the arrhythmia "No" option icon
-        composeRule.onNodeWithContentDescription(text(R.string.arrhythmia_no)).performClick()
+        composeRule.onNodeWithContentDescription(text(R.string.arrhythmia_no)).performScrollTo().performClick()
 
         // Error should now appear because tapping the option leaves the focused field
         composeRule.onNodeWithText(outOfRange(30, 300), substring = true).assertExists()
@@ -221,9 +228,90 @@ class NewEntryDialogTest {
         composeRule.onNodeWithText(outOfRange(30, 250), substring = true).assertDoesNotExist()
 
         // Tap the auto date checkbox
-        composeRule.onNodeWithText(text(R.string.entry_use_current_datetime)).performClick()
+        composeRule.onNodeWithText(text(R.string.entry_use_current_datetime)).performScrollTo().performClick()
 
         // Error should now appear because tapping the checkbox leaves the focused field
         composeRule.onNodeWithText(outOfRange(30, 250), substring = true).assertExists()
+    }
+
+    @Test
+    fun optionErrors_andFieldErrors_shownWhenTappingDisabledSave() {
+        val bp = MeasurementType.BLOOD_PRESSURE
+        open(bp)
+
+        // Initially no option error or required field error is displayed
+        composeRule.onAllNodes(hasErrorMessage("Selection required")).assertCountEquals(0)
+        composeRule.onAllNodes(androidx.compose.ui.test.hasText(text(R.string.error_required))).assertCountEquals(0)
+
+        // Tap disabled Save
+        saveButton().performClick()
+
+        // All 3 required option groups (Arm, Position, Arrhythmia) show errors
+        composeRule.onAllNodes(hasErrorMessage("Selection required")).assertCountEquals(3)
+
+        // All 3 numeric fields show Required error message
+        composeRule.onAllNodes(androidx.compose.ui.test.hasText(text(R.string.error_required))).assertCountEquals(3)
+
+        // Selecting Arm clears its error (2 remain)
+        composeRule.onNodeWithContentDescription(text(R.string.arm_left)).performScrollTo().performClick()
+        composeRule.onAllNodes(hasErrorMessage("Selection required")).assertCountEquals(2)
+    }
+
+    @Test
+    fun optionErrors_shownWhenAllNumbersEnteredAndDonePressed() {
+        val pulse = MeasurementType.PULSE
+        open(pulse)
+        field(pulse.fields[0]).performTextInput("75")
+
+        // While editing, no option error yet
+        composeRule.onAllNodes(hasErrorMessage("Selection required")).assertCountEquals(0)
+
+        // Press Done on the keyboard
+        field(pulse.fields[0]).performImeAction()
+
+        // Arrhythmia group now shows error because all numbers are valid
+        composeRule.onAllNodes(hasErrorMessage("Selection required")).assertCountEquals(1)
+
+        // Selecting arrhythmia clears the error
+        composeRule.onNodeWithContentDescription(text(R.string.arrhythmia_no)).performScrollTo().performClick()
+        composeRule.onAllNodes(hasErrorMessage("Selection required")).assertCountEquals(0)
+    }
+
+    @Test
+    fun optionErrors_remainStickyWhenNumbersBecomeInvalid() {
+        val bp = MeasurementType.BLOOD_PRESSURE
+        open(bp)
+
+        // Enter valid numbers in all 3 fields
+        field(bp.fields[0]).performTextInput("120")
+        field(bp.fields[1]).performTextInput("80")
+        field(bp.fields[2]).performTextInput("72")
+
+        // Done on last field leaves it and reveals option errors
+        field(bp.fields[2]).performImeAction()
+        composeRule.onAllNodes(hasErrorMessage("Selection required")).assertCountEquals(3)
+
+        // Select Left arm -> Arm error clears, 2 remain
+        composeRule.onNodeWithContentDescription(text(R.string.arm_left)).performScrollTo().performClick()
+        composeRule.onAllNodes(hasErrorMessage("Selection required")).assertCountEquals(2)
+
+        // User goes back to systolic field and replaces with invalid "8"
+        field(bp.fields[0]).performScrollTo().performTextClearance()
+        field(bp.fields[0]).performTextInput("8")
+
+        // Position and Arrhythmia must remain in error state
+        composeRule.onAllNodes(hasErrorMessage("Selection required")).assertCountEquals(2)
+
+        // Tap outside (e.g. Save button)
+        saveButton().performClick()
+        composeRule.onAllNodes(hasErrorMessage("Selection required")).assertCountEquals(2)
+
+        // Selecting Sitting position clears Position error (1 remains: Arrhythmia)
+        composeRule.onNodeWithContentDescription(text(R.string.position_sitting)).performScrollTo().performClick()
+        composeRule.onAllNodes(hasErrorMessage("Selection required")).assertCountEquals(1)
+
+        // Selecting No arrhythmia clears all option errors
+        composeRule.onNodeWithContentDescription(text(R.string.arrhythmia_no)).performScrollTo().performClick()
+        composeRule.onAllNodes(hasErrorMessage("Selection required")).assertCountEquals(0)
     }
 }

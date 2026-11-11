@@ -8,7 +8,11 @@ The app is available in Greek and English.
 
 - **Five measurement types:** blood pressure (systolic, diastolic and pulse), pulse, blood sugar,
   weight and height
-- **Automatic date and time** for every entry
+- **Clinical measurement context:** single-choice compact icon chips to specify arm (left/right),
+  body position (sitting, lying down, standing), arrhythmia presence (yes/no), and meal context
+  (before meal, 2h after meal)
+- **Automatic or custom date and time:** records current time by default or allows picking a custom
+  date and time via Material 3 date and time pickers
 - **History per measurement type:** one page per type, chosen with tabs or by swiping left and
   right; newest first. Each entry is a card with its date and time, its value and a bin to
   delete it. The last selected type is remembered while the app is open
@@ -34,8 +38,10 @@ The app is available in Greek and English.
   the brand icon and a two-tone "HealthLog" title
 - **Own icons:** each type, each stat and the buttons have their own multicolored icons
 - **Delete with confirmation:** the bin on a card asks before deleting
-- **Input validation:** every value is checked against a range; errors are shown under the field
-  and saving is only possible when everything is valid
+- **Input validation & feedback:** every value is checked against a range with inline messages.
+  Tapping Save or completing numeric inputs highlights omitted required option rows in red with
+  subtle borders and soft tinting, persisting until selected. Saving is enabled only when all
+  numeric fields and required options are complete and valid
 - **Rotation-safe:** typed values, dialogs and errors survive screen rotation
 - **Greek and English:** the app follows the phone's language (English for any other language);
   on Android 13+ it can also be set per app. Numbers and dates follow the language
@@ -91,6 +97,15 @@ appearance across light and dark modes.
 The icons in `app/src/main/res/drawable/` were drawn for HealthLog. Most are multicolored, so
 they are shown with `tint = Color.Unspecified` to keep their colors. The app launcher icon and in-app brand logo
 (`ic_brand_logo.xml`) represent the core identity.
+
+Dedicated vector icons illustrate every clinical option and dialog action:
+- **Measurement Arm:** `ic_arm_left.xml`, `ic_arm_right.xml`
+- **Body Position:** `ic_position_sitting.xml`, `ic_position_lying.xml`, `ic_position_standing.xml`
+- **Arrhythmia Presence:** `ic_arrhythmia_no.xml`, `ic_arrhythmia_yes.xml`
+- **Meal Context:** `ic_meal_before.xml`, `ic_meal_after.xml`
+- **Custom Date & Time:** `ic_calendar.xml`
+
+These are rendered inside `OptionSelectorGroup` as compact, single-choice chips with icon presentation and accessible content descriptions, keeping the entry dialog uncluttered and easy to tap.
 
 ### Naming: measurement and entry
 
@@ -151,7 +166,14 @@ Run them on a separate emulator, not on a device with data you want to keep.
 
 ## Database
 
-Measurements are stored locally with Room. The database is currently at **version 3**.
+Measurements are stored locally with Room. The database is currently at **version 4**.
+
+### Schema versions & migrations
+
+- **Version 1:** Initial database storing `id`, `type`, `value`, `secondaryValue`, `timestamp`.
+- **Version 1 → 2 (`MIGRATION_1_2`):** Added nullable `tertiaryValue` column to store pulse for blood pressure measurements.
+- **Version 2 → 3 (`MIGRATION_2_3`):** Converted stored Greek type names to enum constant strings (`BLOOD_PRESSURE`, `PULSE`, `BLOOD_SUGAR`, `WEIGHT`, `HEIGHT`).
+- **Version 3 → 4 (`MIGRATION_3_4`):** Added nullable clinical context columns (`hasArrhythmia` INTEGER, `mealContext` TEXT, `arm` TEXT, `bodyPosition` TEXT). Older rows keep their data and have `null` for these columns.
 
 Any change to what is stored needs a database migration in `HealthDatabase.kt`, for example:
 - adding, removing or renaming a column in `Measurement`
