@@ -22,4 +22,8 @@ interface MeasurementDao {
         "SELECT * FROM measurements WHERE type = :type ORDER BY timestamp DESC, id DESC"
     )
     fun getMeasurementsByType(type: MeasurementType): Flow<List<Measurement>>
+
+    // A single measurement by its ID, or null if it was deleted or not found.
+    @Query("SELECT * FROM measurements WHERE id = :id")
+    fun getMeasurementById(id: Long): Flow<Measurement?>
 }

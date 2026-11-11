@@ -13,6 +13,10 @@ class MeasurementRepository(
     fun getMeasurementsByType(type: MeasurementType): Flow<List<Measurement>> =
         dao.getMeasurementsByType(type)
 
+    // Observes a single measurement by its database ID.
+    fun getMeasurementById(id: Long): Flow<Measurement?> =
+        dao.getMeasurementById(id)
+
     // Saves a new measurement (see measurementsToSave for what is stored).
     // Everything is saved in one database transaction: either all of it or nothing.
     suspend fun save(measurement: Measurement) {
