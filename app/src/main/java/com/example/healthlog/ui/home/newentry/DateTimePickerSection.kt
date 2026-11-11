@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -28,6 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.example.healthlog.R
 import com.example.healthlog.ui.format.formatLocale
@@ -72,11 +74,17 @@ fun DateTimePickerSection(
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .toggleable(
+                    value = useCurrentDateTime,
+                    role = Role.Checkbox,
+                    onValueChange = onUseCurrentChange
+                )
         ) {
             Checkbox(
                 checked = useCurrentDateTime,
-                onCheckedChange = { onUseCurrentChange(it) }
+                onCheckedChange = null
             )
             Text(
                 text = stringResource(R.string.entry_use_current_datetime),

@@ -199,4 +199,31 @@ class NewEntryDialogTest {
         // Checkbox is still present and clickable
         composeRule.onNodeWithText(checkboxText).assertExists()
     }
+
+    @Test
+    fun tooLowValue_showsErrorAfterTappingOptionIcon() {
+        val pulse = MeasurementType.PULSE
+        open(pulse)
+        field(pulse.fields[0]).performTextInput("8")
+        composeRule.onNodeWithText(outOfRange(30, 300), substring = true).assertDoesNotExist()
+
+        // Tap the arrhythmia "No" option icon
+        composeRule.onNodeWithContentDescription(text(R.string.arrhythmia_no)).performClick()
+
+        // Error should now appear because tapping the option leaves the focused field
+        composeRule.onNodeWithText(outOfRange(30, 300), substring = true).assertExists()
+    }
+
+    @Test
+    fun tooLowValue_showsErrorAfterTappingAutoDateCheckbox() {
+        open(height)
+        field(heightField).performTextInput("18")
+        composeRule.onNodeWithText(outOfRange(30, 250), substring = true).assertDoesNotExist()
+
+        // Tap the auto date checkbox
+        composeRule.onNodeWithText(text(R.string.entry_use_current_datetime)).performClick()
+
+        // Error should now appear because tapping the checkbox leaves the focused field
+        composeRule.onNodeWithText(outOfRange(30, 250), substring = true).assertExists()
+    }
 }
