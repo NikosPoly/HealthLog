@@ -116,7 +116,7 @@ fun DateTimePickerSection(
     if (showDatePicker) {
         val datePickerState = rememberDatePickerState(
             initialSelectedDateMillis = localDateTime.toLocalDate()
-                .atStartOfDay(zoneId)
+                .atStartOfDay(ZoneId.of("UTC"))
                 .toInstant()
                 .toEpochMilli()
         )

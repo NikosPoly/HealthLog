@@ -106,8 +106,14 @@ data class NewEntryState(
     fun withMealContext(context: MealContext): NewEntryState =
         copy(mealContext = context)
 
-    fun withUseCurrentDateTime(useCurrent: Boolean): NewEntryState =
-        copy(useCurrentDateTime = useCurrent)
+    // When the user unticks "use current date and time", snapshot the current time (now)
+    // as the starting point so the picker reflects the actual current moment.
+    fun withUseCurrentDateTime(useCurrent: Boolean, now: Long = System.currentTimeMillis()): NewEntryState =
+        if (!useCurrent) {
+            copy(useCurrentDateTime = false, customTimestamp = now)
+        } else {
+            copy(useCurrentDateTime = true)
+        }
 
     fun withCustomTimestamp(timestamp: Long): NewEntryState =
         copy(customTimestamp = timestamp)
@@ -141,7 +147,7 @@ data class NewEntryState(
     companion object {
         // The state when the dialog opens: all fields empty, none left, none focused,
         // options unselected, current date/time enabled.
-        fun initial(type: MeasurementType): NewEntryState =
+        fun initial(type: MeasurementType, now: Long = System.currentTimeMillis()): NewEntryState =
             NewEntryState(
                 type = type,
                 texts = List(type.fields.size) { "" },
@@ -152,7 +158,7 @@ data class NewEntryState(
                 bodyPosition = null,
                 mealContext = null,
                 useCurrentDateTime = true,
-                customTimestamp = System.currentTimeMillis()
+                customTimestamp = now
             )
     }
 }

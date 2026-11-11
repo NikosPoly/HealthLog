@@ -179,6 +179,36 @@ class NewEntryStateTest {
     }
 
     @Test
+    fun uncheckingUseCurrentDateTime_resetsCustomTimestampToNow() {
+        val time1 = 1000L
+        val time2 = 2000L
+        val time3 = 3000L
+
+        // Initialized at time1
+        val initial = NewEntryState.initial(MeasurementType.HEIGHT, now = time1)
+        assertEquals(time1, initial.customTimestamp)
+        assertTrue(initial.useCurrentDateTime)
+
+        // Untick at time2 -> customTimestamp updates to time2 (now)
+        val unticked = initial.withUseCurrentDateTime(false, now = time2)
+        assertFalse(unticked.useCurrentDateTime)
+        assertEquals(time2, unticked.customTimestamp)
+
+        // Select a custom date/time
+        val custom = unticked.withCustomTimestamp(999999L)
+        assertEquals(999999L, custom.customTimestamp)
+
+        // Tick auto again
+        val reticked = custom.withUseCurrentDateTime(true)
+        assertTrue(reticked.useCurrentDateTime)
+
+        // Untick at time3 -> customTimestamp resets to time3 (now), not the old custom date
+        val untickedAgain = reticked.withUseCurrentDateTime(false, now = time3)
+        assertFalse(untickedAgain.useCurrentDateTime)
+        assertEquals(time3, untickedAgain.customTimestamp)
+    }
+
+    @Test
     fun invalidState_cannotBeSaved() {
         assertNull(bloodPressure.withText(0, "80").withText(1, "120").withText(2, "72").toMeasurement())
     }
