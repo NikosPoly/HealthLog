@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -108,10 +109,111 @@ fun NewEntryDialog(
                     )
                 }
 
-                Text(
-                    stringResource(R.string.entry_timestamp_note),
-                    style = MaterialTheme.typography.bodySmall
-                )
+                // Measurement options and date/time selection.
+                // Any tap on an option icon, checkbox, or calendar button leaves the active
+                // text field immediately so its validation errors appear.
+                Column(
+                    modifier = Modifier.clearFocusOnPress(onPress = { state = state.leaveFocusedField() }),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    when (type) {
+                        MeasurementType.BLOOD_PRESSURE -> {
+                            OptionSelectorGroup(
+                                title = stringResource(R.string.section_arm),
+                                options = listOf(
+                                    SelectorOption(com.example.healthlog.model.MeasurementArm.LEFT, stringResource(R.string.arm_left), R.drawable.ic_arm_left),
+                                    SelectorOption(com.example.healthlog.model.MeasurementArm.RIGHT, stringResource(R.string.arm_right), R.drawable.ic_arm_right)
+                                ),
+                                selectedValue = state.arm,
+                                onSelect = {
+                                    state = state.leaveFocusedField().withArm(it)
+                                    focusManager.clearFocus()
+                                },
+                                modifier = Modifier.padding(vertical = 4.dp)
+                            )
+
+                            OptionSelectorGroup(
+                                title = stringResource(R.string.section_position),
+                                options = listOf(
+                                    SelectorOption(com.example.healthlog.model.BodyPosition.SITTING, stringResource(R.string.position_sitting), R.drawable.ic_position_sitting),
+                                    SelectorOption(com.example.healthlog.model.BodyPosition.LYING_DOWN, stringResource(R.string.position_lying_down), R.drawable.ic_position_lying),
+                                    SelectorOption(com.example.healthlog.model.BodyPosition.STANDING, stringResource(R.string.position_standing), R.drawable.ic_position_standing)
+                                ),
+                                selectedValue = state.bodyPosition,
+                                onSelect = {
+                                    state = state.leaveFocusedField().withBodyPosition(it)
+                                    focusManager.clearFocus()
+                                },
+                                modifier = Modifier.padding(vertical = 4.dp)
+                            )
+
+                            OptionSelectorGroup(
+                                title = stringResource(R.string.section_arrhythmia),
+                                options = listOf(
+                                    SelectorOption(false, stringResource(R.string.arrhythmia_no), R.drawable.ic_arrhythmia_no),
+                                    SelectorOption(true, stringResource(R.string.arrhythmia_yes), R.drawable.ic_arrhythmia_yes)
+                                ),
+                                selectedValue = state.hasArrhythmia,
+                                onSelect = {
+                                    state = state.leaveFocusedField().withArrhythmia(it)
+                                    focusManager.clearFocus()
+                                },
+                                modifier = Modifier.padding(vertical = 4.dp)
+                            )
+                        }
+
+                        MeasurementType.PULSE -> {
+                            OptionSelectorGroup(
+                                title = stringResource(R.string.section_arrhythmia),
+                                options = listOf(
+                                    SelectorOption(false, stringResource(R.string.arrhythmia_no), R.drawable.ic_arrhythmia_no),
+                                    SelectorOption(true, stringResource(R.string.arrhythmia_yes), R.drawable.ic_arrhythmia_yes)
+                                ),
+                                selectedValue = state.hasArrhythmia,
+                                onSelect = {
+                                    state = state.leaveFocusedField().withArrhythmia(it)
+                                    focusManager.clearFocus()
+                                },
+                                modifier = Modifier.padding(vertical = 4.dp)
+                            )
+                        }
+
+                        MeasurementType.BLOOD_SUGAR -> {
+                            OptionSelectorGroup(
+                                title = stringResource(R.string.section_meal_context),
+                                options = listOf(
+                                    SelectorOption(com.example.healthlog.model.MealContext.BEFORE_MEAL, stringResource(R.string.meal_before), R.drawable.ic_meal_before),
+                                    SelectorOption(com.example.healthlog.model.MealContext.AFTER_MEAL_2H, stringResource(R.string.meal_after_2h), R.drawable.ic_meal_after)
+                                ),
+                                selectedValue = state.mealContext,
+                                onSelect = {
+                                    state = state.leaveFocusedField().withMealContext(it)
+                                    focusManager.clearFocus()
+                                },
+                                modifier = Modifier.padding(vertical = 4.dp)
+                            )
+                        }
+
+                        MeasurementType.WEIGHT,
+                        MeasurementType.HEIGHT -> {
+                            // No extra clinical context options
+                        }
+                    }
+
+                    // Date and time selection (automatic or custom)
+                    DateTimePickerSection(
+                        useCurrentDateTime = state.useCurrentDateTime,
+                        timestamp = state.customTimestamp,
+                        onUseCurrentChange = {
+                            state = state.leaveFocusedField().withUseCurrentDateTime(it)
+                            focusManager.clearFocus()
+                        },
+                        onTimestampChange = {
+                            state = state.leaveFocusedField().withCustomTimestamp(it)
+                            focusManager.clearFocus()
+                        }
+                    )
+                }
 
                 Text(
                     stringResource(R.string.entry_required_note),
@@ -144,17 +246,36 @@ fun NewEntryDialog(
     )
 }
 
-// Saves the dialog's state across rotation: the type by name, plus the typed texts,
-// the left fields and the focused field, which Android can store as they are.
+// Saves the dialog's state across rotation: the type by name, the typed texts,
+// the left fields, focused field, and all clinical options and custom datetime.
 private val entryStateSaver = listSaver<NewEntryState, Any?>(
-    save = { listOf(it.type.name, it.texts, it.leftFields, it.focusedIndex) },
+    save = {
+        listOf(
+            it.type.name,
+            it.texts,
+            it.leftFields,
+            it.focusedIndex,
+            it.hasArrhythmia,
+            it.arm?.name,
+            it.bodyPosition?.name,
+            it.mealContext?.name,
+            it.useCurrentDateTime,
+            it.customTimestamp
+        )
+    },
     restore = {
         @Suppress("UNCHECKED_CAST")
         NewEntryState(
             type = MeasurementType.valueOf(it[0] as String),
             texts = it[1] as List<String>,
             leftFields = it[2] as List<Boolean>,
-            focusedIndex = it[3] as Int?
+            focusedIndex = it[3] as Int?,
+            hasArrhythmia = it[4] as Boolean?,
+            arm = (it[5] as String?)?.let { armName -> com.example.healthlog.model.MeasurementArm.valueOf(armName) },
+            bodyPosition = (it[6] as String?)?.let { posName -> com.example.healthlog.model.BodyPosition.valueOf(posName) },
+            mealContext = (it[7] as String?)?.let { mealName -> com.example.healthlog.model.MealContext.valueOf(mealName) },
+            useCurrentDateTime = it[8] as Boolean,
+            customTimestamp = it[9] as Long
         )
     }
 )

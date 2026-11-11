@@ -48,7 +48,6 @@
     <string name="action_delete">Διαγραφή</string>
 
     <!-- Entry dialog -->
-    <string name="entry_timestamp_note">Η ημερομηνία και η ώρα αποθηκεύονται αυτόματα.</string>
     <string name="entry_required_note">* Υποχρεωτικό πεδίο</string>
 
     <!-- Validation errors in the entry dialog -->
@@ -66,6 +65,26 @@
     <!-- Snackbar messages -->
     <string name="message_entry_saved">Η καταχώριση αποθηκεύτηκε</string>
     <string name="message_entry_deleted">Η καταχώριση διαγράφηκε</string>
+
+    <!-- Entry dialog options and context -->
+    <string name="entry_use_current_datetime">Χρήση τρέχουσας ημερομηνίας και ώρας</string>
+
+    <string name="section_arrhythmia">Αρρυθμία</string>
+    <string name="arrhythmia_no">Όχι</string>
+    <string name="arrhythmia_yes">Ναι</string>
+
+    <string name="section_arm">Χέρι</string>
+    <string name="arm_left">Αριστερό</string>
+    <string name="arm_right">Δεξί</string>
+
+    <string name="section_position">Θέση</string>
+    <string name="position_sitting">Καθιστή</string>
+    <string name="position_standing">Όρθια</string>
+    <string name="position_lying_down">Ξαπλωτή</string>
+
+    <string name="section_meal_context">Γεύμα</string>
+    <string name="meal_before">Πριν</string>
+    <string name="meal_after_2h">Μετά 2ω</string>
 
     <!-- Measurement types (single-value types also use these as their field label) -->
     <string name="type_blood_pressure">Αρτηριακή Πίεση</string>

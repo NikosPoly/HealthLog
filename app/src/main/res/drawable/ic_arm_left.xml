@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Human torso with the LEFT arm highlighted in blue for blood pressure measurement. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="20dp"
+    android:height="20dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Head -->
+    <path
+        android:fillColor="#90A4AE"
+        android:pathData="M12,2a2.5,2.5 0 1,0 0.01,0z" />
+    <!-- Torso and Right arm (muted/neutral gray) -->
+    <path
+        android:fillColor="#B0BEC5"
+        android:pathData="M10,8h4c1,0 1.5,0.8 1.5,1.5v6.5h-7V9.5C8.5,8.8 9,8 10,8z" />
+    <!-- Right arm (user's right = screen right, muted) -->
+    <path
+        android:fillColor="#B0BEC5"
+        android:pathData="M15.5,9.5l1.8,4.5c0.2,0.5 0,1.1 -0.5,1.3 -0.5,0.2 -1.1,0 -1.3,-0.5l-1.5,-4.3V9.5z" />
+    <!-- Left arm (user's left = screen left, highlighted in vivid blue with cuff) -->
+    <path
+        android:fillColor="#1E88E5"
+        android:strokeColor="#1565C0"
+        android:strokeWidth="0.8"
+        android:pathData="M8.5,9.5l-2.2,5c-0.2,0.5 -0.8,0.7 -1.3,0.5 -0.5,-0.2 -0.7,-0.8 -0.5,-1.3l2,-5.2H8.5z" />
+    <!-- Cuff indicator on Left arm -->
+    <path
+        android:fillColor="#E53935"
+        android:pathData="M5.8,11.2l1.6,-0.6 0.8,1.8 -1.6,0.6z" />
+</vector>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Heart with irregular, jagged ECG heartbeat line for "Yes" arrhythmia (detected). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="20dp"
+    android:height="20dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Anatomical/stylized heart body in vibrant red/coral -->
+    <path
+        android:fillColor="#EF5350"
+        android:strokeColor="#C62828"
+        android:strokeWidth="1.2"
+        android:strokeLineJoin="round"
+        android:pathData="M12,4.5c-1.5,-2.5 -5,-2 -6.5,0.5 -1.8,3 0,6.5 6.5,13.5 6.5,-7 8.3,-10.5 6.5,-13.5 -1.5,-2.5 -5,-3 -6.5,-0.5z" />
+    <!-- Aorta and pulmonary arteries at top -->
+    <path
+        android:fillColor="#EF5350"
+        android:strokeColor="#C62828"
+        android:strokeWidth="1.2"
+        android:strokeLineCap="round"
+        android:pathData="M10,4.5V2h2.5v2M13.5,4.5l1,-2.2 2,0.8 -0.8,2" />
+    <!-- Irregular, jagged arrhythmia ECG wave across the heart -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M1.5,12.5H4l1.2,-3.5 1.5,6.5 1.8,-7.5 1.5,8 1.8,-6 1.8,7 1.2,-5 1.5,6 1.5,-8 1.2,5.5H22.5" />
+    <!-- Sharp contrast line over background for visibility -->
+    <path
+        android:strokeColor="#D32F2F"
+        android:strokeWidth="1.0"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M1.5,12.5H4l1.2,-3.5 1.5,6.5 1.8,-7.5 1.5,8 1.8,-6 1.8,7 1.2,-5 1.5,6 1.5,-8 1.2,5.5H22.5" />
+</vector>

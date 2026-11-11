@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Human figure standing straight with both arms resting naturally at the sides. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="20dp"
+    android:height="20dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Head -->
+    <path
+        android:fillColor="#5E35B1"
+        android:pathData="M12,3a2,2 0 1,0 0.01,0z" />
+    <!-- Torso -->
+    <path
+        android:fillColor="#5E35B1"
+        android:pathData="M10,7h4c0.8,0 1.5,0.7 1.5,1.5v6.5h-7V8.5C8.5,7.7 9.2,7 10,7z" />
+    <!-- Left arm resting at side -->
+    <path
+        android:strokeColor="#5E35B1"
+        android:strokeWidth="1.6"
+        android:strokeLineCap="round"
+        android:pathData="M7.5,9v6" />
+    <!-- Right arm resting at side -->
+    <path
+        android:strokeColor="#5E35B1"
+        android:strokeWidth="1.6"
+        android:strokeLineCap="round"
+        android:pathData="M16.5,9v6" />
+    <!-- Legs straight down -->
+    <path
+        android:strokeColor="#5E35B1"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:pathData="M10.5,15v7M13.5,15v7" />
+</vector>

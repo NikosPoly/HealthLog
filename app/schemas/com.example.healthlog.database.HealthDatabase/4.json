@@ -1,0 +1,79 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 4,
+    "identityHash": "b8964496a04d0a4c0f84a522da30991a",
+    "entities": [
+      {
+        "tableName": "measurements",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `type` TEXT NOT NULL, `value` REAL NOT NULL, `secondaryValue` REAL, `tertiaryValue` REAL, `hasArrhythmia` INTEGER, `mealContext` TEXT, `arm` TEXT, `bodyPosition` TEXT, `timestamp` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "value",
+            "columnName": "value",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "secondaryValue",
+            "columnName": "secondaryValue",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "tertiaryValue",
+            "columnName": "tertiaryValue",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "hasArrhythmia",
+            "columnName": "hasArrhythmia",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "mealContext",
+            "columnName": "mealContext",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "arm",
+            "columnName": "arm",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "bodyPosition",
+            "columnName": "bodyPosition",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'b8964496a04d0a4c0f84a522da30991a')"
+    ]
+  }
+}

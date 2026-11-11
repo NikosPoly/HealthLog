@@ -7,6 +7,7 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
@@ -149,5 +150,80 @@ class NewEntryDialogTest {
             text(R.string.error_diastolic_not_below_systolic), substring = true
         ).assertExists()
         saveButton().assertIsNotEnabled()
+    }
+
+    @Test
+    fun bloodPressure_enablesSaveOnlyWhenAllOptionsSelected() {
+        val bp = MeasurementType.BLOOD_PRESSURE
+        open(bp)
+        field(bp.fields[0]).performTextInput("120")
+        field(bp.fields[1]).performTextInput("80")
+        field(bp.fields[2]).performTextInput("72")
+
+        // Numbers are valid, but options are not selected yet -> Save disabled
+        saveButton().assertIsNotEnabled()
+
+        // Select Left arm (found by icon's contentDescription)
+        composeRule.onNodeWithContentDescription(text(R.string.arm_left)).performClick()
+        saveButton().assertIsNotEnabled()
+
+        // Select Sitting
+        composeRule.onNodeWithContentDescription(text(R.string.position_sitting)).performClick()
+        saveButton().assertIsNotEnabled()
+
+        // Select No arrhythmia
+        composeRule.onNodeWithContentDescription(text(R.string.arrhythmia_no)).performClick()
+
+        // Now all required fields and options are selected -> Save enabled
+        saveButton().assertIsEnabled()
+        saveButton().performClick()
+
+        assertEquals(MeasurementType.BLOOD_PRESSURE, saved?.type)
+        assertEquals("LEFT", saved?.arm)
+        assertEquals("SITTING", saved?.bodyPosition)
+        assertEquals(false, saved?.hasArrhythmia)
+    }
+
+    @Test
+    fun customDateTime_checkboxTogglesDateTimeButtons() {
+        open(height)
+
+        val checkboxText = text(R.string.entry_use_current_datetime)
+
+        // Checkbox is checked by default
+        composeRule.onNodeWithText(checkboxText).assertExists()
+
+        // Uncheck to show date/time picker button
+        composeRule.onNodeWithText(checkboxText).performClick()
+
+        // Checkbox is still present and clickable
+        composeRule.onNodeWithText(checkboxText).assertExists()
+    }
+
+    @Test
+    fun tooLowValue_showsErrorAfterTappingOptionIcon() {
+        val pulse = MeasurementType.PULSE
+        open(pulse)
+        field(pulse.fields[0]).performTextInput("8")
+        composeRule.onNodeWithText(outOfRange(30, 300), substring = true).assertDoesNotExist()
+
+        // Tap the arrhythmia "No" option icon
+        composeRule.onNodeWithContentDescription(text(R.string.arrhythmia_no)).performClick()
+
+        // Error should now appear because tapping the option leaves the focused field
+        composeRule.onNodeWithText(outOfRange(30, 300), substring = true).assertExists()
+    }
+
+    @Test
+    fun tooLowValue_showsErrorAfterTappingAutoDateCheckbox() {
+        open(height)
+        field(heightField).performTextInput("18")
+        composeRule.onNodeWithText(outOfRange(30, 250), substring = true).assertDoesNotExist()
+
+        // Tap the auto date checkbox
+        composeRule.onNodeWithText(text(R.string.entry_use_current_datetime)).performClick()
+
+        // Error should now appear because tapping the checkbox leaves the focused field
+        composeRule.onNodeWithText(outOfRange(30, 250), substring = true).assertExists()
     }
 }
