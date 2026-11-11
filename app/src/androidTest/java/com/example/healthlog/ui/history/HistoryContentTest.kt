@@ -58,6 +58,7 @@ class HistoryContentTest {
     private var selectedType = MeasurementType.BLOOD_PRESSURE
     private var selectedPeriod = ChartPeriod.ALL
     private var requestedDelete: Measurement? = null
+    private var openedDetailsId: Long? = null
 
     // Keeps the tab, the mode and the period like the real screen does, so tapping
     // the tabs, the button and the chips changes what is shown.
@@ -85,6 +86,7 @@ class HistoryContentTest {
                         period = it
                         selectedPeriod = it
                     },
+                    onOpenDetails = { openedDetailsId = it },
                     onRequestDelete = { requestedDelete = it },
                     onConfirmDelete = {},
                     onCancelDelete = {}
@@ -208,5 +210,13 @@ class HistoryContentTest {
         assertEquals(ChartPeriod.SEVEN_DAYS, selectedPeriod)
         // The sample measurements are from now, so they are still in the last 7 days.
         text(R.string.stats_average).assertExists()
+    }
+
+    @Test
+    fun tappingDetails_reportsMeasurementId() {
+        open(MeasurementType.BLOOD_PRESSURE)
+
+        composeRule.onNodeWithText(context.getString(R.string.action_view_details)).performClick()
+        assertEquals(bloodPressure.id, openedDetailsId)
     }
 }
