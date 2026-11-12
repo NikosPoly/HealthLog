@@ -1,6 +1,7 @@
 package com.example.healthlog.ui.history.chart
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -41,12 +43,21 @@ import java.time.ZonedDateTime
 fun NonPeriodStatsCard(
     // The most recent measurement of the type.
     latest: Measurement,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null
 ) {
     val value = statValueText(latest, decimalSeparator())
     val dateTimeFormatter = rememberDateTimeFormatter()
     val recorded = timeAgoText(timeAgo(latest.timestamp, ZonedDateTime.now())) +
         " · " + formatTimestamp(latest.timestamp, dateTimeFormatter)
+
+    val clickModifier = if (onClick != null) {
+        Modifier
+            .clip(RoundedCornerShape(16.dp))
+            .clickable(onClick = onClick)
+    } else {
+        Modifier
+    }
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -60,6 +71,7 @@ fun NonPeriodStatsCard(
             modifier = Modifier
                 .padding(16.dp)
                 .fillMaxWidth()
+                .then(clickModifier)
                 // Same as the stat boxes in the period card.
                 .background(
                     color = MaterialTheme.colorScheme.surfaceContainerHighest,

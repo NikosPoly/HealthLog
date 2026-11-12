@@ -14,8 +14,16 @@ The app is available in Greek and English.
 - **Automatic or custom date and time:** records current time by default or allows picking a custom
   date and time via Material 3 date and time pickers
 - **History per measurement type:** one page per type, chosen with tabs or by swiping left and
-  right; newest first. Each entry is a card with its date and time, its value and a bin to
-  delete it. The last selected type is remembered while the app is open
+  right; newest first. Each entry is a card with its date and time, its value, a "Details"
+  button to view the full entry, and a bin to delete it. The last selected type is remembered
+  while the app is open
+- **Measurement details screen:** a dedicated screen displaying a single measurement in full detail:
+  type-themed header, prominent values, absolute and relative timestamp, and compact clinical
+  condition tags with icons (arm, posture, meal context, arrhythmia). Delete with confirmation
+  is also supported directly from details. The screen is structured to easily host future medical
+  guideline tables and stage classifications
+- **Interactive chart stats:** tapping the highest, lowest or last entry stat cards on the chart
+  page navigates directly into that measurement's details
 - **Blood pressure includes the pulse:** saving a blood pressure also saves its pulse as a
   separate Pulse measurement, so it appears in both histories. The two measurements are
   independent: deleting one keeps the other
@@ -76,6 +84,7 @@ healthlog/
     │       │                periods, screen taps
     │       ├── stats/       the stats in the period card: calculations, texts, the stat boxes
     │       └── vico/        the chart itself, its tooltip and axes (the only place Vico is used)
+    ├── details/             measurement details screen: single-entry breakdown, clinical context tags
     ├── format/              display text: values, dates, "time ago", messages, per-language formats
     └── theme/               colors, typography and theme, plus the type colors (TypeTheme)
                              and the type icons (TypeIcon)
@@ -138,12 +147,13 @@ There are two kinds of tests:
 **Unit tests** (`app/src/test`, run on your computer):
 - `MeasurementValidationTest`: the validation rules
 - `MeasurementTypeTest`: the rules of the measurement types (stored names, fields, ranges)
+- `MeasurementContextTest`: icon and label bindings for clinical context enums and safe parsers
 - `NumberInputTest`: what can be typed into number fields
 - `NewEntryStateTest`: the new-entry dialog's state and rules
 - `MeasurementFormattingTest`: how measurement values are shown (units, decimals, separator)
 - `DateFormattingTest`: the date format of each language
 - `ValidationMessagesTest`: how range limits are shown in error messages
-- `MeasurementRepositoryTest`: what is stored when a measurement is saved
+- `MeasurementRepositoryTest`: what is stored when a measurement is saved and ID lookups
 - `ChartPeriodTest`: which measurements each chart period includes
 - `PeriodStatsCalculationTest`: count, highest, lowest, average and their rounding
 - `TimeAgoTest`: the "time ago" of the last measurement (hours, yesterday, days, months, years)
@@ -151,10 +161,11 @@ There are two kinds of tests:
 **Instrumented tests** (`app/src/androidTest`, run on an emulator or device):
 - `MigrationTest`: the database migrations
 - `NewEntryDialogTest`: the new-entry dialog's UI
-- `HistoryContentTest`: the history's tabs, swiping, empty pages, deleting, the See Chart
+- `HistoryContentTest`: the history's tabs, swiping, empty pages, entry details navigation, deleting, the See Chart
   button and the period chips
 - `ChartPageTest`: the chart page: the period card (chart or empty message, stats) and the last
   entry card
+- `MeasurementDetailsScreenTest`: the details screen layout, clinical condition tags, back navigation and deletion
 
 To run them:
 
@@ -205,7 +216,9 @@ To assemble the benchmark build:
 
 ## Roadmap
 
-- [x] Own app colors, branding and app icon
+- [x] Dedicated measurement details screen with clinical condition tags and interactive chart navigation
+- Measurement details: medical organization guidelines and reference tables (e.g. AHA/ESC blood pressure stages, ADA glucose ranges) evaluating whether a reading is optimal, elevated, or high
+- Condition breakdown statistics: aggregate percentages of measurements taken under various conditions (e.g. % left vs. right arm, % before vs. after meals, posture) presented in a space-efficient view (e.g. bottom sheet or insights card)
 - History list: a filter for out-of-range values
 - Charts: normal ranges shown on the chart, and exporting a report
 - User profiles with sign-up and log-in (including choosing the language in the app)

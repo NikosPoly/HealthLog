@@ -26,7 +26,8 @@ fun ChartPage(
     period: ChartPeriod,
     // The latest tap anywhere on the screen, or null before the first one. Passed on to the
     // chart, which uses it to close the box of a tapped dot.
-    screenTap: ScreenTap?
+    screenTap: ScreenTap?,
+    onOpenDetails: ((Long) -> Unit)? = null
 ) {
     val inPeriod = remember(measurements, period) {
         measurements.inPeriod(period, ZonedDateTime.now())
@@ -40,11 +41,19 @@ fun ChartPage(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        PeriodCard(type = type, inPeriod = inPeriod, screenTap = screenTap)
+        PeriodCard(
+            type = type,
+            inPeriod = inPeriod,
+            screenTap = screenTap,
+            onOpenDetails = onOpenDetails
+        )
 
         // The list is newest first. A type without any measurement shows only the message.
         measurements.firstOrNull()?.let { latest ->
-            NonPeriodStatsCard(latest = latest)
+            NonPeriodStatsCard(
+                latest = latest,
+                onClick = onOpenDetails?.let { open -> { open(latest.id) } }
+            )
         }
     }
 }

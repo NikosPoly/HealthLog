@@ -6,11 +6,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.repository.MeasurementRepository
+import com.example.healthlog.ui.details.MeasurementDetailsScreen
+import com.example.healthlog.ui.details.MeasurementDetailsViewModel
 import com.example.healthlog.ui.history.HistoryScreen
 import com.example.healthlog.ui.history.HistoryViewModel
 import com.example.healthlog.ui.home.HomeScreen
@@ -20,6 +24,9 @@ import com.example.healthlog.ui.home.HomeViewModel
 private object Routes {
     const val HOME = "home"
     const val HISTORY = "history"
+    const val DETAILS = "details/{measurementId}"
+
+    fun details(measurementId: Long) = "details/$measurementId"
 }
 
 // Decides which screen is shown and how to move between them.
@@ -61,10 +68,30 @@ fun HealthLogNavHost(
                 viewModel = viewModel,
                 selectedType = historyType,
                 onSelectType = { historyType = it },
+                onOpenDetails = { measurementId ->
+                    navController.navigate(Routes.details(measurementId)) { launchSingleTop = true }
+                },
                 onBack = {
                     // Go back to Home, but never remove Home itself (e.g. on a double tap).
                     navController.popBackStack(Routes.HOME, inclusive = false)
                 }
+            )
+        }
+
+        composable(
+            route = Routes.DETAILS,
+            arguments = listOf(
+                navArgument("measurementId") { type = NavType.LongType }
+            )
+        ) { backStackEntry ->
+            val measurementId = backStackEntry.arguments?.getLong("measurementId") ?: 0L
+            val viewModel: MeasurementDetailsViewModel = viewModel(
+                factory = MeasurementDetailsViewModel.factory(repository, measurementId)
+            )
+
+            MeasurementDetailsScreen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() }
             )
         }
     }

@@ -11,6 +11,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,11 +29,12 @@ import com.example.healthlog.ui.format.formatTimestamp
 import com.example.healthlog.ui.format.rememberDateTimeFormatter
 import com.example.healthlog.ui.theme.HealthLogTheme
 
-// One entry in the history list: its date and time, its value, and a bin to delete it.
+// One entry in the history list: its date and time, its value, a details button, and a bin to delete it.
 // The type isn't repeated on the card, since the tab above already shows it.
 @Composable
 fun EntryCard(
     measurement: Measurement,
+    onViewDetails: () -> Unit,
     onDelete: () -> Unit
 ) {
     // Value and date in the formats of the current language.
@@ -48,7 +50,7 @@ fun EntryCard(
     ) {
         Row(
             // Less space on the right: the bin button has its own padding.
-            modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 4.dp),
+            modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(
@@ -65,6 +67,10 @@ fun EntryCard(
                     displayedValue,
                     style = MaterialTheme.typography.titleMedium
                 )
+            }
+
+            TextButton(onClick = onViewDetails) {
+                Text(stringResource(R.string.action_view_details))
             }
 
             IconButton(onClick = onDelete) {
@@ -96,11 +102,13 @@ private fun EntryCardPreview() {
                     secondaryValue = 80.0,
                     tertiaryValue = 72.0
                 ),
+                onViewDetails = {},
                 onDelete = {}
             )
 
             EntryCard(
                 measurement = Measurement(type = MeasurementType.WEIGHT, value = 72.5),
+                onViewDetails = {},
                 onDelete = {}
             )
         }

@@ -2,6 +2,7 @@ package com.example.healthlog.ui.history.chart.stats
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -26,7 +28,8 @@ internal class StatItem(
     @param:DrawableRes val icon: Int,
     val label: String,
     val value: String,
-    val emphasis: Emphasis = Emphasis.NONE
+    val emphasis: Emphasis = Emphasis.NONE,
+    val onClick: (() -> Unit)? = null
 )
 
 // Two stats side by side, each in its own rounded box: the icon and the name small on top,
@@ -46,8 +49,17 @@ internal fun StatPair(start: StatItem, end: StatItem, modifier: Modifier = Modif
 
 @Composable
 private fun StatBox(item: StatItem, modifier: Modifier) {
+    val clickModifier = if (item.onClick != null) {
+        Modifier
+            .clip(RoundedCornerShape(16.dp))
+            .clickable(onClick = item.onClick)
+    } else {
+        Modifier
+    }
+
     Column(
         modifier = modifier
+            .then(clickModifier)
             // A stronger tint than the period card around it.
             .background(
                 color = MaterialTheme.colorScheme.surfaceContainerHighest,

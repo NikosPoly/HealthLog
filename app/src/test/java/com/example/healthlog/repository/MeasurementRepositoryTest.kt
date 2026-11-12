@@ -53,4 +53,25 @@ class MeasurementRepositoryTest {
                 assertEquals("$type", listOf(measurement), measurementsToSave(measurement))
             }
     }
+
+    @Test
+    fun getMeasurementById_delegatesToDao() = kotlinx.coroutines.runBlocking {
+        val expected = Measurement(id = 42L, type = MeasurementType.WEIGHT, value = 75.0)
+        var requestedId: Long? = null
+        val fakeDao = object : com.example.healthlog.database.MeasurementDao {
+            override suspend fun insertAll(measurements: List<Measurement>) {}
+            override suspend fun delete(measurement: Measurement) {}
+            override fun getMeasurementsByType(type: MeasurementType): kotlinx.coroutines.flow.Flow<List<Measurement>> =
+                kotlinx.coroutines.flow.flowOf(emptyList())
+            override fun getMeasurementById(id: Long): kotlinx.coroutines.flow.Flow<Measurement?> {
+                requestedId = id
+                return kotlinx.coroutines.flow.flowOf(expected)
+            }
+        }
+        val repository = MeasurementRepository(fakeDao)
+        var emitted: Measurement? = null
+        repository.getMeasurementById(42L).collect { emitted = it }
+        assertEquals(42L, requestedId)
+        assertEquals(expected, emitted)
+    }
 }
