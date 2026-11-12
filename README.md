@@ -216,10 +216,26 @@ To assemble the benchmark build:
 
 ## Roadmap
 
+HealthLog follows an offline-first, privacy-by-design architecture with zero server operating costs.
+For detailed specifications and architectural decisions, see the complete [Product Roadmap](docs/ROADMAP.md).
+
+### Phase 1: Clinical Guidance & Reference Standards (In Progress)
 - [x] Dedicated measurement details screen with clinical condition tags and interactive chart navigation
-- Measurement details: medical organization guidelines and reference tables (e.g. AHA/ESC blood pressure stages, ADA glucose ranges) evaluating whether a reading is optimal, elevated, or high
-- Condition breakdown statistics: aggregate percentages of measurements taken under various conditions (e.g. % left vs. right arm, % before vs. after meals, posture) presented in a space-efficient view (e.g. bottom sheet or insights card)
-- History list: a filter for out-of-range values
-- Charts: normal ranges shown on the chart, and exporting a report
-- User profiles with sign-up and log-in (including choosing the language in the app)
-- Wider test coverage
+- [ ] Medical organization guidelines & reference tables on details screen (AHA/ESC blood pressure stages, ADA glucose ranges, WHO BMI, resting pulse zones)
+- [ ] Educational "How to Measure" guide (contextual helpers on entry dialogs and reference sheets)
+- [ ] Condition breakdown statistics (aggregate % of measurements taken under various conditions: arm, meal context, posture, arrhythmia rate)
+
+### Phase 2: Data Visualization, Filtering & Doctor Reporting
+- [ ] Charts: normal target ranges and shaded zones on Vico line charts
+- [ ] History list: filtering for out-of-range / flagged values and clinical conditions
+- [ ] Doctor reporting: on-device PDF generation, printing, and CSV export for medical appointments (100% local and private)
+
+### Phase 3: Health Journal & Medication Management
+- [ ] Per-measurement contextual notes
+- [ ] Medication tracking and local reminders (AlarmManager)
+- [ ] Symptom logging and calendar tracker
+
+### Phase 4: Local Profiles & Data Portability
+- [ ] Local multi-user profiles (device profile switcher with guest-first experience)
+- [ ] Data backup & restore (encrypted export to personal storage or Google Drive)
+- [ ] Wider automated test coverage
