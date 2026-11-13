@@ -107,4 +107,69 @@
     <string name="details_title">Measurement Details</string>
     <string name="details_not_found">Measurement not found</string>
     <string name="action_view_details">Details</string>
+
+    <!-- Clinical Guidelines & References -->
+    <string name="guidelines_title">Clinical Guidelines</string>
+    <string name="guidelines_card_title">Medical Reference Standards</string>
+    <string name="guidelines_current_reading">Current Reading</string>
+    <string name="guidelines_source_ish">ISH 2020 Guidelines</string>
+    <string name="guidelines_source_who_idf">WHO / IDF Standards</string>
+    <string name="guidelines_source_whf">WHF / WHO Consensus</string>
+    <string name="guidelines_source_who">WHO International Standards</string>
+
+    <!-- Blood Pressure Stages (ISH 2020) -->
+    <string name="bp_stage_low">Low</string>
+    <string name="bp_stage_normal">Normal</string>
+    <string name="bp_stage_high_normal">High-Normal</string>
+    <string name="bp_stage_grade_1">Grade 1 Hypertension</string>
+    <string name="bp_stage_grade_2">Grade 2 Hypertension</string>
+    <string name="bp_stage_crisis">Hypertensive Crisis</string>
+
+    <string name="bp_criteria_low">&lt; 90 or &lt; 60 mmHg</string>
+    <string name="bp_criteria_normal">&lt; 130 and &lt; 85 mmHg</string>
+    <string name="bp_criteria_high_normal">130–139 or 85–89 mmHg</string>
+    <string name="bp_criteria_grade_1">140–159 or 90–99 mmHg</string>
+    <string name="bp_criteria_grade_2">≥ 160 or ≥ 100 mmHg</string>
+    <string name="bp_criteria_crisis">&gt; 180 and/or &gt; 120 mmHg</string>
+
+    <!-- Blood Glucose Categories (WHO / IDF) -->
+    <string name="glucose_category_hypoglycemia">Hypoglycemia</string>
+    <string name="glucose_category_normal">Normal</string>
+    <string name="glucose_category_prediabetes">Prediabetes</string>
+    <string name="glucose_category_diabetes">Diabetes</string>
+
+    <string name="glucose_criteria_hypoglycemia">&lt; 70 mg/dL</string>
+    <string name="glucose_criteria_fasting_normal">70–99 mg/dL (Fasting)</string>
+    <string name="glucose_criteria_fasting_prediabetes">100–125 mg/dL (Fasting)</string>
+    <string name="glucose_criteria_fasting_diabetes">≥ 126 mg/dL (Fasting)</string>
+    <string name="glucose_criteria_post_normal">&lt; 140 mg/dL (After 2h)</string>
+    <string name="glucose_criteria_post_prediabetes">140–199 mg/dL (After 2h)</string>
+    <string name="glucose_criteria_post_diabetes">≥ 200 mg/dL (After 2h)</string>
+
+    <!-- Pulse Zones (WHF / WHO) -->
+    <string name="pulse_zone_bradycardia">Bradycardia</string>
+    <string name="pulse_zone_normal">Normal</string>
+    <string name="pulse_zone_tachycardia">Tachycardia</string>
+
+    <string name="pulse_criteria_bradycardia">&lt; 60 bpm</string>
+    <string name="pulse_criteria_normal">60–100 bpm</string>
+    <string name="pulse_criteria_tachycardia">&gt; 100 bpm</string>
+    <string name="pulse_note_athlete">Resting pulse below 60 bpm can be normal for trained athletes.</string>
+
+    <!-- BMI & Weight (WHO & Oxford New BMI) -->
+    <string name="bmi_category_underweight">Underweight</string>
+    <string name="bmi_category_normal">Normal Weight</string>
+    <string name="bmi_category_overweight">Overweight</string>
+    <string name="bmi_category_obese">Obese</string>
+
+    <string name="bmi_value_label">BMI: %1$s</string>
+    <string name="bmi_new_value_label">New BMI: %1$s</string>
+    <string name="bmi_healthy_range">Healthy weight for %1$s cm: %2$s – %3$s kg</string>
+    <string name="bmi_delta_above">+%1$s kg above healthy range</string>
+    <string name="bmi_delta_below">-%1$s kg below healthy range</string>
+    <string name="bmi_in_range">Within healthy range</string>
+    <string name="bmi_asian_note">WHO Asian consultation: Elevated health risks may begin at BMI ≥ 23.0.</string>
+    <string name="bmi_no_height_prompt">Log your height to calculate your Body Mass Index (BMI) and healthy weight range.</string>
+    <string name="height_healthy_weight_range">Healthy weight range: %1$s – %2$s kg</string>
+    <string name="height_bmi_baseline_info">Height is used as a baseline to calculate your Body Mass Index (BMI) for weight entries.</string>
 </resources>
