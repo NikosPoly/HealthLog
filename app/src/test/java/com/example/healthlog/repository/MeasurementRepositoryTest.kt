@@ -67,11 +67,31 @@ class MeasurementRepositoryTest {
                 requestedId = id
                 return kotlinx.coroutines.flow.flowOf(expected)
             }
+            override fun getLatestHeight(): kotlinx.coroutines.flow.Flow<Double?> =
+                kotlinx.coroutines.flow.flowOf(null)
         }
         val repository = MeasurementRepository(fakeDao)
         var emitted: Measurement? = null
         repository.getMeasurementById(42L).collect { emitted = it }
         assertEquals(42L, requestedId)
         assertEquals(expected, emitted)
+    }
+
+    @Test
+    fun getLatestHeight_delegatesToDao() = kotlinx.coroutines.runBlocking {
+        val fakeDao = object : com.example.healthlog.database.MeasurementDao {
+            override suspend fun insertAll(measurements: List<Measurement>) {}
+            override suspend fun delete(measurement: Measurement) {}
+            override fun getMeasurementsByType(type: MeasurementType): kotlinx.coroutines.flow.Flow<List<Measurement>> =
+                kotlinx.coroutines.flow.flowOf(emptyList())
+            override fun getMeasurementById(id: Long): kotlinx.coroutines.flow.Flow<Measurement?> =
+                kotlinx.coroutines.flow.flowOf(null)
+            override fun getLatestHeight(): kotlinx.coroutines.flow.Flow<Double?> =
+                kotlinx.coroutines.flow.flowOf(178.5)
+        }
+        val repository = MeasurementRepository(fakeDao)
+        var emitted: Double? = null
+        repository.getLatestHeight().collect { emitted = it }
+        assertEquals(178.5, emitted)
     }
 }
