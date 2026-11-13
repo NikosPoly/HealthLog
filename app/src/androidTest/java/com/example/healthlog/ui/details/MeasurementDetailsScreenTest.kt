@@ -6,6 +6,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.example.healthlog.R
@@ -251,17 +252,27 @@ class MeasurementDetailsScreenTest {
 
         val separator = context.getString(R.string.decimal_separator).first()
         val formattedBmi = "27.2".replace('.', separator)
+        val formattedNewBmi = "26.6".replace('.', separator)
 
-        // Stage chip for overweight
-        composeRule.onNodeWithText(
+        // Stage chips and scale labels for overweight (WHO BMI & Oxford New BMI)
+        composeRule.onAllNodesWithText(
             context.getString(R.string.bmi_category_overweight) + " · " +
                 context.getString(R.string.bmi_value_label, formattedBmi)
-        ).assertExists()
+        ).assertCountEquals(2)
+
+        composeRule.onAllNodesWithText(
+            context.getString(R.string.bmi_category_overweight) + " · " +
+                context.getString(R.string.bmi_new_value_label, formattedNewBmi)
+        ).assertCountEquals(2)
 
         // Reference card source badge
-        composeRule.onNodeWithText(context.getString(R.string.guidelines_source_who)).assertExists()
+        composeRule.onNodeWithText(context.getString(R.string.guidelines_source_who_oxford)).assertExists()
 
-        // Asian population footnote
-        composeRule.onNodeWithText(context.getString(R.string.bmi_asian_note)).assertExists()
+        // Dedicated section titles for both WHO and Oxford
+        composeRule.onNodeWithText(context.getString(R.string.bmi_standard_title)).assertExists()
+        composeRule.onNodeWithText(context.getString(R.string.bmi_oxford_title)).assertExists()
+
+        // Asian population footnote (scroll into view in the details column)
+        composeRule.onNodeWithText(context.getString(R.string.bmi_asian_note)).performScrollTo().assertExists()
     }
 }

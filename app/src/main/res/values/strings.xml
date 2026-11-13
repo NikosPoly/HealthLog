@@ -109,13 +109,16 @@
     <string name="action_view_details">Details</string>
 
     <!-- Clinical Guidelines & References -->
-    <string name="guidelines_title">Clinical Guidelines</string>
     <string name="guidelines_card_title">Medical Reference Standards</string>
+    <string name="guidelines_reference_table">Reference Table</string>
     <string name="guidelines_current_reading">Current Reading</string>
     <string name="guidelines_source_ish">ISH 2020 Guidelines</string>
     <string name="guidelines_source_who_idf">WHO / IDF Standards</string>
     <string name="guidelines_source_whf">WHF / WHO Consensus</string>
     <string name="guidelines_source_who">WHO International Standards</string>
+    <string name="guidelines_source_who_oxford">WHO · Oxford University</string>
+    <string name="bp_section_title">Blood Pressure (ISH 2020)</string>
+    <string name="pulse_section_title">Resting Pulse (WHF / WHO)</string>
 
     <!-- Blood Pressure Stages (ISH 2020) -->
     <string name="bp_stage_low">Low</string>
@@ -164,6 +167,9 @@
 
     <string name="bmi_value_label">BMI: %1$s</string>
     <string name="bmi_new_value_label">New BMI: %1$s</string>
+    <string name="bmi_standard_title">Standard BMI (WHO)</string>
+    <string name="bmi_oxford_title">Oxford New BMI (University of Oxford)</string>
+    <string name="bmi_oxford_explanation">The Oxford formula (1.3 × weight / height^2.5) adjusts for 3D body scaling, correcting distortions for taller and shorter individuals.</string>
     <string name="bmi_healthy_range">Healthy weight for %1$s cm: %2$s – %3$s kg</string>
     <string name="bmi_delta_above">+%1$s kg above healthy range</string>
     <string name="bmi_delta_below">-%1$s kg below healthy range</string>

@@ -25,6 +25,15 @@ data class BmiEvaluation(
     // True when weight falls within the WHO normal range (18.5–24.9).
     val isHealthyWeight: Boolean
         get() = category == BmiCategory.NORMAL
+
+    // Category according to Oxford New BMI.
+    val newBmiCategory: BmiCategory
+        get() = when {
+            newBmi < 18.5 -> BmiCategory.UNDERWEIGHT
+            newBmi < 25.0 -> BmiCategory.NORMAL
+            newBmi < 30.0 -> BmiCategory.OVERWEIGHT
+            else -> BmiCategory.OBESE
+        }
 }
 
 // Calculates healthy weight bounds (in kg) for a given height based on WHO normal BMI (18.5–24.9).

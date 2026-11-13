@@ -103,13 +103,16 @@
     <string name="action_view_details">Λεπτομέρειες</string>
 
     <!-- Clinical Guidelines & References -->
-    <string name="guidelines_title">Κλινικές Οδηγίες</string>
     <string name="guidelines_card_title">Ιατρικά Πρότυπα Αναφοράς</string>
+    <string name="guidelines_reference_table">Πίνακας Αναφοράς</string>
     <string name="guidelines_current_reading">Τρέχουσα Μέτρηση</string>
     <string name="guidelines_source_ish">Οδηγίες ISH 2020</string>
     <string name="guidelines_source_who_idf">Πρότυπα ΠΟΥ / IDF</string>
     <string name="guidelines_source_whf">Συναίνεση WHF / ΠΟΥ</string>
     <string name="guidelines_source_who">Διεθνή Πρότυπα ΠΟΥ</string>
+    <string name="guidelines_source_who_oxford">Πρότυπα ΠΟΥ · Oxford University</string>
+    <string name="bp_section_title">Αρτηριακή Πίεση (ISH 2020)</string>
+    <string name="pulse_section_title">Παλμοί Ηρεμίας (WHF / ΠΟΥ)</string>
 
     <!-- Blood Pressure Stages (ISH 2020) -->
     <string name="bp_stage_low">Χαμηλή</string>
@@ -158,6 +161,9 @@
 
     <string name="bmi_value_label">ΔΜΣ: %1$s</string>
     <string name="bmi_new_value_label">Νέος ΔΜΣ: %1$s</string>
+    <string name="bmi_standard_title">Βασικός ΔΜΣ (ΠΟΥ)</string>
+    <string name="bmi_oxford_title">Νέος ΔΜΣ Οξφόρδης (University of Oxford)</string>
+    <string name="bmi_oxford_explanation">Ο τύπος της Οξφόρδης (1,3 × βάρος / ύψος^2,5) προσαρμόζει για την τρισδιάστατη κλίμακα του σώματος, διορθώνοντας στρεβλώσεις για ψηλότερα και κοντύτερα άτομα.</string>
     <string name="bmi_healthy_range">Φυσιολογικό βάρος για %1$s εκ: %2$s – %3$s kg</string>
     <string name="bmi_delta_above">+%1$s kg πάνω από το φυσιολογικό όριο</string>
     <string name="bmi_delta_below">-%1$s kg κάτω από το φυσιολογικό όριο</string>

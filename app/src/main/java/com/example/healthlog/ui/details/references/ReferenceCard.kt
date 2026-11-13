@@ -49,7 +49,8 @@ fun ReferenceCard(
         is GuidelineEvaluation.BloodPressure -> stringResource(R.string.guidelines_source_ish)
         is GuidelineEvaluation.BloodGlucose -> stringResource(R.string.guidelines_source_who_idf)
         is GuidelineEvaluation.Pulse -> stringResource(R.string.guidelines_source_whf)
-        is GuidelineEvaluation.Weight, is GuidelineEvaluation.Height -> stringResource(R.string.guidelines_source_who)
+        is GuidelineEvaluation.Weight -> stringResource(R.string.guidelines_source_who_oxford)
+        is GuidelineEvaluation.Height -> stringResource(R.string.guidelines_source_who)
     }
 
     Card(

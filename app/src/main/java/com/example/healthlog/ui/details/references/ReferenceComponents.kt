@@ -67,10 +67,16 @@ fun StageBadge(
                 if (bmiEval != null) {
                     val separator = decimalSeparator()
                     val formattedBmi = String.format(Locale.US, "%.1f", bmiEval.bmi).replace('.', separator)
+                    val formattedNewBmi = String.format(Locale.US, "%.1f", bmiEval.newBmi).replace('.', separator)
                     StageChip(
                         label = stringResource(bmiEval.category.labelRes) + " · " +
                             stringResource(R.string.bmi_value_label, formattedBmi),
                         colors = bmiCategoryColor(bmiEval.category)
+                    )
+                    StageChip(
+                        label = stringResource(bmiEval.newBmiCategory.labelRes) + " · " +
+                            stringResource(R.string.bmi_new_value_label, formattedNewBmi),
+                        colors = bmiCategoryColor(bmiEval.newBmiCategory)
                     )
                 }
             }
@@ -125,6 +131,7 @@ fun TableToggle(
     isExpanded: Boolean,
     onToggle: () -> Unit,
     modifier: Modifier = Modifier,
+    title: String = stringResource(R.string.guidelines_reference_table),
 ) {
     Row(
         modifier = modifier
@@ -135,7 +142,7 @@ fun TableToggle(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = stringResource(R.string.guidelines_card_title),
+            text = title,
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.primary,
             fontWeight = FontWeight.SemiBold

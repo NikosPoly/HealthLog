@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -62,12 +63,16 @@ fun BloodPressureSection(evaluation: GuidelineEvaluation.BloodPressure) {
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        SegmentedScale(segments = segments, activeCriteria = activeCriteria)
-
         if (evaluation.pulseEvaluation != null) {
-            Spacer(modifier = Modifier.height(4.dp))
-            PulseSection(evaluation = evaluation.pulseEvaluation)
+            Text(
+                text = stringResource(R.string.bp_section_title),
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
         }
+
+        SegmentedScale(segments = segments, activeCriteria = activeCriteria)
 
         TableToggle(
             isExpanded = showAllStages,
@@ -85,6 +90,20 @@ fun BloodPressureSection(evaluation: GuidelineEvaluation.BloodPressure) {
                     )
                 }
             }
+        }
+
+        // Pulse section with its own scale and reference explanation directly after it
+        if (evaluation.pulseEvaluation != null) {
+            Spacer(modifier = Modifier.height(4.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = stringResource(R.string.pulse_section_title),
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            PulseSection(evaluation = evaluation.pulseEvaluation)
         }
     }
 }
@@ -225,7 +244,8 @@ fun WeightSection(bmiEvaluation: BmiEvaluation?) {
         return
     }
 
-    var showAllStages by rememberSaveable { mutableStateOf(value = false) }
+    var showStandardStages by rememberSaveable { mutableStateOf(value = false) }
+    var showOxfordStages by rememberSaveable { mutableStateOf(value = false) }
 
     val separator = decimalSeparator()
     val formattedBmi = String.format(Locale.US, "%.1f", bmiEvaluation.bmi).replace('.', separator)
@@ -234,14 +254,96 @@ fun WeightSection(bmiEvaluation: BmiEvaluation?) {
     val minStr = String.format(Locale.US, "%.1f", bmiEvaluation.healthyWeightMinKg).replace('.', separator)
     val maxStr = String.format(Locale.US, "%.1f", bmiEvaluation.healthyWeightMaxKg).replace('.', separator)
 
+    val categories = listOf(
+        Triple(BmiCategory.UNDERWEIGHT, R.string.bmi_category_underweight, "< 18.5"),
+        Triple(BmiCategory.NORMAL, R.string.bmi_category_normal, "18.5–24.9"),
+        Triple(BmiCategory.OVERWEIGHT, R.string.bmi_category_overweight, "25.0–29.9"),
+        Triple(BmiCategory.OBESE, R.string.bmi_category_obese, "≥ 30.0")
+    )
+
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        // 1. Standard WHO BMI
+        Text(
+            text = stringResource(R.string.bmi_standard_title),
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+
         BmiContinuousScale(
             bmi = bmiEvaluation.bmi,
-            activeCategoryLabel = stringResource(bmiEvaluation.category.labelRes) + " · BMI $formattedBmi",
+            activeCategoryLabel = stringResource(bmiEvaluation.category.labelRes) + " · " +
+                stringResource(R.string.bmi_value_label, formattedBmi),
             activeCategoryColor = bmiCategoryColor(bmiEvaluation.category).indicator
         )
 
-        // Target healthy weight window
+        TableToggle(
+            isExpanded = showStandardStages,
+            onToggle = { showStandardStages = !showStandardStages }
+        )
+
+        AnimatedVisibility(visible = showStandardStages) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                categories.forEach { (cat, labelRes, criteriaText) ->
+                    ReferenceRow(
+                        title = stringResource(labelRes),
+                        criteria = criteriaText,
+                        colors = bmiCategoryColor(cat),
+                        isCurrent = cat == bmiEvaluation.category
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+        Spacer(modifier = Modifier.height(2.dp))
+
+        // 2. Oxford New BMI
+        Text(
+            text = stringResource(R.string.bmi_oxford_title),
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+
+        BmiContinuousScale(
+            bmi = bmiEvaluation.newBmi,
+            activeCategoryLabel = stringResource(bmiEvaluation.newBmiCategory.labelRes) + " · " +
+                stringResource(R.string.bmi_new_value_label, formattedNewBmi),
+            activeCategoryColor = bmiCategoryColor(bmiEvaluation.newBmiCategory).indicator
+        )
+
+        Text(
+            text = stringResource(R.string.bmi_oxford_explanation),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 4.dp)
+        )
+
+        TableToggle(
+            isExpanded = showOxfordStages,
+            onToggle = { showOxfordStages = !showOxfordStages }
+        )
+
+        AnimatedVisibility(visible = showOxfordStages) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                categories.forEach { (cat, labelRes, criteriaText) ->
+                    ReferenceRow(
+                        title = stringResource(labelRes),
+                        criteria = criteriaText,
+                        colors = bmiCategoryColor(cat),
+                        isCurrent = cat == bmiEvaluation.newBmiCategory
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+        Spacer(modifier = Modifier.height(2.dp))
+
+        // 3. Target healthy weight window
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -283,50 +385,6 @@ fun WeightSection(bmiEvaluation: BmiEvaluation?) {
                     },
                     fontWeight = FontWeight.SemiBold
                 )
-            }
-        }
-
-        // Standard BMI vs Oxford New BMI comparison
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 4.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = stringResource(R.string.bmi_value_label, formattedBmi),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = stringResource(R.string.bmi_new_value_label, formattedNewBmi),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-
-        TableToggle(
-            isExpanded = showAllStages,
-            onToggle = { showAllStages = !showAllStages }
-        )
-
-        AnimatedVisibility(visible = showAllStages) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                val categories = listOf(
-                    Triple(BmiCategory.UNDERWEIGHT, R.string.bmi_category_underweight, "< 18.5"),
-                    Triple(BmiCategory.NORMAL, R.string.bmi_category_normal, "18.5–24.9"),
-                    Triple(BmiCategory.OVERWEIGHT, R.string.bmi_category_overweight, "25.0–29.9"),
-                    Triple(BmiCategory.OBESE, R.string.bmi_category_obese, "≥ 30.0")
-                )
-
-                categories.forEach { (cat, labelRes, criteriaText) ->
-                    ReferenceRow(
-                        title = stringResource(labelRes),
-                        criteria = criteriaText,
-                        colors = bmiCategoryColor(cat),
-                        isCurrent = cat == bmiEvaluation.category
-                    )
-                }
             }
         }
 
