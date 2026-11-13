@@ -17,6 +17,10 @@ class MeasurementRepository(
     fun getMeasurementById(id: Long): Flow<Measurement?> =
         dao.getMeasurementById(id)
 
+    // Observes the latest recorded height in cm (or null if none recorded).
+    fun getLatestHeight(): Flow<Double?> =
+        dao.getLatestHeight()
+
     // Saves a new measurement (see measurementsToSave for what is stored).
     // Everything is saved in one database transaction: either all of it or nothing.
     suspend fun save(measurement: Measurement) {

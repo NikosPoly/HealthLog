@@ -26,4 +26,10 @@ interface MeasurementDao {
     // A single measurement by its ID, or null if it was deleted or not found.
     @Query("SELECT * FROM measurements WHERE id = :id")
     fun getMeasurementById(id: Long): Flow<Measurement?>
+
+    // The most recently recorded height value in cm, or null if no height has been logged.
+    @Query(
+        "SELECT value FROM measurements WHERE type = 'HEIGHT' ORDER BY timestamp DESC, id DESC LIMIT 1"
+    )
+    fun getLatestHeight(): Flow<Double?>
 }
