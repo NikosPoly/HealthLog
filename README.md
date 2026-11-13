@@ -24,6 +24,26 @@ The app is available in Greek and English.
   guideline tables and stage classifications
 - **Interactive chart stats:** tapping the highest, lowest or last entry stat cards on the chart
   page navigates directly into that measurement's details
+- **Medical reference standards & clinical stage badges:**
+  - **Stage badges:** prominent, color-coded stage badge displayed directly beneath the reading card
+    for immediate classification.
+  - **International standards:**
+    - **Blood Pressure:** International Society of Hypertension 2020 (ISH 2020) classification (Low,
+      Normal, High-Normal, Grade 1 Hypertension, Grade 2 Hypertension, Hypertensive Crisis) paired
+      with resting pulse evaluation.
+    - **Blood Glucose:** World Health Organization & International Diabetes Federation (WHO / IDF)
+      clinical thresholds correlated with meal timing (Hypoglycemia, Normal, Prediabetes, Diabetes
+      for Fasting and 2h Post-meal).
+    - **Pulse:** World Heart Federation & WHO consensus resting heart rate zones (Bradycardia, Normal,
+      Tachycardia) with athlete resting pulse footnote.
+    - **Weight & BMI:** World Health Organization (WHO) Body Mass Index (Underweight, Normal,
+      Overweight, Obese) alongside Oxford University "New BMI" ($1.3 \times \text{weight} / \text{height}^{2.5}$),
+      healthy weight target range ($18.5 \times H^2 .. 24.9 \times H^2$) with delta, and WHO Asian
+      population risk consultation footnote.
+  - **Visual gauges & scales:** discrete segmented meters with active glow callout for blood pressure,
+    glucose, and pulse; continuous spectrum gauge with needle pointer for standard BMI and Oxford New BMI.
+  - **Inline reference tables:** clean, expandable reference tables placed directly below each metric's
+    gauge scale, highlighting the active tier and criteria.
 - **Blood pressure includes the pulse:** saving a blood pressure also saves its pulse as a
   separate Pulse measurement, so it appears in both histories. The two measurements are
   independent: deleting one keeps the other
@@ -75,6 +95,7 @@ healthlog/
 ├── database/                Room entity (Measurement), DAO, database and migrations
 ├── repository/              MeasurementRepository, the single access point to the data
 ├── model/                   measurement types (fields, units, ranges) and validation rules
+├── guidelines/              clinical evaluation logic & medical standards (ISH, WHO, WHF, Oxford)
 └── ui/                      navigation (HealthLogNavHost)
     ├── home/                home screen: the type picker cards, with their icons
     │   └── newentry/        adding an entry: the new-entry dialog, its state and inputs
@@ -85,6 +106,7 @@ healthlog/
     │       ├── stats/       the stats in the period card: calculations, texts, the stat boxes
     │       └── vico/        the chart itself, its tooltip and axes (the only place Vico is used)
     ├── details/             measurement details screen: single-entry breakdown, clinical context tags
+    │   └── references/      clinical reference cards, visual gauge meters, and stage badges
     ├── format/              display text: values, dates, "time ago", messages, per-language formats
     └── theme/               colors, typography and theme, plus the type colors (TypeTheme)
                              and the type icons (TypeIcon)
