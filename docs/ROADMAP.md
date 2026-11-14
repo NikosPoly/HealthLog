@@ -30,11 +30,18 @@ This document outlines the architectural strategy, feature specifications, and i
   * **Weight & Height:** WHO BMI categories (Underweight, Normal, Overweight, Obese), Oxford University "New BMI" ($1.3 \times \text{weight} / \text{height}^{2.5}$), healthy weight target range ($18.5 \times H^2 .. 24.9 \times H^2$) with delta, and WHO Asian population risk footnote.
 * **UI Integration:** Color-coded stage badges directly beneath the reading card, visual gauge scales (discrete segmented meters and continuous spectrum needles), and inline expandable reference tables with active stage highlighting.
 
-### B. Educational "How to Measure" Guide
-* **Purpose:** Educate users on clinical measurement protocol to eliminate inaccurate home readings (e.g. resting 5 minutes, cuff at heart level, avoiding caffeine/talking, fasting vs. postprandial timing).
+### B. Educational "How to Measure" Guide (Completed)
+* **Purpose:** Educate users on clinical measurement protocols to eliminate inaccurate home readings (e.g. resting 5 minutes, cuff at heart level, avoiding caffeine/talking, fasting vs. postprandial timing).
+* **Standards & Protocols:**
+  * **Blood Pressure:** ISH 2020 / AHA practice guidelines (5-min quiet rest, back supported, arm at heart level, no speaking, empty bladder, caffeine/exercise abstinence).
+  * **Blood Glucose:** WHO & ADA self-monitoring standards (wash hands with warm water, avoid first drop by wiping away, lance side of fingertip, test 2nd drop, log fasting vs. post-meal).
+  * **Pulse:** WHF & WHO resting protocol (rest 5 min, index + middle fingers on radial artery below thumb base, count full 60 seconds).
+  * **Weight:** WHO & CDC anthropometry (morning baseline, post-voiding, barefoot, centered on flat hard floor, 7-day trend focus).
+  * **Height:** CDC growth & nutrition guidelines (barefoot, 4-point wall contact [heels, calves, buttocks, shoulders, back of head], horizontal line of sight).
 * **UI Integration:**
-  * Contextual `(?)` info icon on each metric's New Entry dialog.
-  * Central guide sheet/screen paired with medical guideline tables.
+  * Contextual `(?)` info icon on each metric's `NewEntryDialog` title bar navigating to a dedicated full-screen guide (`MeasurementGuideScreen`), returning cleanly with inputs preserved.
+  * Friendly native doctor vector avatar (`ic_doctor_guide.xml`) with conversational speech bubble clouds (`SpeechBubbleCard`, `LeftSpeechBubbleShape`) breaking the monotony of plain text.
+  * Structured two-cloud layout: Cloud 1 for step-by-step checklist, Cloud 2 for essential tips and rules.
 
 ### C. Condition Breakdown Statistics (Insights)
 * **Purpose:** Calculate aggregate percentages of measurements taken under various clinical conditions over the selected chart period (e.g., `% Left vs. Right arm`, `% Sitting vs. Standing`, `% Before vs. After meal`, arrhythmia detection frequency).
@@ -89,8 +96,8 @@ This document outlines the architectural strategy, feature specifications, and i
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
 │ PHASE 1: Clinical Guidance & Reference Standards (Current Focus)       │
-│ 1.1 Medical Organization Guidelines & Stage Badges (Details screen)    │
-│ 1.2 "How to Measure" Educational Guide (Contextual dialogs & sheet)    │
+│ 1.1 Medical Organization Guidelines & Stage Badges (Completed)         │
+│ 1.2 "How to Measure" Educational Guide (Completed)                     │
 │ 1.3 Condition Breakdown Statistics (Arm, Meal, Posture insights)       │
 ├────────────────────────────────────────────────────────────────────────┤
 │ PHASE 2: Data Visualization, Filtering & Doctor Reporting              │
@@ -115,9 +122,13 @@ This document outlines the architectural strategy, feature specifications, and i
 1. **Medical Organization Guidelines & Stage Badges (Completed):**
    * Pure domain evaluation logic (`com.example.healthlog.guidelines`), comprehensive unit test coverage, Room & ViewModel wiring (`latestHeight` flow).
    * Visual gauge scales (segmented and continuous spectrum), stage badges, and inline reference tables (`com.example.healthlog.ui.details.references`) in [MeasurementDetailsScreen](file:///home/nikos/Desktop/Git/HealthLog/app/src/main/java/com/example/healthlog/ui/details/MeasurementDetailsScreen.kt).
-2. **Measurement Guide ("How to Measure"):**
-   * Can be combined with the guidelines into a unified "Reference & Guide" sheet/page, plus quick `(?)` info helpers on the entry dialogs.
-3. **Condition Breakdown Statistics:**
+2. **Measurement Guide ("How to Measure") (Completed):**
+   * Standardized clinical protocols (`com.example.healthlog.guidelines.protocols`) for all 5 vital signs based on ISH, WHO, ADA, WHF, and CDC standards.
+   * Dedicated full-screen guide (`MeasurementGuideScreen`) wired seamlessly via `Routes.GUIDE` with single-top navigation.
+   * Contextual `(?)` info button on `NewEntryDialog` title bar that opens the metric's protocol directly, returning back with typed values intact.
+   * Conversational UI: native vector doctor avatar (`ic_doctor_guide.xml`) with custom speech cloud bubble (`LeftSpeechBubbleShape`) for friendly, approachable instructions.
+   * Fully localized in English and Greek; 100% test coverage with automated unit and instrumented UI tests.
+3. **Condition Breakdown Statistics (Next Step):**
    * Aggregate insights (% left vs. right arm, % sitting vs. standing, meal context, arrhythmia rate) on the History/Chart screen.
 
 #### **Phase 2: Discovery & Doctor Communication**
@@ -181,18 +192,24 @@ This document outlines the architectural strategy, feature specifications, and i
 * **Step 6 — Automated UI Tests:**
   * Add assertions to `MeasurementDetailsScreenTest.kt` verifying stage badge rendering and expandable table interaction.
 
-#### Milestone 1.2: Educational "How to Measure" Guide
+#### Milestone 1.2: Educational "How to Measure" Guide (Completed)
 * **Goal:** Guide users on proper clinical measurement protocols to eliminate inaccurate home readings.
-* **Step 1 — Guidance Content Definition:**
-  * Standardized clinical protocols for each type (rest 5 mins seated before BP, cuff on bare arm at heart level, no speaking, fasting interval for blood sugar, morning and barefoot weight).
+* **Step 1 — Clinical Protocol Definition (`guidelines/protocols/MeasurementProtocol.kt`):**
+  * Standardized clinical protocols for all 5 metrics (BP: ISH 2020 / AHA; Glucose: WHO / ADA; Pulse: WHF; Weight: WHO / CDC; Height: CDC).
+  * Comprehensive unit test coverage in `MeasurementProtocolTest.kt`.
 * **Step 2 — Contextual `(?)` Helper in Entry Dialog:**
-  * Add an info icon in `NewEntryDialog` title bar that opens a dialog or bottom sheet explaining how to measure that specific type accurately.
-* **Step 3 — Reference Section:**
-  * Add an expandable "Measurement Protocol" card within the Details reference section.
-* **Step 4 — Automated Tests:**
-  * Add unit and instrumented tests for dialog info button interaction.
+  * Added `(?)` info button on `NewEntryDialog` title bar navigating to `Routes.GUIDE`.
+  * Dedicated full-screen `MeasurementGuideScreen` with focused single-metric mode and tab browsing support.
+  * Back button `←` pops back directly to the open entry dialog with all typed values preserved.
+* **Step 3 — Conversational Persona & Speech Cloud UI (`guidelines/protocols/`):**
+  * Friendly native doctor avatar vector (`ic_doctor_guide.xml`).
+  * Custom `LeftSpeechBubbleShape` with speech tail delivering the clinical intro.
+  * Two conversational speech cards (`SpeechBubbleCard`): Step-by-Step checklist and Important Tips & Rules.
+* **Step 4 — Automated Testing & Localization:**
+  * Full English (`values/strings.xml`) and Greek (`values-el/strings.xml`) translations.
+  * Unit tests (`MeasurementProtocolTest.kt`) and instrumented UI tests (`MeasurementGuideScreenTest.kt`, `NewEntryDialogTest.kt`) all passing.
 
-#### Milestone 1.3: Condition Breakdown Statistics
+#### Milestone 1.3: Condition Breakdown Statistics (Next Step)
 * **Goal:** Present aggregate percentages of measurements taken under various clinical conditions over the selected chart period.
 * **Step 1 — Aggregation Calculation:**
   * Pure calculation functions in `PeriodStatsCalculation.kt` calculating percentages:
