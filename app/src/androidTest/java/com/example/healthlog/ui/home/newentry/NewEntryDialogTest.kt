@@ -24,6 +24,7 @@ import com.example.healthlog.model.MeasurementField
 import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.ui.theme.HealthLogTheme
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -313,5 +314,25 @@ class NewEntryDialogTest {
         // Selecting No arrhythmia clears all option errors
         composeRule.onNodeWithContentDescription(text(R.string.arrhythmia_no)).performScrollTo().performClick()
         composeRule.onAllNodes(hasErrorMessage("Selection required")).assertCountEquals(0)
+    }
+
+    @Test
+    fun infoButton_rendersAndTriggersOpenGuide() {
+        var guideOpened = false
+        composeRule.setContent {
+            HealthLogTheme {
+                NewEntryDialog(
+                    type = height,
+                    onDismiss = {},
+                    onSave = {},
+                    onOpenGuide = { guideOpened = true }
+                )
+            }
+        }
+
+        val infoDesc = text(R.string.guide_info_button_description, text(height.label))
+        composeRule.onNodeWithContentDescription(infoDesc).assertExists().performClick()
+
+        assertTrue(guideOpened)
     }
 }
