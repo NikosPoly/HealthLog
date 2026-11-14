@@ -39,12 +39,18 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
+import com.example.healthlog.guidelines.BloodGlucoseCategory
+import com.example.healthlog.guidelines.BloodPressureStage
+import com.example.healthlog.guidelines.GuidelineEvaluation
+import com.example.healthlog.guidelines.PulseZone
 import com.example.healthlog.model.BodyPosition
 import com.example.healthlog.model.MealContext
 import com.example.healthlog.model.MeasurementArm
 import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.model.arrhythmiaIcon
 import com.example.healthlog.model.arrhythmiaLabel
+import com.example.healthlog.ui.details.references.ReferenceCard
+import com.example.healthlog.ui.details.references.StageBadge
 import com.example.healthlog.ui.format.decimalSeparator
 import com.example.healthlog.ui.format.formatMeasurementValue
 import com.example.healthlog.ui.format.formatTimestamp
@@ -64,10 +70,12 @@ fun MeasurementDetailsScreen(
     onBack: () -> Unit,
 ) {
     val measurement by viewModel.measurement.collectAsState()
+    val guidelineEvaluation by viewModel.guidelineEvaluation.collectAsState()
     var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
 
     MeasurementDetailsContent(
         measurement = measurement,
+        guidelineEvaluation = guidelineEvaluation,
         onBack = onBack,
         onDelete = { showDeleteDialog = true }
     )
@@ -98,6 +106,7 @@ fun MeasurementDetailsContent(
     measurement: Measurement?,
     onBack: () -> Unit,
     onDelete: () -> Unit,
+    guidelineEvaluation: GuidelineEvaluation? = null,
     guidelinesSlot: (@Composable () -> Unit)? = null
 ) {
     val content = @Composable {
@@ -217,6 +226,11 @@ fun MeasurementDetailsContent(
                         }
                     }
 
+                    // Prominent Clinical Stage Badge
+                    if (guidelineEvaluation != null) {
+                        StageBadge(evaluation = guidelineEvaluation)
+                    }
+
                     // Clinical Context / Condition Chips (without redundant headers)
                     if (hasConditions) {
                         FlowRow(
@@ -253,6 +267,11 @@ fun MeasurementDetailsContent(
                                 )
                             }
                         }
+                    }
+
+                    // Clinical Guidelines & Reference Scale Card
+                    if (guidelineEvaluation != null) {
+                        ReferenceCard(evaluation = guidelineEvaluation)
                     }
 
                     // Optional Slot for future guideline tables / statistics
@@ -318,6 +337,15 @@ private fun MeasurementDetailsBloodPressurePreview() {
                 bodyPosition = BodyPosition.SITTING.name,
                 timestamp = System.currentTimeMillis() - 3600_000L
             ),
+            guidelineEvaluation = GuidelineEvaluation.BloodPressure(
+                stage = BloodPressureStage.NORMAL,
+                systolic = 125.0,
+                diastolic = 82.0,
+                pulseEvaluation = GuidelineEvaluation.Pulse(
+                    zone = PulseZone.NORMAL,
+                    rate = 72.0
+                )
+            ),
             onBack = {},
             onDelete = {}
         )
@@ -335,6 +363,11 @@ private fun MeasurementDetailsBloodSugarPreview() {
                 value = 95.0,
                 mealContext = MealContext.BEFORE_MEAL.name,
                 timestamp = System.currentTimeMillis()
+            ),
+            guidelineEvaluation = GuidelineEvaluation.BloodGlucose(
+                category = BloodGlucoseCategory.NORMAL,
+                value = 95.0,
+                mealContext = MealContext.BEFORE_MEAL
             ),
             onBack = {},
             onDelete = {}

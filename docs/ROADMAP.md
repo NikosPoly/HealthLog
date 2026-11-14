@@ -21,14 +21,14 @@ This document outlines the architectural strategy, feature specifications, and i
 
 ## 2. Feature Inventory & Analysis
 
-### A. Medical Organization Guidelines & Stage Badges
+### A. Medical Organization Guidelines & Stage Badges (Completed)
 * **Purpose:** Classify measurements into clinical stages so users understand whether a reading is optimal, elevated, or requires medical attention.
 * **Standards:**
-  * **Blood Pressure:** AHA/ACC (American Heart Association) & ESC (European Society of Cardiology) stages (Normal < 120/< 80, Elevated 120–129/< 80, Stage 1 Hypertension 130–139/80–89, Stage 2 ≥ 140/≥ 90, Hypertensive Crisis > 180/> 120).
-  * **Blood Sugar:** ADA (American Diabetes Association) criteria correlated with `MealContext` (Fasting/Before Meal vs. 2h Postprandial: Normal, Prediabetes, Diabetes).
-  * **Pulse:** Resting heart rate zones (Bradycardia < 60, Normal 60–100, Tachycardia > 100 bpm).
-  * **Weight & Height:** BMI calculation and WHO weight categories (Underweight, Normal, Overweight, Obese).
-* **UI Integration:** Color-coded stage badges on the details card and expandable reference tables inside `guidelinesSlot`.
+  * **Blood Pressure:** International Society of Hypertension 2020 (ISH 2020) stages (Low < 90/< 60, Normal < 130/< 85, High-Normal 130–139/85–89, Grade 1 Hypertension 140–159/90–99, Grade 2 Hypertension ≥ 160/≥ 100, Hypertensive Crisis > 180/> 120 mmHg) with accompanying resting pulse evaluation.
+  * **Blood Glucose:** World Health Organization & International Diabetes Federation (WHO / IDF) criteria correlated with `MealContext` (Hypoglycemia < 70 mg/dL; Fasting: Normal 70–99, Prediabetes 100–125, Diabetes ≥ 126 mg/dL; 2h Postprandial: Normal < 140, Prediabetes 140–199, Diabetes ≥ 200 mg/dL).
+  * **Pulse:** World Heart Federation & WHO resting heart rate consensus (Bradycardia < 60, Normal 60–100, Tachycardia > 100 bpm) with athlete resting pulse footnote.
+  * **Weight & Height:** WHO BMI categories (Underweight, Normal, Overweight, Obese), Oxford University "New BMI" ($1.3 \times \text{weight} / \text{height}^{2.5}$), healthy weight target range ($18.5 \times H^2 .. 24.9 \times H^2$) with delta, and WHO Asian population risk footnote.
+* **UI Integration:** Color-coded stage badges directly beneath the reading card, visual gauge scales (discrete segmented meters and continuous spectrum needles), and inline expandable reference tables with active stage highlighting.
 
 ### B. Educational "How to Measure" Guide
 * **Purpose:** Educate users on clinical measurement protocol to eliminate inaccurate home readings (e.g. resting 5 minutes, cuff at heart level, avoiding caffeine/talking, fasting vs. postprandial timing).
@@ -45,8 +45,12 @@ This document outlines the architectural strategy, feature specifications, and i
 * **Filters:** All entries, Flagged/High (Stage 1, Stage 2, Crisis), or specific conditions (e.g., Post-meal readings only).
 * **UI Integration:** Filter chips row above the history list.
 
-### E. Visual Normal Ranges on Charts
-* **Purpose:** Render shaded target/normal zones on Vico line charts (e.g. green band for systolic 90–120 mmHg) so users can instantly see when readings drift out of target range over 7d, 1m, 6m, 1y.
+### E. Visual Normal Ranges & Clinical Stage Coloring on Charts
+* **Purpose:** Give users instant visual feedback on their trends over time (7d, 1m, 6m, 1y, all).
+* **Specifications:**
+  * **Shaded Normal Target Bands:** Render subtle, semi-transparent shaded target/normal zones across the chart background (e.g. green band for systolic 90–129 mmHg and diastolic 60–84 mmHg, fasting glucose 70–99 mg/dL).
+  * **Stage-Colored Data Points:** Dynamically tint individual chart data points (dots) using their clinical stage color (e.g. green for normal, orange for high-normal/prediabetes, red for hypertension/diabetes).
+  * **Stage-Tethered Tooltip:** The tap tooltip / detail bubble displays the stage chip alongside the exact value, timestamp, and clinical conditions.
 
 ### F. Doctor Reporting & Print / Export (Zero Cost & Private)
 * **Purpose:** Allow users to share comprehensive health logs with their physicians without complex hospital software or cloud servers.
@@ -107,19 +111,20 @@ This document outlines the architectural strategy, feature specifications, and i
 
 ### Step-by-Step Breakdown
 
-#### **Phase 1: Deepening Clinical Value (Immediate Next Steps)**
-1. **Medical Organization Guidelines & Stage Badges:**
-   * Evaluate systolic/diastolic, glucose, and pulse against AHA/ESC and ADA tiers.
-   * Plugs directly into `guidelinesSlot` in [MeasurementDetailsScreen](file:///home/nikos/Desktop/Git/HealthLog/app/src/main/java/com/example/healthlog/ui/details/MeasurementDetailsScreen.kt).
+#### **Phase 1: Deepening Clinical Value**
+1. **Medical Organization Guidelines & Stage Badges (Completed):**
+   * Pure domain evaluation logic (`com.example.healthlog.guidelines`), comprehensive unit test coverage, Room & ViewModel wiring (`latestHeight` flow).
+   * Visual gauge scales (segmented and continuous spectrum), stage badges, and inline reference tables (`com.example.healthlog.ui.details.references`) in [MeasurementDetailsScreen](file:///home/nikos/Desktop/Git/HealthLog/app/src/main/java/com/example/healthlog/ui/details/MeasurementDetailsScreen.kt).
 2. **Measurement Guide ("How to Measure"):**
    * Can be combined with the guidelines into a unified "Reference & Guide" sheet/page, plus quick `(?)` info helpers on the entry dialogs.
 3. **Condition Breakdown Statistics:**
    * Aggregate insights (% left vs. right arm, % sitting vs. standing, meal context, arrhythmia rate) on the History/Chart screen.
 
 #### **Phase 2: Discovery & Doctor Communication**
-4. **Chart Target Zones:**
+4. **Chart Target Zones & Stage Coloring (2.1):**
    * Shaded normal bands on Vico line charts using the thresholds established in Phase 1.
-5. **History List Filtering:**
+   * Stage-colored data points (dots) and stage-tinted tooltip callouts when tapping points.
+5. **History List Filtering (2.2):**
    * Filter entries by status (*All*, *Elevated/High*, *Specific Condition*).
 6. **Doctor Export Report (PDF/CSV):**
    * The most effective answer to Item E: allows patients to export and share comprehensive reports with their doctor.
@@ -206,13 +211,16 @@ This document outlines the architectural strategy, feature specifications, and i
 
 ### Phase 2: Discovery & Doctor Communication
 
-#### Milestone 2.1: Chart Target Zones
-* **Goal:** Display shaded normal target bands directly on Vico line charts.
+#### Milestone 2.1: Chart Target Zones & Stage-Colored Data Points
+* **Goal:** Display shaded normal target bands, stage-colored data points, and stage-tinted tooltip callouts on Vico line charts.
 * **Step 1 — Target Band Decoration (`ui/history/chart/vico/`):**
-  * Use Vico's threshold range decorations / shaded line ranges matching the normal guideline thresholds established in Phase 1 (e.g. green zone for systolic 90–120 mmHg and diastolic 60–80 mmHg).
+  * Use Vico's threshold range decorations / shaded line ranges matching the normal guideline thresholds established in Phase 1 (e.g. green zone for systolic 90–129 mmHg and diastolic 60–84 mmHg, fasting glucose 70–99 mg/dL).
 * **Step 2 — Dynamic Bounds per Metric:**
-  * Dynamically assign target band Y-ranges based on current `MeasurementType` (e.g. 70–99 mg/dL for blood sugar, 60–100 bpm for pulse).
-* **Step 3 — Visual Testing & Verification:**
+  * Dynamically assign target band Y-ranges based on current `MeasurementType` (e.g. 70–99 mg/dL for blood sugar, 60–100 bpm for pulse, 18.5–24.9 for BMI).
+* **Step 3 — Stage-Colored Data Points & Tooltip Badge:**
+  * Dynamically tint individual chart data points (dots) using their clinical stage color (e.g. green for normal, orange for high-normal/prediabetes, red for hypertension/diabetes).
+  * Display the clinical stage chip inside the tap tooltip / detail callout bubble alongside the value, timestamp, and clinical conditions.
+* **Step 4 — Visual Testing & Verification:**
   * Test rendering with different chart periods and data sets in `ChartPageTest.kt`.
 
 #### Milestone 2.2: History List Filtering

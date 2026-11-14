@@ -101,4 +101,75 @@
     <string name="details_title">Λεπτομέρειες Καταχώρισης</string>
     <string name="details_not_found">Η καταχώριση δεν βρέθηκε</string>
     <string name="action_view_details">Λεπτομέρειες</string>
+
+    <!-- Clinical Guidelines & References -->
+    <string name="guidelines_card_title">Ιατρικά Πρότυπα Αναφοράς</string>
+    <string name="guidelines_reference_table">Πίνακας Αναφοράς</string>
+    <string name="guidelines_current_reading">Τρέχουσα Μέτρηση</string>
+    <string name="guidelines_source_ish">Οδηγίες ISH 2020</string>
+    <string name="guidelines_source_who_idf">Πρότυπα ΠΟΥ / IDF</string>
+    <string name="guidelines_source_whf">Συναίνεση WHF / ΠΟΥ</string>
+    <string name="guidelines_source_who">Διεθνή Πρότυπα ΠΟΥ</string>
+    <string name="guidelines_source_who_oxford">Πρότυπα ΠΟΥ · Oxford University</string>
+    <string name="bp_section_title">Αρτηριακή Πίεση (ISH 2020)</string>
+    <string name="pulse_section_title">Παλμοί Ηρεμίας (WHF / ΠΟΥ)</string>
+
+    <!-- Blood Pressure Stages (ISH 2020) -->
+    <string name="bp_stage_low">Χαμηλή</string>
+    <string name="bp_stage_normal">Φυσιολογική</string>
+    <string name="bp_stage_high_normal">Υψηλή-Φυσιολογική</string>
+    <string name="bp_stage_grade_1">Υπέρταση 1ου Βαθμού</string>
+    <string name="bp_stage_grade_2">Υπέρταση 2ου Βαθμού</string>
+    <string name="bp_stage_crisis">Υπερτασική Κρίση</string>
+
+    <string name="bp_criteria_low">&lt; 90 ή &lt; 60 mmHg</string>
+    <string name="bp_criteria_normal">&lt; 130 και &lt; 85 mmHg</string>
+    <string name="bp_criteria_high_normal">130–139 ή 85–89 mmHg</string>
+    <string name="bp_criteria_grade_1">140–159 ή 90–99 mmHg</string>
+    <string name="bp_criteria_grade_2">≥ 160 ή ≥ 100 mmHg</string>
+    <string name="bp_criteria_crisis">&gt; 180 ή/και &gt; 120 mmHg</string>
+
+    <!-- Blood Glucose Categories (WHO / IDF) -->
+    <string name="glucose_category_hypoglycemia">Υπογλυκαιμία</string>
+    <string name="glucose_category_normal">Φυσιολογικό</string>
+    <string name="glucose_category_prediabetes">Προδιαβήτης</string>
+    <string name="glucose_category_diabetes">Διαβήτης</string>
+
+    <string name="glucose_criteria_hypoglycemia">&lt; 70 mg/dL</string>
+    <string name="glucose_criteria_fasting_normal">70–99 mg/dL (Νηστείας)</string>
+    <string name="glucose_criteria_fasting_prediabetes">100–125 mg/dL (Νηστείας)</string>
+    <string name="glucose_criteria_fasting_diabetes">≥ 126 mg/dL (Νηστείας)</string>
+    <string name="glucose_criteria_post_normal">&lt; 140 mg/dL (Μετά 2ω)</string>
+    <string name="glucose_criteria_post_prediabetes">140–199 mg/dL (Μετά 2ω)</string>
+    <string name="glucose_criteria_post_diabetes">≥ 200 mg/dL (Μετά 2ω)</string>
+
+    <!-- Pulse Zones (WHF / WHO) -->
+    <string name="pulse_zone_bradycardia">Βραδυκαρδία</string>
+    <string name="pulse_zone_normal">Φυσιολογικοί</string>
+    <string name="pulse_zone_tachycardia">Ταχυκαρδία</string>
+
+    <string name="pulse_criteria_bradycardia">&lt; 60 bpm</string>
+    <string name="pulse_criteria_normal">60–100 bpm</string>
+    <string name="pulse_criteria_tachycardia">&gt; 100 bpm</string>
+    <string name="pulse_note_athlete">Παλμοί ηρεμίας κάτω από 60 bpm μπορεί να είναι φυσιολογικοί για αθλητές.</string>
+
+    <!-- BMI & Weight (WHO & Oxford New BMI) -->
+    <string name="bmi_category_underweight">Ελλιποβαρές</string>
+    <string name="bmi_category_normal">Φυσιολογικό Βάρος</string>
+    <string name="bmi_category_overweight">Υπέρβαρο</string>
+    <string name="bmi_category_obese">Παχύσαρκο</string>
+
+    <string name="bmi_value_label">ΔΜΣ: %1$s</string>
+    <string name="bmi_new_value_label">Νέος ΔΜΣ: %1$s</string>
+    <string name="bmi_standard_title">Βασικός ΔΜΣ (ΠΟΥ)</string>
+    <string name="bmi_oxford_title">Νέος ΔΜΣ Οξφόρδης (University of Oxford)</string>
+    <string name="bmi_oxford_explanation">Ο τύπος της Οξφόρδης (1,3 × βάρος / ύψος^2,5) προσαρμόζει για την τρισδιάστατη κλίμακα του σώματος, διορθώνοντας στρεβλώσεις για ψηλότερα και κοντύτερα άτομα.</string>
+    <string name="bmi_healthy_range">Φυσιολογικό βάρος για %1$s εκ: %2$s – %3$s kg</string>
+    <string name="bmi_delta_above">+%1$s kg πάνω από το φυσιολογικό όριο</string>
+    <string name="bmi_delta_below">-%1$s kg κάτω από το φυσιολογικό όριο</string>
+    <string name="bmi_in_range">Εντός φυσιολογικού εύρους</string>
+    <string name="bmi_asian_note">Σύσταση ΠΟΥ για Ασιατικούς πληθυσμούς: Αυξημένος κίνδυνος μπορεί να ξεκινά από ΔΜΣ ≥ 23.0.</string>
+    <string name="bmi_no_height_prompt">Καταχωρίστε το ύψος σας για να υπολογιστεί ο Δείκτης Μάζας Σώματος (ΔΜΣ) και το ιδανικό βάρος.</string>
+    <string name="height_healthy_weight_range">Ιδανικό εύρος βάρους: %1$s – %2$s kg</string>
+    <string name="height_bmi_baseline_info">Το ύψος χρησιμοποιείται ως βάση για τον υπολογισμό του Δείκτη Μάζας Σώματος (ΔΜΣ) στις καταχωρίσεις βάρους.</string>
 </resources>
