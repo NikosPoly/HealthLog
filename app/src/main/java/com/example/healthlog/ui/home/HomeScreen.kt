@@ -8,12 +8,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalResources
 
+import com.example.healthlog.model.MeasurementType
+
 // Connector: reads the HomeViewModel's state, shows its messages,
 // and hands everything to the layout as plain values and callbacks.
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
-    onOpenHistory: () -> Unit
+    onOpenHistory: () -> Unit,
+    onOpenGuide: (MeasurementType) -> Unit = {}
 ) {
     val selectedType by viewModel.selectedType.collectAsState()
 
@@ -32,6 +35,7 @@ fun HomeScreen(
         onOpenEntry = viewModel::openEntry,
         onDismissEntry = viewModel::closeEntry,
         onSave = viewModel::save,
-        onOpenHistory = onOpenHistory
+        onOpenHistory = onOpenHistory,
+        onOpenGuide = onOpenGuide
     )
 }

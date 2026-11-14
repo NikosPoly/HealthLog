@@ -11,6 +11,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.healthlog.guidelines.protocols.MeasurementGuideScreen
 import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.repository.MeasurementRepository
 import com.example.healthlog.ui.details.MeasurementDetailsScreen
@@ -25,8 +26,10 @@ private object Routes {
     const val HOME = "home"
     const val HISTORY = "history"
     const val DETAILS = "details/{measurementId}"
+    const val GUIDE = "guide/{type}"
 
     fun details(measurementId: Long) = "details/$measurementId"
+    fun guide(type: MeasurementType) = "guide/${type.name}"
 }
 
 // Decides which screen is shown and how to move between them.
@@ -55,6 +58,9 @@ fun HealthLogNavHost(
                 onOpenHistory = {
                     // launchSingleTop: a double tap doesn't open the history twice.
                     navController.navigate(Routes.HISTORY) { launchSingleTop = true }
+                },
+                onOpenGuide = { type ->
+                    navController.navigate(Routes.guide(type)) { launchSingleTop = true }
                 }
             )
         }
@@ -91,6 +97,23 @@ fun HealthLogNavHost(
 
             MeasurementDetailsScreen(
                 viewModel = viewModel,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Routes.GUIDE,
+            arguments = listOf(
+                navArgument("type") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val typeName = backStackEntry.arguments?.getString("type")
+            val type = typeName?.let { runCatching { MeasurementType.valueOf(it) }.getOrNull() }
+                ?: MeasurementType.BLOOD_PRESSURE
+
+            MeasurementGuideScreen(
+                type = type,
+                showTabs = false,
                 onBack = { navController.popBackStack() }
             )
         }
