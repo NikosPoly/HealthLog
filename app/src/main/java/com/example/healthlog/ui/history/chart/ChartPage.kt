@@ -48,6 +48,11 @@ fun ChartPage(
             onOpenDetails = onOpenDetails
         )
 
+        ConditionInsightsCard(
+            type = type,
+            inPeriod = inPeriod
+        )
+
         // The list is newest first. A type without any measurement shows only the message.
         measurements.firstOrNull()?.let { latest ->
             NonPeriodStatsCard(

@@ -1,5 +1,8 @@
 package com.example.healthlog.ui.history.chart.stats
 
+import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
+import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.BodyPosition
 import com.example.healthlog.model.MealContext
@@ -37,13 +40,32 @@ data class ArrhythmiaStats(
     val ratio: Float
 )
 
+enum class ClinicalAdviceType {
+    INFO,
+    WARNING
+}
+
+// Evidence-based clinical advice or warning triggered by condition patterns.
+data class ClinicalAdviceNote(
+    @param:StringRes val textRes: Int,
+    val type: ClinicalAdviceType = ClinicalAdviceType.INFO,
+    @param:DrawableRes val iconRes: Int = R.drawable.ic_doctor_warning
+)
+
 // Condition breakdown statistics over a period.
 data class ConditionBreakdown(
     val armDistribution: List<ConditionDistribution<MeasurementArm>> = emptyList(),
     val positionDistribution: List<ConditionDistribution<BodyPosition>> = emptyList(),
     val mealDistribution: List<ConditionDistribution<MealContext>> = emptyList(),
-    val arrhythmiaStats: ArrhythmiaStats? = null
+    val arrhythmiaStats: ArrhythmiaStats? = null,
+    val armAdvice: ClinicalAdviceNote? = null,
+    val positionAdvice: ClinicalAdviceNote? = null,
+    val mealAdvice: ClinicalAdviceNote? = null,
+    val arrhythmiaAdvice: ClinicalAdviceNote? = null
 ) {
+    val adviceNotes: List<ClinicalAdviceNote>
+        get() = listOfNotNull(armAdvice, positionAdvice, mealAdvice, arrhythmiaAdvice)
+
     val isEmpty: Boolean
         get() = armDistribution.isEmpty() &&
             positionDistribution.isEmpty() &&
@@ -88,25 +110,93 @@ fun periodConditionStats(measurements: List<Measurement>, type: MeasurementType)
                 measurements.mapNotNull { BodyPosition.fromNameOrNull(it.bodyPosition) }
             )
             val arrhythmia = calculateArrhythmiaStats(measurements)
+
             ConditionBreakdown(
                 armDistribution = arms,
                 positionDistribution = positions,
-                arrhythmiaStats = arrhythmia
+                arrhythmiaStats = arrhythmia,
+                armAdvice = evaluateArmAdvice(arms),
+                positionAdvice = evaluatePositionAdvice(positions),
+                arrhythmiaAdvice = evaluateArrhythmiaAdvice(arrhythmia)
             )
         }
         MeasurementType.BLOOD_SUGAR -> {
             val meals = calculateDistribution(
                 measurements.mapNotNull { MealContext.fromNameOrNull(it.mealContext) }
             )
-            ConditionBreakdown(mealDistribution = meals)
+            ConditionBreakdown(
+                mealDistribution = meals,
+                mealAdvice = evaluateMealAdvice(meals)
+            )
         }
         MeasurementType.PULSE -> {
             val arrhythmia = calculateArrhythmiaStats(measurements)
-            ConditionBreakdown(arrhythmiaStats = arrhythmia)
+            ConditionBreakdown(
+                arrhythmiaStats = arrhythmia,
+                arrhythmiaAdvice = evaluateArrhythmiaAdvice(arrhythmia)
+            )
         }
         MeasurementType.WEIGHT, MeasurementType.HEIGHT -> {
             ConditionBreakdown()
         }
+    }
+}
+
+private fun evaluateArmAdvice(arms: List<ConditionDistribution<MeasurementArm>>): ClinicalAdviceNote? {
+    val secondaryArm = arms.getOrNull(1)
+    return if (secondaryArm != null && secondaryArm.total >= 4 && secondaryArm.percentage >= 25) {
+        ClinicalAdviceNote(
+            textRes = R.string.insights_advice_arm_inconsistent,
+            type = ClinicalAdviceType.INFO,
+            iconRes = R.drawable.ic_doctor_warning
+        )
+    } else {
+        null
+    }
+}
+
+private fun evaluatePositionAdvice(positions: List<ConditionDistribution<BodyPosition>>): ClinicalAdviceNote? {
+    val totalPositions = positions.firstOrNull()?.total ?: 0
+    val nonSittingCount = positions
+        .filter { it.value != BodyPosition.SITTING }
+        .sumOf { it.count }
+    return if (totalPositions >= 4 && (nonSittingCount.toDouble() / totalPositions) >= 0.25) {
+        ClinicalAdviceNote(
+            textRes = R.string.insights_advice_posture_standard,
+            type = ClinicalAdviceType.INFO,
+            iconRes = R.drawable.ic_doctor_warning
+        )
+    } else {
+        null
+    }
+}
+
+private fun evaluateArrhythmiaAdvice(arrhythmia: ArrhythmiaStats?): ClinicalAdviceNote? {
+    if (arrhythmia == null || arrhythmia.totalRecorded < 5) return null
+    val hasMeaningfulPattern = arrhythmia.detectedCount >= 3 ||
+        (arrhythmia.detectedCount >= 2 && arrhythmia.percentage >= 25)
+    return if (hasMeaningfulPattern) {
+        ClinicalAdviceNote(
+            textRes = R.string.insights_advice_arrhythmia_warning,
+            type = ClinicalAdviceType.WARNING,
+            iconRes = R.drawable.ic_doctor_warning
+        )
+    } else {
+        null
+    }
+}
+
+private fun evaluateMealAdvice(meals: List<ConditionDistribution<MealContext>>): ClinicalAdviceNote? {
+    val totalMeals = meals.firstOrNull()?.total ?: 0
+    val dominantMeal = meals.firstOrNull()
+    return if (totalMeals >= 5 && dominantMeal != null && dominantMeal.percentage >= 85) {
+        ClinicalAdviceNote(
+            textRes = R.string.insights_advice_glucose_balanced,
+            type = ClinicalAdviceType.INFO,
+            iconRes = R.drawable.ic_doctor_warning
+        )
+    } else {
+        null
     }
 }
 

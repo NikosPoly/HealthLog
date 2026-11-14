@@ -41,6 +41,15 @@
     <string name="stats_lowest_diastolic">Ελάχιστη Διαστολική</string>
     <string name="stats_last_entry">Τελευταία Καταχώριση</string>
 
+    <!-- Condition Breakdown / Insights -->
+    <string name="insights_title">Ανάλυση Συνθηκών</string>
+    <string name="insights_arrhythmia_none">Δεν εντοπίστηκε (%1$d μετρήσεις)</string>
+    <string name="insights_arrhythmia_detected">%1$d από %2$d μετρήσεις (%3$d%%)</string>
+    <string name="insights_advice_arm_inconsistent">Συνέπεια Χεριού: Αλλάζετε συχνά χέρι. Οι κλινικές οδηγίες (ISH 2020) συνιστούν να μετράτε σταθερά στο χέρι με την υψηλότερη πίεση για ακριβή παρακολούθηση.</string>
+    <string name="insights_advice_posture_standard">Συμβουλή Θέσης: Πάνω από το ένα τέταρτο των μετρήσεών σας έγιναν όρθιοι ή ξαπλωμένοι. Τα κλινικά πρότυπα συνιστούν καθιστή θέση με υποστηριζόμενη πλάτη.</string>
+    <string name="insights_advice_arrhythmia_warning">Καρδιακός Ρυθμός: Περιστασιακές ενδείξεις αρρυθμίας μπορεί να οφείλονται σε κίνηση. Επειδή εντοπίστηκε σε πολλαπλές μετρήσεις σε αυτή την περίοδο, αναφέρετέ το στον ιατρό σας εάν επιμένει.</string>
+    <string name="insights_advice_glucose_balanced">Συγχρονισμός Γευμάτων: Οι περισσότερες μετρήσεις έγιναν πριν το γεύμα. Η καταγραφή μετρήσεων 2 ώρες μετά το φαγητό δίνει πλήρη εικόνα του γλυκαιμικού ελέγχου.</string>
+
     <!-- Buttons and actions used in several places -->
     <string name="action_back">Πίσω</string>
     <string name="action_save">Αποθήκευση</string>

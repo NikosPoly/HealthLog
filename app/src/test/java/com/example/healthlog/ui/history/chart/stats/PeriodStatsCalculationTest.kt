@@ -290,4 +290,89 @@ class PeriodStatsCalculationTest {
         assertEquals(MeasurementArm.LEFT, stats.conditions.armDistribution[0].value)
         assertEquals(100, stats.conditions.armDistribution[0].percentage)
     }
+
+    @Test
+    fun bloodPressure_armInconsistency_triggersAdvice() {
+        // 3 Left, 1 Right -> Right is 25%, total 4 -> triggers arm inconsistency advice
+        val measurements = listOf(
+            Measurement(id = 1, type = MeasurementType.BLOOD_PRESSURE, value = 120.0, arm = MeasurementArm.LEFT.name),
+            Measurement(id = 2, type = MeasurementType.BLOOD_PRESSURE, value = 122.0, arm = MeasurementArm.LEFT.name),
+            Measurement(id = 3, type = MeasurementType.BLOOD_PRESSURE, value = 125.0, arm = MeasurementArm.LEFT.name),
+            Measurement(id = 4, type = MeasurementType.BLOOD_PRESSURE, value = 130.0, arm = MeasurementArm.RIGHT.name)
+        )
+
+        val breakdown = periodConditionStats(measurements, MeasurementType.BLOOD_PRESSURE)
+
+        assertTrue(breakdown.adviceNotes.any { it.textRes == com.example.healthlog.R.string.insights_advice_arm_inconsistent })
+    }
+
+    @Test
+    fun bloodPressure_consistentArm_doesNotTriggerAdvice() {
+        val measurements = (1..5).map {
+            Measurement(id = it.toLong(), type = MeasurementType.BLOOD_PRESSURE, value = 120.0, arm = MeasurementArm.LEFT.name)
+        }
+
+        val breakdown = periodConditionStats(measurements, MeasurementType.BLOOD_PRESSURE)
+
+        assertTrue(breakdown.adviceNotes.none { it.textRes == com.example.healthlog.R.string.insights_advice_arm_inconsistent })
+    }
+
+    @Test
+    fun bloodPressure_nonSittingPosture_triggersAdvice() {
+        // 3 Sitting, 1 Standing -> 25% non-sitting, total 4 -> triggers posture tip
+        val measurements = listOf(
+            Measurement(id = 1, type = MeasurementType.BLOOD_PRESSURE, value = 120.0, bodyPosition = BodyPosition.SITTING.name),
+            Measurement(id = 2, type = MeasurementType.BLOOD_PRESSURE, value = 122.0, bodyPosition = BodyPosition.SITTING.name),
+            Measurement(id = 3, type = MeasurementType.BLOOD_PRESSURE, value = 125.0, bodyPosition = BodyPosition.SITTING.name),
+            Measurement(id = 4, type = MeasurementType.BLOOD_PRESSURE, value = 130.0, bodyPosition = BodyPosition.STANDING.name)
+        )
+
+        val breakdown = periodConditionStats(measurements, MeasurementType.BLOOD_PRESSURE)
+
+        assertTrue(breakdown.adviceNotes.any { it.textRes == com.example.healthlog.R.string.insights_advice_posture_standard })
+    }
+
+    @Test
+    fun arrhythmia_multipleDetections_triggersWarning() {
+        // 5 readings, 2 detected (40%) -> triggers warning
+        val measurements = listOf(
+            Measurement(id = 1, type = MeasurementType.PULSE, value = 75.0, hasArrhythmia = true),
+            Measurement(id = 2, type = MeasurementType.PULSE, value = 78.0, hasArrhythmia = true),
+            Measurement(id = 3, type = MeasurementType.PULSE, value = 72.0, hasArrhythmia = false),
+            Measurement(id = 4, type = MeasurementType.PULSE, value = 70.0, hasArrhythmia = false),
+            Measurement(id = 5, type = MeasurementType.PULSE, value = 74.0, hasArrhythmia = false)
+        )
+
+        val breakdown = periodConditionStats(measurements, MeasurementType.PULSE)
+
+        val warning = breakdown.adviceNotes.firstOrNull { it.textRes == com.example.healthlog.R.string.insights_advice_arrhythmia_warning }
+        assertNotNull(warning)
+        assertEquals(ClinicalAdviceType.WARNING, warning!!.type)
+    }
+
+    @Test
+    fun arrhythmia_isolatedFewReadings_doesNotTriggerFalseAlarm() {
+        // Only 3 readings total -> even if 1 had arrhythmia, do not sound false alarms
+        val measurements = listOf(
+            Measurement(id = 1, type = MeasurementType.PULSE, value = 75.0, hasArrhythmia = true),
+            Measurement(id = 2, type = MeasurementType.PULSE, value = 72.0, hasArrhythmia = false),
+            Measurement(id = 3, type = MeasurementType.PULSE, value = 70.0, hasArrhythmia = false)
+        )
+
+        val breakdown = periodConditionStats(measurements, MeasurementType.PULSE)
+
+        assertTrue(breakdown.adviceNotes.none { it.textRes == com.example.healthlog.R.string.insights_advice_arrhythmia_warning })
+    }
+
+    @Test
+    fun bloodSugar_unbalancedMealTiming_triggersAdvice() {
+        // 5 before meal readings, 0 after meal -> triggers meal balance advice
+        val measurements = (1..5).map {
+            Measurement(id = it.toLong(), type = MeasurementType.BLOOD_SUGAR, value = 100.0, mealContext = MealContext.BEFORE_MEAL.name)
+        }
+
+        val breakdown = periodConditionStats(measurements, MeasurementType.BLOOD_SUGAR)
+
+        assertTrue(breakdown.adviceNotes.any { it.textRes == com.example.healthlog.R.string.insights_advice_glucose_balanced })
+    }
 }
