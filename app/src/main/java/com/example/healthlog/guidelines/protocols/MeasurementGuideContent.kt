@@ -38,85 +38,52 @@ fun MeasurementGuideContent(
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        // Clinical Reference Authority Badge
-        Surface(
-            shape = RoundedCornerShape(8.dp),
-            color = MaterialTheme.colorScheme.secondaryContainer,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(
-                text = stringResource(protocol.clinicalReferenceRes),
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-            )
-        }
-
-        // Summary Text
-        Text(
-            text = stringResource(protocol.summaryRes),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+        // Doctor Persona + Intro Speech Cloud
+        DoctorPersonaIntro(
+            clinicalReferenceRes = protocol.clinicalReferenceRes,
+            summaryRes = protocol.summaryRes,
         )
 
-        // Step-by-Step Instructions
-        Text(
-            text = stringResource(R.string.guide_section_steps),
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-
-        Column(
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+        // Cloud 1: Step-by-Step Instructions Speech Bubble
+        SpeechBubbleCard(
+            title = stringResource(R.string.guide_section_steps),
+            isSecondary = false,
         ) {
-            protocol.steps.forEachIndexed { index, step ->
-                ProtocolStepCard(
-                    stepNumber = index + 1,
-                    step = step
-                )
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                protocol.steps.forEachIndexed { index, step ->
+                    ProtocolStepCard(
+                        stepNumber = index + 1,
+                        step = step,
+                    )
+                }
             }
         }
 
-        // Tips & Key Rules Card
+        // Cloud 2: Important Tips & Rules Speech Bubble
         if (protocol.tips.isNotEmpty()) {
-            Card(
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-                ),
-                modifier = Modifier.fillMaxWidth()
+            SpeechBubbleCard(
+                title = stringResource(R.string.guide_section_tips),
+                isSecondary = true,
             ) {
-                Column(
-                    modifier = Modifier.padding(14.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.guide_section_tips),
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     protocol.tips.forEach { tipRes ->
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.Top
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalAlignment = Alignment.Top,
                         ) {
                             Box(
                                 modifier = Modifier
                                     .padding(top = 6.dp)
                                     .size(6.dp)
                                     .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.primary)
+                                    .background(MaterialTheme.colorScheme.tertiary),
                             )
                             Text(
                                 text = stringResource(tipRes),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface,
                             )
                         }
                     }
@@ -126,62 +93,66 @@ fun MeasurementGuideContent(
     }
 }
 
+// Visual card for an individual protocol step.
 @Composable
 private fun ProtocolStepCard(
     stepNumber: Int,
-    step: ProtocolStep
+    step: ProtocolStep,
+    modifier: Modifier = Modifier,
 ) {
     Card(
-        shape = RoundedCornerShape(10.dp),
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+            containerColor = MaterialTheme.colorScheme.surface,
         ),
-        modifier = Modifier.fillMaxWidth()
     ) {
         Row(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.Top
+            verticalAlignment = Alignment.Top,
         ) {
-            // Step Number or Contextual Icon
-            Box(
-                modifier = Modifier
-                    .size(28.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
-                contentAlignment = Alignment.Center
+            // Step Number Badge or Icon
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier.size(36.dp),
             ) {
-                if (step.iconRes != null) {
-                    Icon(
-                        painter = painterResource(step.iconRes),
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                        tint = Color.Unspecified
-                    )
-                } else {
-                    Text(
-                        text = stepNumber.toString(),
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
+                Box(contentAlignment = Alignment.Center) {
+                    if (step.iconRes != null) {
+                        Icon(
+                            painter = painterResource(step.iconRes),
+                            contentDescription = null,
+                            tint = Color.Unspecified,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    } else {
+                        Text(
+                            text = stepNumber.toString(),
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        )
+                    }
                 }
             }
 
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
+                verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 Text(
                     text = stringResource(step.titleRes),
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     text = stringResource(step.descriptionRes),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -190,29 +161,11 @@ private fun ProtocolStepCard(
 
 @Preview(showBackground = true)
 @Composable
-fun MeasurementGuideContentBpPreview() {
+private fun MeasurementGuideContentBpPreview() {
     HealthLogTheme {
-        Surface(
-            modifier = Modifier.padding(16.dp),
-            color = MaterialTheme.colorScheme.background
-        ) {
+        Box(modifier = Modifier.padding(16.dp)) {
             MeasurementGuideContent(
-                protocol = getMeasurementProtocol(MeasurementType.BLOOD_PRESSURE)
-            )
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun MeasurementGuideContentGlucosePreview() {
-    HealthLogTheme {
-        Surface(
-            modifier = Modifier.padding(16.dp),
-            color = MaterialTheme.colorScheme.background
-        ) {
-            MeasurementGuideContent(
-                protocol = getMeasurementProtocol(MeasurementType.BLOOD_SUGAR)
+                protocol = getMeasurementProtocol(MeasurementType.BLOOD_PRESSURE),
             )
         }
     }
