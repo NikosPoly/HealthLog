@@ -68,6 +68,20 @@ The app is available in Greek and English.
   chart, highest and lowest below it (for blood pressure, the highest and lowest systolic and
   diastolic with their pairs), each in its own box with an icon. An empty period shows only a
   message
+- **Condition breakdown statistics & clinical insights:**
+  - **Aggregate condition metrics:** on the chart page, a dedicated `ConditionInsightsCard` summarizes
+    the distribution of readings across clinical conditions for the selected period (e.g. % Left vs. % Right
+    arm, % Sitting vs. % Lying vs. % Standing posture, % Before vs. % After meal).
+  - **Visual distribution bars:** clean progress indicator bars show proportional fills with count and percentage
+    breakdowns for each condition.
+  - **Arrhythmia frequency tracking:** displays total readings with detected irregular heartbeat and percentage
+    over the period.
+  - **Conversational doctor clinical advice:** when meaningful condition patterns or repeated arrhythmia occurrences
+    are detected (with strict false-positive prevention thresholds), contextual doctor advice is displayed directly
+    beneath the relevant section in a talking speech bubble (`LeftSpeechBubbleShape`) featuring a serious, attentive
+    doctor avatar (`ic_doctor_warning.xml`).
+  - **Smart visibility:** hidden automatically for metrics without recorded clinical conditions (weight and height)
+    or when a period has no entries.
 - **Last entry card:** below the period card, whatever the period: the last entry's value and when
   it was recorded (e.g. "3 hours ago", "yesterday", "2 months ago") with its date and time
 - **A color per type and fixed brand identity:** red for blood pressure, pink for pulse, orange for blood sugar, green for
@@ -148,6 +162,7 @@ Dedicated vector icons illustrate every clinical option and dialog action:
 - **Body Position:** `ic_position_sitting.xml`, `ic_position_lying.xml`, `ic_position_standing.xml`
 - **Arrhythmia Presence:** `ic_arrhythmia_no.xml`, `ic_arrhythmia_yes.xml`
 - **Meal Context:** `ic_meal_before.xml`, `ic_meal_after.xml`
+- **Conversational Doctor Avatars:** `ic_doctor_guide.xml` (friendly educational guide avatar), `ic_doctor_warning.xml` (serious, attentive avatar with alert badge for clinical warnings)
 - **Custom Date & Time:** `ic_calendar.xml`
 
 These are rendered inside `OptionSelectorGroup` as compact, single-choice chips with icon presentation and accessible content descriptions, keeping the entry dialog uncluttered and easy to tap.
@@ -191,7 +206,8 @@ There are two kinds of tests:
 - `ValidationMessagesTest`: how range limits are shown in error messages
 - `MeasurementRepositoryTest`: what is stored when a measurement is saved and ID lookups
 - `ChartPeriodTest`: which measurements each chart period includes
-- `PeriodStatsCalculationTest`: count, highest, lowest, average and their rounding
+- `PeriodStatsCalculationTest`: count, highest, lowest, average, and condition breakdowns (arm, posture, arrhythmia, meal context distributions and balanced clinical advice rules)
+- `MeasurementProtocolTest`: evidence-based clinical preparation checklist and tips per vital sign
 - `TimeAgoTest`: the "time ago" of the last measurement (hours, yesterday, days, months, years)
 
 **Instrumented tests** (`app/src/androidTest`, run on an emulator or device):
@@ -199,9 +215,9 @@ There are two kinds of tests:
 - `NewEntryDialogTest`: the new-entry dialog's UI
 - `HistoryContentTest`: the history's tabs, swiping, empty pages, entry details navigation, deleting, the See Chart
   button and the period chips
-- `ChartPageTest`: the chart page: the period card (chart or empty message, stats) and the last
-  entry card
+- `ChartPageTest`: the chart page: the period card (chart or empty message, stats), condition breakdown statistics and clinical insights, and the last entry card
 - `MeasurementDetailsScreenTest`: the details screen layout, clinical condition tags, back navigation and deletion
+- `MeasurementGuideScreenTest`: the educational guide screen, tabs, doctor speech bubble cards, and back navigation
 
 To run them:
 
