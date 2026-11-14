@@ -172,4 +172,83 @@
     <string name="bmi_no_height_prompt">Καταχωρίστε το ύψος σας για να υπολογιστεί ο Δείκτης Μάζας Σώματος (ΔΜΣ) και το ιδανικό βάρος.</string>
     <string name="height_healthy_weight_range">Ιδανικό εύρος βάρους: %1$s – %2$s kg</string>
     <string name="height_bmi_baseline_info">Το ύψος χρησιμοποιείται ως βάση για τον υπολογισμό του Δείκτη Μάζας Σώματος (ΔΜΣ) στις καταχωρίσεις βάρους.</string>
+
+    <!-- Educational Measurement Protocols ("How to Measure") -->
+    <string name="guide_title">Οδηγός Μέτρησης</string>
+    <string name="guide_action_got_it">Το κατάλαβα</string>
+    <string name="guide_section_steps">Οδηγίες Βήμα-Βήμα</string>
+    <string name="guide_section_tips">Σημαντικές Συμβουλές &amp; Κανόνες</string>
+    <string name="guide_step_format">Βήμα %1$d: %2$s</string>
+    <string name="guide_info_button_description">Πώς να μετρήσετε: %1$s</string>
+
+    <!-- Blood Pressure Protocol -->
+    <string name="protocol_bp_title">Αρτηριακή Πίεση</string>
+    <string name="protocol_bp_summary">Η κατάλληλη ανάπαυση, η σωστή στάση σώματος και η ακριβής τοποθέτηση της περιχειρίδας αποτρέπουν πλασματικά αυξημένες μετρήσεις.</string>
+    <string name="protocol_bp_step1_title">Ανάπαυση εκ των προτέρων</string>
+    <string name="protocol_bp_step1_desc">Καθίστε ήρεμα για τουλάχιστον 5 λεπτά σε άνετο, ήσυχο περιβάλλον πριν από τη μέτρηση.</string>
+    <string name="protocol_bp_step2_title">Σωστή στάση σώματος</string>
+    <string name="protocol_bp_step2_desc">Διατηρήστε την πλάτη σας υποστηριζόμενη, τα πόδια αστάρωτα και τα πέλματα να πατούν σταθερά στο πάτωμα.</string>
+    <string name="protocol_bp_step3_title">Τοποθέτηση περιχειρίδας</string>
+    <string name="protocol_bp_step3_desc">Τοποθετήστε την περιχειρίδα σε γυμνό βραχίονα, στο ύψος της καρδιάς, περίπου 2–3 εκ. πάνω από την πτυχή του αγκώνα.</string>
+    <string name="protocol_bp_step4_title">Ακινησία και σιωπή</string>
+    <string name="protocol_bp_step4_desc">Μην μιλάτε, μην κινείστε και μην κοιτάτε το κινητό σας κατά τη διάρκεια της μέτρησης.</string>
+    <string name="protocol_bp_tip1">Αποφύγετε καφεΐνη, σωματική άσκηση και κάπνισμα για τουλάχιστον 30 λεπτά πριν τη μέτρηση.</string>
+    <string name="protocol_bp_tip2">Αδειάστε την κύστη σας πριν μετρήσετε· μια γεμάτη κύστη μπορεί να αυξήσει τη συστολική πίεση κατά 10–15 mmHg.</string>
+    <string name="protocol_bp_tip3">Πραγματοποιήστε 2 μετρήσεις με διαφορά 1–2 λεπτών και καταγράψτε τον μέσο όρο.</string>
+    <string name="protocol_bp_reference">Οδηγίες ISH 2020 &amp; AHA/ACC</string>
+
+    <!-- Blood Glucose Protocol -->
+    <string name="protocol_glucose_title">Σάκχαρο Αίματος</string>
+    <string name="protocol_glucose_summary">Η σωστή υγιεινή, η κατάλληλη λήψη δείγματος και ο ακριβής συγχρονισμός με τα γεύματα εξασφαλίζουν αξιόπιστη καταγραφή.</string>
+    <string name="protocol_glucose_step1_title">Πλύσιμο χεριών με ζεστό νερό</string>
+    <string name="protocol_glucose_step1_desc">Πλύνετε καλά τα χέρια με σαπούνι και ζεστό νερό για καλύτερη κυκλοφορία και στεγνώστε εντελώς. Αποφύγετε μαντηλάκια οινοπνεύματος καθώς αλλοιώνουν την ένδειξη.</string>
+    <string name="protocol_glucose_step2_title">Τρύπημα στο πλάι του δακτύλου</string>
+    <string name="protocol_glucose_step2_desc">Τρυπήστε στο πλαϊνό μέρος της άκρης του δακτύλου αντί για το κέντρο, ώστε να μειωθεί η ευαισθησία και ο πόνος.</string>
+    <string name="protocol_glucose_step3_title">Σκούπισμα πρώτης σταγόνας</string>
+    <string name="protocol_glucose_step3_desc">Σκουπίστε την πρώτη σταγόνα αίματος με καθαρό χαρτομάντιλο και τοποθετήστε τη δεύτερη σταγόνα στην ταινία μέτρησης.</string>
+    <string name="protocol_glucose_step4_title">Έλεγχος ταινιών μέτρησης</string>
+    <string name="protocol_glucose_step4_desc">Βεβαιωθείτε ότι οι ταινίες μέτρησης φυλάσσονται σε ξηρό μέρος, μακριά από θερμότητα, και δεν έχουν λήξει.</string>
+    <string name="protocol_glucose_tip1">Η μέτρηση νηστείας απαιτεί 8–10 ώρες χωρίς τροφή ή θερμιδικά ποτά (το νερό επιτρέπεται).</string>
+    <string name="protocol_glucose_tip2">Η μεταγευματική μέτρηση πρέπει να πραγματοποιείται ακριβώς 2 ώρες μετά την έναρξη του γεύματος.</string>
+    <string name="protocol_glucose_tip3">Μην πιέζετε υπερβολικά το δάχτυλο, καθώς μεσοκυττάριο υγρό μπορεί να αραιώσει το δείγμα αίματος.</string>
+    <string name="protocol_glucose_reference">Οδηγίες ΠΟΥ &amp; American Diabetes Association (ADA)</string>
+
+    <!-- Pulse Protocol -->
+    <string name="protocol_pulse_title">Παλμοί Ηρεμίας</string>
+    <string name="protocol_pulse_summary">Ο καρδιακός ρυθμός ηρεμίας αντικατοπτρίζει την καρδιαγγειακή κατάσταση και μετράται σε πλήρη ηρεμία.</string>
+    <string name="protocol_pulse_step1_title">Ανάπαυση πριν τη μέτρηση</string>
+    <string name="protocol_pulse_step1_desc">Καθίστε άνετα σε ένα ήσυχο δωμάτιο για τουλάχιστον 5 λεπτά πριν από την καταμέτρηση.</string>
+    <string name="protocol_pulse_step2_title">Εντοπισμός σφυγμού</string>
+    <string name="protocol_pulse_step2_desc">Τοποθετήστε τις άκρες του δείκτη και του μέσου δακτύλου στο εσωτερικό του καρπού, κάτω από τη βάση του αντίχειρα. Ποτέ μη χρησιμοποιείτε τον αντίχειρα, καθώς έχει δικό του σφυγμό.</string>
+    <string name="protocol_pulse_step3_title">Καταμέτρηση για 60 δευτερόλεπτα</string>
+    <string name="protocol_pulse_step3_desc">Μετρήστε τους παλμούς για 60 δευτερόλεπτα (ή για 30 δευτερόλεπτα επί 2 αν ο ρυθμός είναι σταθερός). Σε ακανόνιστο ρυθμό, μετράτε πάντα πλήρη 60 δευτερόλεπτα.</string>
+    <string name="protocol_pulse_tip1">Περιμένετε τουλάχιστον 15–30 λεπτά μετά από περπάτημα, ανέβασμα σκάλας ή συναισθηματική φόρτιση.</string>
+    <string name="protocol_pulse_tip2">Αποφύγετε τη μέτρηση αμέσως μετά από κατανάλωση ροφημάτων με καφεΐνη ή νικοτίνη.</string>
+    <string name="protocol_pulse_reference">World Heart Federation (WHF) &amp; Σύσταση ΠΟΥ</string>
+
+    <!-- Weight Protocol -->
+    <string name="protocol_weight_title">Σωματικό Βάρος</string>
+    <string name="protocol_weight_summary">Το βάρος αυξομειώνεται καθημερινά λόγω ενυδάτωσης και τροφής· οι σταθερές συνθήκες αποκαλύπτουν την πραγματική τάση.</string>
+    <string name="protocol_weight_step1_title">Πρωινή μέτρηση αναφοράς</string>
+    <string name="protocol_weight_step1_desc">Ζυγιστείτε το πρωί, αμέσως μόλις ξυπνήσετε και ουρήσετε, πριν από το πρωινό γεύμα.</string>
+    <string name="protocol_weight_step2_title">Σκληρή, επίπεδη επιφάνεια</string>
+    <string name="protocol_weight_step2_desc">Τοποθετήστε τη ζυγαριά σε σκληρό πλακάκι ή ξύλινο πάτωμα. Ποτέ σε χαλιά, μοκέτες ή ανώμαλους αρμούς πλακιδίων.</string>
+    <string name="protocol_weight_step3_title">Ξυπόλυτοι και ισορροπημένοι</string>
+    <string name="protocol_weight_step3_desc">Σταθείτε ξυπόλυτοι στο κέντρο της ζυγαριάς με το βάρος ομοιόμορφα κατανεμημένο και στα δύο πόδια μέχρι να σταθεροποιηθεί η ένδειξη.</string>
+    <string name="protocol_weight_tip1">Φοράτε ελάχιστα, σταθερά ρούχα (π.χ. μόνο εσώρουχα).</string>
+    <string name="protocol_weight_tip2">Εστιάστε στον κινητό μέσο όρο 7 ημερών και όχι στις ημερήσιες διακυμάνσεις κατακράτησης υγρών.</string>
+    <string name="protocol_weight_reference">Οδηγίες ΠΟΥ &amp; Ανθρωπομετρικές Οδηγίες CDC</string>
+
+    <!-- Height Protocol -->
+    <string name="protocol_height_title">Ύψος</string>
+    <string name="protocol_height_summary">Το ακριβές ύψος καθορίζει τη βάση αναφοράς για τον Δείκτη Μάζας Σώματος (ΔΜΣ) και το ιδανικό εύρος βάρους.</string>
+    <string name="protocol_height_step1_title">Ξυπόλυτοι σε επίπεδο τοίχο</string>
+    <string name="protocol_height_step1_desc">Αφαιρέστε παπούτσια, χοντρές κάλτσες και αξεσουάρ μαλλιών. Σταθείτε σε επίπεδο τοίχο πάνω σε σκληρό δάπεδο.</string>
+    <string name="protocol_height_step2_title">Στάση πλήρους επαφής</string>
+    <string name="protocol_height_step2_desc">Βεβαιωθείτε ότι οι φτέρνες, οι γάμπες, οι γλουτοί, οι ώμοι και το πίσω μέρος του κεφαλιού ακουμπούν ελαφρά στον τοίχο.</string>
+    <string name="protocol_height_step3_title">Οριζόντιο βλέμμα</string>
+    <string name="protocol_height_step3_desc">Κοιτάξτε ευθεία μπροστά με το πηγούνι παράλληλο στο πάτωμα. Χρησιμοποιήστε έναν χάρακα ή βιβλίο οριζόντια στην κορυφή του κεφαλιού.</string>
+    <string name="protocol_height_tip1">Σταθείτε όσο πιο ψηλά μπορείτε χωρίς να σηκώνετε τις φτέρνες από το έδαφος.</string>
+    <string name="protocol_height_tip2">Στους ενήλικες, η μέτρηση του ύψους χρειάζεται επανέλεγχο μόνο μία φορά κάθε 1–2 χρόνια.</string>
+    <string name="protocol_height_reference">Οδηγίες Ανάπτυξης &amp; Διατροφής CDC</string>
 </resources>

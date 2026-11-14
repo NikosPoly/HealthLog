@@ -44,6 +44,19 @@ The app is available in Greek and English.
     glucose, and pulse; continuous spectrum gauge with needle pointer for standard BMI and Oxford New BMI.
   - **Inline reference tables:** clean, expandable reference tables placed directly below each metric's
     gauge scale, highlighting the active tier and criteria.
+- **Educational "How to Measure" measurement guides:**
+  - **Contextual access:** tap the `(?)` info button on any entry dialog's title bar to open a dedicated,
+    full-screen guide on how to take an accurate clinical reading for that specific vital sign.
+  - **Conversational doctor persona:** a friendly vector doctor avatar (`ic_doctor_guide.xml`) speaks
+    directly to the user through speech bubble clouds (`LeftSpeechBubbleShape`), breaking the monotony of
+    plain clinical text.
+  - **Structured two-cloud guidance:** Cloud 1 contains the numbered, step-by-step preparation checklist;
+    Cloud 2 highlights essential clinical tips and rules (e.g. 5-min rest, cuff at heart level, avoiding
+    caffeine/exercise/smoking, morning fasting, proper barefoot posture).
+  - **Evidence-based protocols:** clinically verified guidance based on ISH 2020, WHO, ADA, WHF, and CDC
+    standard measurement procedures.
+  - **Non-disruptive navigation:** pressing the back button `←` returns directly to the open entry dialog
+    with all typed values and clinical selections preserved.
 - **Blood pressure includes the pulse:** saving a blood pressure also saves its pulse as a
   separate Pulse measurement, so it appears in both histories. The two measurements are
   independent: deleting one keeps the other
@@ -96,6 +109,7 @@ healthlog/
 ├── repository/              MeasurementRepository, the single access point to the data
 ├── model/                   measurement types (fields, units, ranges) and validation rules
 ├── guidelines/              clinical evaluation logic & medical standards (ISH, WHO, WHF, Oxford)
+│   └── protocols/           evidence-based clinical measurement protocols & doctor persona visual
 └── ui/                      navigation (HealthLogNavHost)
     ├── home/                home screen: the type picker cards, with their icons
     │   └── newentry/        adding an entry: the new-entry dialog, its state and inputs

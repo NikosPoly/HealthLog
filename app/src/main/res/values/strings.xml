@@ -178,4 +178,83 @@
     <string name="bmi_no_height_prompt">Log your height to calculate your Body Mass Index (BMI) and healthy weight range.</string>
     <string name="height_healthy_weight_range">Healthy weight range: %1$s – %2$s kg</string>
     <string name="height_bmi_baseline_info">Height is used as a baseline to calculate your Body Mass Index (BMI) for weight entries.</string>
+
+    <!-- Educational Measurement Protocols ("How to Measure") -->
+    <string name="guide_title">How to Measure</string>
+    <string name="guide_action_got_it">Got it</string>
+    <string name="guide_section_steps">Step-by-Step Instructions</string>
+    <string name="guide_section_tips">Important Tips &amp; Rules</string>
+    <string name="guide_step_format">Step %1$d: %2$s</string>
+    <string name="guide_info_button_description">How to measure %1$s</string>
+
+    <!-- Blood Pressure Protocol -->
+    <string name="protocol_bp_title">Blood Pressure</string>
+    <string name="protocol_bp_summary">Proper rest, posture, and cuff positioning are essential to prevent falsely elevated blood pressure readings.</string>
+    <string name="protocol_bp_step1_title">Rest in Advance</string>
+    <string name="protocol_bp_step1_desc">Sit quietly for at least 5 minutes in a comfortable, relaxed environment before taking a reading.</string>
+    <string name="protocol_bp_step2_title">Proper Posture</string>
+    <string name="protocol_bp_step2_desc">Keep your back supported, legs uncrossed, and feet flat on the floor.</string>
+    <string name="protocol_bp_step3_title">Cuff Placement</string>
+    <string name="protocol_bp_step3_desc">Place the cuff on a bare upper arm, centered at heart level, approximately 2–3 cm above the elbow crease.</string>
+    <string name="protocol_bp_step4_title">Remain Still &amp; Silent</string>
+    <string name="protocol_bp_step4_desc">Do not speak, move, or look at your phone during the measurement.</string>
+    <string name="protocol_bp_tip1">Avoid caffeine, exercise, and smoking for at least 30 minutes before measuring.</string>
+    <string name="protocol_bp_tip2">Empty your bladder beforehand; a full bladder can increase systolic readings by 10–15 mmHg.</string>
+    <string name="protocol_bp_tip3">Take 2 readings spaced 1–2 minutes apart and record the average.</string>
+    <string name="protocol_bp_reference">ISH 2020 &amp; AHA/ACC Practice Guidelines</string>
+
+    <!-- Blood Glucose Protocol -->
+    <string name="protocol_glucose_title">Blood Glucose</string>
+    <string name="protocol_glucose_summary">Careful hygiene, proper sample collection, and exact meal timing ensure accurate glucose tracking.</string>
+    <string name="protocol_glucose_step1_title">Wash Hands with Warm Water</string>
+    <string name="protocol_glucose_step1_desc">Wash thoroughly with soap and warm water to stimulate blood flow, then dry completely. Avoid alcohol wipes, as residual alcohol alters readings.</string>
+    <string name="protocol_glucose_step2_title">Lance Side of Fingertip</string>
+    <string name="protocol_glucose_step2_desc">Puncture the side of the fingertip rather than the center pad to reduce discomfort and sensitivity.</string>
+    <string name="protocol_glucose_step3_title">Wipe Away First Drop</string>
+    <string name="protocol_glucose_step3_desc">Wipe away the first drop of blood with a clean tissue and apply the second drop to the test strip.</string>
+    <string name="protocol_glucose_step4_title">Check Test Strip</string>
+    <string name="protocol_glucose_step4_desc">Ensure test strips are stored in a dry container, away from heat, and have not passed their expiry date.</string>
+    <string name="protocol_glucose_tip1">Fasting readings require an 8–10 hour overnight fast (water is permitted).</string>
+    <string name="protocol_glucose_tip2">Postprandial (post-meal) readings must be timed exactly 2 hours after the start of your meal.</string>
+    <string name="protocol_glucose_tip3">Do not squeeze your fingertip too forcefully, as interstitial fluid can dilute the blood sample.</string>
+    <string name="protocol_glucose_reference">WHO &amp; American Diabetes Association (ADA) Guidelines</string>
+
+    <!-- Pulse Protocol -->
+    <string name="protocol_pulse_title">Resting Pulse</string>
+    <string name="protocol_pulse_summary">Resting heart rate reflects cardiovascular health and should be measured in a calm, neutral state.</string>
+    <string name="protocol_pulse_step1_title">Rest Before Measuring</string>
+    <string name="protocol_pulse_step1_desc">Sit comfortably in a quiet room for at least 5 minutes before counting beats.</string>
+    <string name="protocol_pulse_step2_title">Locate Pulse</string>
+    <string name="protocol_pulse_step2_desc">Place index and middle fingertips on the inside wrist below the thumb base. Never use your thumb, as it has its own pulse.</string>
+    <string name="protocol_pulse_step3_title">Count for 60 Seconds</string>
+    <string name="protocol_pulse_step3_desc">Count pulses for 60 seconds (or 30 seconds multiplied by 2 if rhythm is steady). If irregular, always count a full 60 seconds.</string>
+    <string name="protocol_pulse_tip1">Wait at least 15–30 minutes after walking, climbing stairs, or emotional excitement.</string>
+    <string name="protocol_pulse_tip2">Avoid measuring right after drinking caffeinated drinks or using nicotine.</string>
+    <string name="protocol_pulse_reference">World Heart Federation (WHF) &amp; WHO Consensus</string>
+
+    <!-- Weight Protocol -->
+    <string name="protocol_weight_title">Body Weight</string>
+    <string name="protocol_weight_summary">Body weight fluctuates daily with hydration and meals; consistent conditions reveal true trends.</string>
+    <string name="protocol_weight_step1_title">Morning Baseline</string>
+    <string name="protocol_weight_step1_desc">Weigh yourself in the morning, immediately after waking and emptying your bladder, before breakfast.</string>
+    <string name="protocol_weight_step2_title">Hard, Level Surface</string>
+    <string name="protocol_weight_step2_desc">Place the scale on a solid, level tile or wooden floor. Never place on carpets, rugs, or uneven tile grout.</string>
+    <string name="protocol_weight_step3_title">Barefoot &amp; Balanced</string>
+    <string name="protocol_weight_step3_desc">Stand barefoot in the center of the scale with weight evenly distributed on both feet until the reading stabilizes.</string>
+    <string name="protocol_weight_tip1">Wear minimal, consistent clothing (e.g. underwear only).</string>
+    <string name="protocol_weight_tip2">Focus on 7-day rolling averages rather than day-to-day fluid retention fluctuations.</string>
+    <string name="protocol_weight_reference">WHO &amp; CDC Anthropometric Guidelines</string>
+
+    <!-- Height Protocol -->
+    <string name="protocol_height_title">Height</string>
+    <string name="protocol_height_summary">Accurate height establishes your clinical baseline for Body Mass Index (BMI) and healthy weight range.</string>
+    <string name="protocol_height_step1_title">Barefoot &amp; Flat Wall</string>
+    <string name="protocol_height_step1_desc">Remove shoes, thick socks, and hair accessories. Stand against a flat wall on a hard floor.</string>
+    <string name="protocol_height_step2_title">Full Contact Posture</string>
+    <string name="protocol_height_step2_desc">Ensure your heels, calves, buttocks, shoulders, and the back of your head gently touch the wall.</string>
+    <string name="protocol_height_step3_title">Horizontal Line of Sight</string>
+    <string name="protocol_height_step3_desc">Look straight ahead with chin parallel to the floor. Use a flat ruler or book brought horizontally down to the crown of the head.</string>
+    <string name="protocol_height_tip1">Stand as tall as possible without lifting your heels off the ground.</string>
+    <string name="protocol_height_tip2">In adults, height measurement only needs to be rechecked once every 1–2 years.</string>
+    <string name="protocol_height_reference">CDC Growth &amp; Nutrition Guidelines</string>
 </resources>

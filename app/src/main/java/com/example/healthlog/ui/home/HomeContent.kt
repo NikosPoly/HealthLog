@@ -51,7 +51,8 @@ fun HomeContent(
     onOpenEntry: (MeasurementType) -> Unit,
     onDismissEntry: () -> Unit,
     onSave: (Measurement) -> Unit,
-    onOpenHistory: () -> Unit
+    onOpenHistory: () -> Unit,
+    onOpenGuide: (MeasurementType) -> Unit = {}
 ) {
     Scaffold(
         topBar = {
@@ -157,7 +158,8 @@ fun HomeContent(
             NewEntryDialog(
                 type = type,
                 onDismiss = onDismissEntry,
-                onSave = onSave
+                onSave = onSave,
+                onOpenGuide = { onOpenGuide(type) }
             )
         }
     }
