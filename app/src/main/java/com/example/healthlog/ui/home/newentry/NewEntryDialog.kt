@@ -40,12 +40,22 @@ fun NewEntryDialog(
     type: MeasurementType,
     onDismiss: () -> Unit,
     onSave: (Measurement) -> Unit,
-    onOpenGuide: (() -> Unit)? = null
+    onOpenGuide: (() -> Unit)? = null,
+    entryState: NewEntryState? = null,
+    onEntryStateChange: ((NewEntryState) -> Unit)? = null
 ) {
-    // Everything the user has typed and done in the dialog, with the dialog's rules
-    // (see NewEntryState.kt). rememberSaveable keeps it when the screen is rotated.
-    var state by rememberSaveable(stateSaver = entryStateSaver) {
+    // If state is hoisted from outside, use it; otherwise manage it internally.
+    var internalState by rememberSaveable(stateSaver = entryStateSaver) {
         mutableStateOf(NewEntryState.initial(type))
+    }
+
+    val state = entryState ?: internalState
+    val updateState: (NewEntryState) -> Unit = { newState ->
+        if (onEntryStateChange != null) {
+            onEntryStateChange(newState)
+        } else {
+            internalState = newState
+        }
     }
 
     // The decimal separator of the current language: "," in Greek, "." in English.
@@ -54,7 +64,7 @@ fun NewEntryDialog(
     // If the language changes while the dialog is open, convert what is already typed
     // to the new separator, so it can still be edited.
     LaunchedEffect(separator) {
-        state = state.withSeparator(separator)
+        updateState(state.withSeparator(separator))
     }
 
     AlertDialog(
@@ -63,7 +73,7 @@ fun NewEntryDialog(
         },
         // A tap anywhere in the dialog outside a text field leaves the current field,
         // so its errors appear (see clearFocusOnTap in FocusModifiers.kt).
-        modifier = Modifier.clearFocusOnTap(onTap = { state = state.leaveFocusedField() }),
+        modifier = Modifier.clearFocusOnTap(onTap = { updateState(state.leaveFocusedField()) }),
         title = {
             // The type's icon next to its name, with a contextual (?) guide button on the right.
             Row(
@@ -87,7 +97,7 @@ fun NewEntryDialog(
                 if (onOpenGuide != null) {
                     IconButton(
                         onClick = {
-                            state = state.leaveFocusedField()
+                            updateState(state.leaveFocusedField())
                             onOpenGuide()
                         },
                         modifier = Modifier.size(36.dp)
@@ -124,13 +134,13 @@ fun NewEntryDialog(
                         error = state.visibleError(index),
                         separator = separator,
                         isLast = index == type.fields.lastIndex,
-                        onTextChange = { input -> state = state.withText(index, input) },
+                        onTextChange = { input -> updateState(state.withText(index, input)) },
                         // Only gaining focus matters; losing focus is ignored,
                         // since it also happens on rotation.
-                        onFocused = { state = state.focusField(index) },
+                        onFocused = { updateState(state.focusField(index)) },
                         // "Done" on the last field also leaves it, so its errors appear.
                         onDone = {
-                            state = state.leaveFocusedField()
+                            updateState(state.leaveFocusedField())
                             focusManager.clearFocus()
                         }
                     )
@@ -140,7 +150,7 @@ fun NewEntryDialog(
                 // Any tap on an option icon, checkbox, or calendar button leaves the active
                 // text field immediately so its validation errors appear.
                 Column(
-                    modifier = Modifier.clearFocusOnPress(onPress = { state = state.leaveFocusedField() }),
+                    modifier = Modifier.clearFocusOnPress(onPress = { updateState(state.leaveFocusedField()) }),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     when (type) {
@@ -154,7 +164,7 @@ fun NewEntryDialog(
                                 selectedValue = state.arm,
                                 isError = state.isArmError,
                                 onSelect = {
-                                    state = state.leaveFocusedField().withArm(it)
+                                    updateState(state.leaveFocusedField().withArm(it))
                                     focusManager.clearFocus()
                                 },
                                 modifier = Modifier.padding(vertical = 4.dp)
@@ -170,7 +180,7 @@ fun NewEntryDialog(
                                 selectedValue = state.bodyPosition,
                                 isError = state.isBodyPositionError,
                                 onSelect = {
-                                    state = state.leaveFocusedField().withBodyPosition(it)
+                                    updateState(state.leaveFocusedField().withBodyPosition(it))
                                     focusManager.clearFocus()
                                 },
                                 modifier = Modifier.padding(vertical = 4.dp)
@@ -185,7 +195,7 @@ fun NewEntryDialog(
                                 selectedValue = state.hasArrhythmia,
                                 isError = state.isArrhythmiaError,
                                 onSelect = {
-                                    state = state.leaveFocusedField().withArrhythmia(it)
+                                    updateState(state.leaveFocusedField().withArrhythmia(it))
                                     focusManager.clearFocus()
                                 },
                                 modifier = Modifier.padding(vertical = 4.dp)
@@ -202,7 +212,7 @@ fun NewEntryDialog(
                                 selectedValue = state.hasArrhythmia,
                                 isError = state.isArrhythmiaError,
                                 onSelect = {
-                                    state = state.leaveFocusedField().withArrhythmia(it)
+                                    updateState(state.leaveFocusedField().withArrhythmia(it))
                                     focusManager.clearFocus()
                                 },
                                 modifier = Modifier.padding(vertical = 4.dp)
@@ -219,7 +229,7 @@ fun NewEntryDialog(
                                 selectedValue = state.mealContext,
                                 isError = state.isMealContextError,
                                 onSelect = {
-                                    state = state.leaveFocusedField().withMealContext(it)
+                                    updateState(state.leaveFocusedField().withMealContext(it))
                                     focusManager.clearFocus()
                                 },
                                 modifier = Modifier.padding(vertical = 4.dp)
@@ -237,11 +247,11 @@ fun NewEntryDialog(
                         useCurrentDateTime = state.useCurrentDateTime,
                         timestamp = state.customTimestamp,
                         onUseCurrentChange = {
-                            state = state.leaveFocusedField().withUseCurrentDateTime(it)
+                            updateState(state.leaveFocusedField().withUseCurrentDateTime(it))
                             focusManager.clearFocus()
                         },
                         onTimestampChange = {
-                            state = state.leaveFocusedField().withCustomTimestamp(it)
+                            updateState(state.leaveFocusedField().withCustomTimestamp(it))
                             focusManager.clearFocus()
                         }
                     )
@@ -256,7 +266,7 @@ fun NewEntryDialog(
         },
         confirmButton = {
             // A disabled button swallows taps, so this Box notices them first.
-            Box(modifier = Modifier.clearFocusOnPress(onPress = { state = state.attemptSave() })) {
+            Box(modifier = Modifier.clearFocusOnPress(onPress = { updateState(state.attemptSave()) })) {
                 TextButton(
                     // Save is possible only when every field passes every check.
                     enabled = state.isValid,
@@ -280,7 +290,7 @@ fun NewEntryDialog(
 
 // Saves the dialog's state across rotation: the type by name, the typed texts,
 // the left fields, focused field, and all clinical options and custom datetime.
-private val entryStateSaver = listSaver<NewEntryState, Any?>(
+internal val entryStateSaver = listSaver<NewEntryState, Any?>(
     save = {
         listOf(
             it.type.name,

@@ -19,7 +19,12 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -37,6 +42,8 @@ import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.ui.home.newentry.NewEntryDialog
+import com.example.healthlog.ui.home.newentry.NewEntryState
+import com.example.healthlog.ui.home.newentry.entryStateSaver
 import com.example.healthlog.ui.theme.HealthLogTheme
 import com.example.healthlog.ui.theme.TypeTheme
 import com.example.healthlog.ui.theme.icon
@@ -52,7 +59,8 @@ fun HomeContent(
     onDismissEntry: () -> Unit,
     onSave: (Measurement) -> Unit,
     onOpenHistory: () -> Unit,
-    onOpenGuide: (MeasurementType) -> Unit = {}
+    onOpenGuide: (MeasurementType) -> Unit = {},
+    isDialogVisible: Boolean = true
 ) {
     Scaffold(
         topBar = {
@@ -153,14 +161,33 @@ fun HomeContent(
     }
 
     selectedType?.let { type ->
-        // In the color of the chosen type, like its card.
-        TypeTheme(type) {
-            NewEntryDialog(
-                type = type,
-                onDismiss = onDismissEntry,
-                onSave = onSave,
-                onOpenGuide = { onOpenGuide(type) }
-            )
+        var entryState by rememberSaveable(type, stateSaver = entryStateSaver) {
+            mutableStateOf(NewEntryState.initial(type))
+        }
+
+        var isHiddenForGuide by rememberSaveable { mutableStateOf(false) }
+
+        LaunchedEffect(isDialogVisible) {
+            if (isDialogVisible) {
+                isHiddenForGuide = false
+            }
+        }
+
+        if (isDialogVisible && !isHiddenForGuide) {
+            // In the color of the chosen type, like its card.
+            TypeTheme(type) {
+                NewEntryDialog(
+                    type = type,
+                    onDismiss = onDismissEntry,
+                    onSave = onSave,
+                    onOpenGuide = {
+                        isHiddenForGuide = true
+                        onOpenGuide(type)
+                    },
+                    entryState = entryState,
+                    onEntryStateChange = { entryState = it }
+                )
+            }
         }
     }
 }

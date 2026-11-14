@@ -9,6 +9,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.healthlog.guidelines.protocols.MeasurementGuideScreen
@@ -53,6 +54,9 @@ fun HealthLogNavHost(
                 factory = HomeViewModel.factory(repository)
             )
 
+            val currentBackStackEntry by navController.currentBackStackEntryAsState()
+            val isHomeCurrent = currentBackStackEntry?.destination?.route == Routes.HOME
+
             HomeScreen(
                 viewModel = viewModel,
                 onOpenHistory = {
@@ -61,7 +65,8 @@ fun HealthLogNavHost(
                 },
                 onOpenGuide = { type ->
                     navController.navigate(Routes.guide(type)) { launchSingleTop = true }
-                }
+                },
+                isDialogVisible = isHomeCurrent
             )
         }
 
