@@ -1,6 +1,9 @@
 package com.example.healthlog.ui.history.chart
 
 import android.icu.text.RelativeDateTimeFormatter
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -10,6 +13,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
+import com.example.healthlog.model.BodyPosition
+import com.example.healthlog.model.MeasurementArm
 import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.ui.theme.HealthLogTheme
 import org.junit.Rule
@@ -74,6 +79,26 @@ class ChartPageTest {
             tertiaryValue = 70.0,
             timestamp = now - ago
         )
+
+    private fun bloodPressureWithConditions(
+        id: Long,
+        systolic: Double,
+        diastolic: Double,
+        ago: Long,
+        arm: MeasurementArm? = null,
+        position: BodyPosition? = null,
+        arrhythmia: Boolean? = null
+    ) = Measurement(
+        id = id,
+        type = MeasurementType.BLOOD_PRESSURE,
+        value = systolic,
+        secondaryValue = diastolic,
+        tertiaryValue = 70.0,
+        arm = arm?.name,
+        bodyPosition = position?.name,
+        hasArrhythmia = arrhythmia,
+        timestamp = now - ago
+    )
 
     // "yesterday", "3 hours ago"… as the app writes them in the emulator's language.
     private val relative = RelativeDateTimeFormatter.getInstance(
@@ -189,5 +214,105 @@ class ChartPageTest {
             RelativeDateTimeFormatter.AbsoluteUnit.DAY
         )
         containing(yesterday).assertCountEquals(1)
+    }
+
+    @Test
+    fun bloodPressure_conditionBreakdown_displaysArmAndPositionAndArrhythmia() {
+        val measurements = listOf(
+            bloodPressureWithConditions(
+                id = 1,
+                systolic = 120.0,
+                diastolic = 80.0,
+                ago = hour,
+                arm = MeasurementArm.LEFT,
+                position = BodyPosition.SITTING,
+                arrhythmia = false
+            ),
+            bloodPressureWithConditions(
+                id = 2,
+                systolic = 130.0,
+                diastolic = 85.0,
+                ago = 2 * hour,
+                arm = MeasurementArm.RIGHT,
+                position = BodyPosition.STANDING,
+                arrhythmia = true
+            )
+        )
+        open(MeasurementType.BLOOD_PRESSURE, measurements, ChartPeriod.ALL)
+
+        text(R.string.insights_title).assertExists()
+        text(R.string.section_arm).assertExists()
+        text(R.string.section_position).assertExists()
+        text(R.string.section_arrhythmia).assertExists()
+        // 4 distribution bar percentages (Left, Right, Sit, Stand) + 1 in arrhythmia summary
+        containing("50%").assertCountEquals(5)
+        exactly("50% ").assertCountEquals(4)
+    }
+
+    @Test
+    fun conditionBreakdown_updatesWhenSwitchingPeriods() {
+        val recentLeft = bloodPressureWithConditions(
+            id = 1,
+            systolic = 120.0,
+            diastolic = 80.0,
+            ago = hour,
+            arm = MeasurementArm.LEFT,
+            position = BodyPosition.SITTING
+        )
+        val oldRight = bloodPressureWithConditions(
+            id = 2,
+            systolic = 130.0,
+            diastolic = 85.0,
+            ago = 30 * day,
+            arm = MeasurementArm.RIGHT,
+            position = BodyPosition.SITTING
+        )
+        val measurements = listOf(recentLeft, oldRight)
+
+        var period by mutableStateOf(ChartPeriod.SEVEN_DAYS)
+        composeRule.setContent {
+            HealthLogTheme {
+                ChartPage(
+                    type = MeasurementType.BLOOD_PRESSURE,
+                    measurements = measurements,
+                    period = period,
+                    screenTap = null
+                )
+            }
+        }
+
+        // In 7 days: only recentLeft is in period -> Left is 100% (1/1)
+        text(R.string.insights_title).assertExists()
+        containing("100%").assertCountEquals(2) // Left 100%, Sit 100%
+        containing("(1/1)").assertCountEquals(2)
+
+        // Switch to ALL: both are in period -> Left is 50%, Right is 50%
+        period = ChartPeriod.ALL
+        composeRule.waitForIdle()
+
+        containing("50%").assertCountEquals(2) // Left 50%, Right 50%
+        containing("(1/2)").assertCountEquals(2)
+    }
+
+    @Test
+    fun weight_doesNotShowConditionBreakdown() {
+        open(MeasurementType.WEIGHT, listOf(weight(1, 72.5, hour)), ChartPeriod.ALL)
+
+        text(R.string.insights_title).assertDoesNotExist()
+    }
+
+    @Test
+    fun emptyPeriod_doesNotShowConditionBreakdown() {
+        val oldMeasurement = bloodPressureWithConditions(
+            id = 1,
+            systolic = 120.0,
+            diastolic = 80.0,
+            ago = 40 * day,
+            arm = MeasurementArm.LEFT
+        )
+        open(MeasurementType.BLOOD_PRESSURE, listOf(oldMeasurement), ChartPeriod.SEVEN_DAYS)
+
+        text(R.string.chart_empty).assertExists()
+        text(R.string.insights_title).assertDoesNotExist()
     }
 }
