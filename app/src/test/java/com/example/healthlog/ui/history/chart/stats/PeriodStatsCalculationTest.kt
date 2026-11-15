@@ -362,14 +362,40 @@ class PeriodStatsCalculationTest {
     }
 
     @Test
-    fun bloodSugar_unbalancedMealTiming_triggersAdvice() {
-        // 5 before meal readings, 0 after meal -> triggers meal balance advice
+    fun bloodSugar_mostlyBeforeMealTiming_triggersBeforeAdvice() {
+        // 5 before meal readings, 0 after meal -> triggers mostly before advice
         val measurements = (1..5).map {
             Measurement(id = it.toLong(), type = MeasurementType.BLOOD_SUGAR, value = 100.0, mealContext = MealContext.BEFORE_MEAL.name)
         }
 
         val breakdown = periodConditionStats(measurements, MeasurementType.BLOOD_SUGAR)
 
-        assertTrue(breakdown.adviceNotes.any { it.textRes == com.example.healthlog.R.string.insights_advice_glucose_balanced })
+        assertTrue(breakdown.adviceNotes.any { it.textRes == com.example.healthlog.R.string.insights_advice_glucose_mostly_before })
+    }
+
+    @Test
+    fun bloodSugar_mostlyAfterMealTiming_triggersAfterAdvice() {
+        // 5 after meal readings, 0 before meal -> triggers mostly after advice
+        val measurements = (1..5).map {
+            Measurement(id = it.toLong(), type = MeasurementType.BLOOD_SUGAR, value = 140.0, mealContext = MealContext.AFTER_MEAL_2H.name)
+        }
+
+        val breakdown = periodConditionStats(measurements, MeasurementType.BLOOD_SUGAR)
+
+        assertTrue(breakdown.adviceNotes.any { it.textRes == com.example.healthlog.R.string.insights_advice_glucose_mostly_after })
+    }
+
+    @Test
+    fun bloodSugar_balancedMealTiming_doesNotTriggerAdvice() {
+        // 3 before meal, 3 after meal -> 50% each -> neither is >= 85%
+        val measurements = (1..3).map {
+            Measurement(id = it.toLong(), type = MeasurementType.BLOOD_SUGAR, value = 100.0, mealContext = MealContext.BEFORE_MEAL.name)
+        } + (4..6).map {
+            Measurement(id = it.toLong(), type = MeasurementType.BLOOD_SUGAR, value = 140.0, mealContext = MealContext.AFTER_MEAL_2H.name)
+        }
+
+        val breakdown = periodConditionStats(measurements, MeasurementType.BLOOD_SUGAR)
+
+        assertTrue(breakdown.adviceNotes.isEmpty())
     }
 }

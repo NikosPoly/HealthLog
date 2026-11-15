@@ -189,8 +189,12 @@ private fun evaluateMealAdvice(meals: List<ConditionDistribution<MealContext>>):
     val totalMeals = meals.firstOrNull()?.total ?: 0
     val dominantMeal = meals.firstOrNull()
     return if (totalMeals >= 5 && dominantMeal != null && dominantMeal.percentage >= 85) {
+        val textRes = when (dominantMeal.value) {
+            MealContext.BEFORE_MEAL -> R.string.insights_advice_glucose_mostly_before
+            MealContext.AFTER_MEAL_2H -> R.string.insights_advice_glucose_mostly_after
+        }
         ClinicalAdviceNote(
-            textRes = R.string.insights_advice_glucose_balanced,
+            textRes = textRes,
             type = ClinicalAdviceType.INFO,
             iconRes = R.drawable.ic_doctor_warning
         )
