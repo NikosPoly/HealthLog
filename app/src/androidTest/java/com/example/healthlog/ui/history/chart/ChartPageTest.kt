@@ -243,10 +243,25 @@ class ChartPageTest {
         text(R.string.insights_title).assertExists()
         text(R.string.section_arm).assertExists()
         text(R.string.section_position).assertExists()
-        text(R.string.section_arrhythmia).assertExists()
-        // 4 distribution bar percentages (Left, Right, Sit, Stand) + 1 in arrhythmia summary
-        containing("50%").assertCountEquals(5)
+        text(R.string.section_arrhythmia).assertDoesNotExist()
+        // 4 distribution bar percentages (Left, Right, Sit, Stand)
+        containing("50%").assertCountEquals(4)
         exactly("50% ").assertCountEquals(4)
+    }
+
+    @Test
+    fun pulse_conditionBreakdown_displaysArrhythmia() {
+        val measurements = listOf(
+            Measurement(id = 1, type = MeasurementType.PULSE, value = 70.0, hasArrhythmia = false, timestamp = now - hour),
+            Measurement(id = 2, type = MeasurementType.PULSE, value = 75.0, hasArrhythmia = true, timestamp = now - 2 * hour)
+        )
+        open(MeasurementType.PULSE, measurements, ChartPeriod.ALL)
+
+        text(R.string.insights_title).assertExists()
+        text(R.string.section_arrhythmia).assertExists()
+        text(R.string.section_arm).assertDoesNotExist()
+        text(R.string.section_position).assertDoesNotExist()
+        containing("50%").assertCountEquals(1)
     }
 
     @Test

@@ -184,11 +184,8 @@ class PeriodStatsCalculationTest {
         assertEquals(3, standing.total)
         assertEquals(33, standing.percentage)
 
-        // Arrhythmia: 1 detected out of 3 recorded
-        assertNotNull(breakdown.arrhythmiaStats)
-        assertEquals(1, breakdown.arrhythmiaStats!!.detectedCount)
-        assertEquals(3, breakdown.arrhythmiaStats!!.totalRecorded)
-        assertEquals(33, breakdown.arrhythmiaStats!!.percentage)
+        // Arrhythmia should be null for blood pressure (arrhythmia belongs to Pulse)
+        assertNull(breakdown.arrhythmiaStats)
 
         // Meal distribution should be empty for blood pressure
         assertTrue(breakdown.mealDistribution.isEmpty())

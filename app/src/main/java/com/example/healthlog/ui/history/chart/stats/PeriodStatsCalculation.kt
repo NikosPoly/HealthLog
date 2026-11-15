@@ -109,15 +109,14 @@ fun periodConditionStats(measurements: List<Measurement>, type: MeasurementType)
             val positions = calculateDistribution(
                 measurements.mapNotNull { BodyPosition.fromNameOrNull(it.bodyPosition) }
             )
-            val arrhythmia = calculateArrhythmiaStats(measurements)
 
             ConditionBreakdown(
                 armDistribution = arms,
                 positionDistribution = positions,
-                arrhythmiaStats = arrhythmia,
+                arrhythmiaStats = null,
                 armAdvice = evaluateArmAdvice(arms),
                 positionAdvice = evaluatePositionAdvice(positions),
-                arrhythmiaAdvice = evaluateArrhythmiaAdvice(arrhythmia)
+                arrhythmiaAdvice = null
             )
         }
         MeasurementType.BLOOD_SUGAR -> {

@@ -15,6 +15,7 @@ class MeasurementRepositoryTest {
             value = 130.0,
             secondaryValue = 70.0,
             tertiaryValue = 80.0,
+            hasArrhythmia = true,
             timestamp = 1000L
         )
 
@@ -28,6 +29,7 @@ class MeasurementRepositoryTest {
         assertEquals(80.0, pulse.value, 0.0)
         assertEquals(null, pulse.secondaryValue)
         assertEquals(null, pulse.tertiaryValue)
+        assertEquals(true, pulse.hasArrhythmia)
         assertEquals(1000L, pulse.timestamp)
     }
 
