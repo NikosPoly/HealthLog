@@ -20,8 +20,12 @@ import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.guidelines.BloodGlucoseCategory
 import com.example.healthlog.guidelines.BloodPressureStage
+import com.example.healthlog.guidelines.BmiCategory
+import com.example.healthlog.guidelines.PulseZone
+import com.example.healthlog.guidelines.calculateBmi
 import com.example.healthlog.guidelines.evaluateBloodGlucose
 import com.example.healthlog.guidelines.evaluateDiastolicStage
+import com.example.healthlog.guidelines.evaluatePulse
 import com.example.healthlog.guidelines.evaluateSystolicStage
 import com.example.healthlog.model.MealContext
 import com.example.healthlog.model.MeasurementType
@@ -161,10 +165,9 @@ private fun VicoLineChart(
         val lines = when (type) {
             MeasurementType.BLOOD_PRESSURE -> rememberBloodPressureLines(oldestFirst)
             MeasurementType.BLOOD_SUGAR -> listOf(rememberGlucoseLine(oldestFirst, chartPrimary))
-            else -> listOf(
-                rememberDotLine(chartPrimary),
-                rememberDotLine(MaterialTheme.colorScheme.tertiary),
-            )
+            MeasurementType.PULSE -> listOf(rememberPulseLine(chartPrimary))
+            MeasurementType.WEIGHT -> listOf(rememberWeightLine(latestHeight, chartPrimary))
+            MeasurementType.HEIGHT -> listOf(rememberDotLine(chartPrimary))
         }
         val marker = rememberEntryMarker(oldestFirst, latestHeight)
 
@@ -417,5 +420,131 @@ internal class BloodPressurePointProvider(
 
     override fun getLargestPoint(extraStore: ExtraStore): LineCartesianLayer.Point = fallbackPoint
 }
+
+// A pulse line whose dots are colored by clinical resting pulse zone (matching the target band shades and reference table).
+@Composable
+private fun rememberPulseLine(
+    lineColor: Color,
+): LineCartesianLayer.Line {
+    val dark = isSystemInDarkTheme()
+    val outlineColor = MaterialTheme.colorScheme.surface
+    val pointProvider = rememberPulsePointProvider(dark, outlineColor)
+
+    return LineCartesianLayer.rememberLine(
+        fill = remember(lineColor) { LineCartesianLayer.LineFill.single(Fill(lineColor)) },
+        pointProvider = pointProvider,
+    )
+}
+
+@Composable
+private fun rememberPulsePointProvider(
+    dark: Boolean,
+    outlineColor: Color = MaterialTheme.colorScheme.surface,
+): LineCartesianLayer.PointProvider {
+    val points = remember(dark, outlineColor) {
+        PulseZone.entries.associateWith { zone ->
+            val color = pulseZoneColor(zone, dark)
+            val component = ShapeComponent(
+                fill = Fill(color),
+                shape = CircleShape,
+                strokeFill = Fill(outlineColor),
+                strokeThickness = 1.5.dp,
+            )
+            LineCartesianLayer.Point(component, size = 8.dp)
+        }
+    }
+    val fallbackPoint = remember(points) { points.values.first() }
+
+    return remember(points, fallbackPoint) {
+        PulsePointProvider(points, fallbackPoint)
+    }
+}
+
+internal class PulsePointProvider(
+    private val pointsByZone: Map<PulseZone, LineCartesianLayer.Point>,
+    private val fallbackPoint: LineCartesianLayer.Point,
+) : LineCartesianLayer.PointProvider {
+    fun getPoint(entry: LineCartesianLayerModel.Entry): LineCartesianLayer.Point {
+        val zone = evaluatePulse(entry.y)
+        return pointsByZone[zone] ?: fallbackPoint
+    }
+
+    override fun getPoint(
+        entry: LineCartesianLayerModel.Entry,
+        extraStore: ExtraStore,
+    ): LineCartesianLayer.Point = getPoint(entry)
+
+    override fun getLargestPoint(extraStore: ExtraStore): LineCartesianLayer.Point = fallbackPoint
+}
+
+// A weight line whose dots are colored by WHO BMI category when height is known (matching the target band shades and reference table).
+@Composable
+private fun rememberWeightLine(
+    latestHeight: Double?,
+    lineColor: Color,
+): LineCartesianLayer.Line {
+    val dark = isSystemInDarkTheme()
+    val outlineColor = MaterialTheme.colorScheme.surface
+    val pointProvider = rememberWeightPointProvider(latestHeight, dark, outlineColor, lineColor)
+
+    return LineCartesianLayer.rememberLine(
+        fill = remember(lineColor) { LineCartesianLayer.LineFill.single(Fill(lineColor)) },
+        pointProvider = pointProvider,
+    )
+}
+
+@Composable
+private fun rememberWeightPointProvider(
+    latestHeight: Double?,
+    dark: Boolean,
+    outlineColor: Color = MaterialTheme.colorScheme.surface,
+    fallbackColor: Color,
+): LineCartesianLayer.PointProvider {
+    val points = remember(dark, outlineColor) {
+        BmiCategory.entries.associateWith { category ->
+            val color = bmiCategoryColor(category, dark)
+            val component = ShapeComponent(
+                fill = Fill(color),
+                shape = CircleShape,
+                strokeFill = Fill(outlineColor),
+                strokeThickness = 1.5.dp,
+            )
+            LineCartesianLayer.Point(component, size = 8.dp)
+        }
+    }
+    val fallbackPoint = remember(fallbackColor, outlineColor) {
+        val component = ShapeComponent(
+            fill = Fill(fallbackColor),
+            shape = CircleShape,
+            strokeFill = Fill(outlineColor),
+            strokeThickness = 1.5.dp,
+        )
+        LineCartesianLayer.Point(component, size = 8.dp)
+    }
+
+    return remember(latestHeight, points, fallbackPoint) {
+        WeightPointProvider(latestHeight, points, fallbackPoint)
+    }
+}
+
+internal class WeightPointProvider(
+    private val latestHeightCm: Double?,
+    private val pointsByCategory: Map<BmiCategory, LineCartesianLayer.Point>,
+    private val fallbackPoint: LineCartesianLayer.Point,
+) : LineCartesianLayer.PointProvider {
+    fun getPoint(entry: LineCartesianLayerModel.Entry): LineCartesianLayer.Point {
+        val height = latestHeightCm ?: return fallbackPoint
+        val eval = calculateBmi(entry.y, height) ?: return fallbackPoint
+        return pointsByCategory[eval.category] ?: fallbackPoint
+    }
+
+    override fun getPoint(
+        entry: LineCartesianLayerModel.Entry,
+        extraStore: ExtraStore,
+    ): LineCartesianLayer.Point = getPoint(entry)
+
+    override fun getLargestPoint(extraStore: ExtraStore): LineCartesianLayer.Point = fallbackPoint
+}
+
 
 

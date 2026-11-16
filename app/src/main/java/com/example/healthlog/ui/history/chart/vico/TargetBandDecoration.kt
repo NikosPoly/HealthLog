@@ -12,8 +12,15 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.healthlog.guidelines.BloodGlucoseCategory
 import com.example.healthlog.guidelines.BloodPressureStage
+import com.example.healthlog.guidelines.BmiCategory
+import com.example.healthlog.guidelines.PulseZone
 import com.example.healthlog.guidelines.calculateHealthyWeightRange
 import com.example.healthlog.model.MeasurementType
+import com.example.healthlog.ui.details.references.StageColor
+import com.example.healthlog.ui.details.references.bloodGlucoseCategoryColors
+import com.example.healthlog.ui.details.references.bloodPressureStageColors
+import com.example.healthlog.ui.details.references.bmiCategoryColors
+import com.example.healthlog.ui.details.references.pulseZoneColors
 import com.patrykandpatrick.vico.compose.cartesian.CartesianDrawingContext
 import com.patrykandpatrick.vico.compose.cartesian.decoration.Decoration
 
@@ -48,72 +55,79 @@ fun targetRangesFor(
     }
 }
 
-// Universal clinical color for blood glucose evaluation categories:
-// - Blue: Hypoglycemia (< 70 mg/dL)
-// - Green: Normal (Fasting 70–99 mg/dL | 2h Post-meal < 140 mg/dL)
-// - Amber: Prediabetes (Fasting 100–125 mg/dL | 2h Post-meal 140–199 mg/dL)
-// - Red: Diabetes (Fasting ≥ 126 mg/dL | 2h Post-meal ≥ 200 mg/dL)
-fun glucoseCategoryColor(category: BloodGlucoseCategory, dark: Boolean): Color {
-    return when (category) {
-        BloodGlucoseCategory.HYPOGLYCEMIA -> if (dark) Color(0xFF64B5F6) else Color(0xFF1E88E5)
-        BloodGlucoseCategory.NORMAL -> if (dark) Color(0xFF81C784) else Color(0xFF4CAF50)
-        BloodGlucoseCategory.PREDIABETES -> if (dark) Color(0xFFFFB74D) else Color(0xFFFB8C00)
-        BloodGlucoseCategory.DIABETES -> if (dark) Color(0xFFE57373) else Color(0xFFE53935)
-    }
-}
+// Universal clinical color for blood glucose evaluation categories (matches details screen reference table).
+fun glucoseCategoryColor(category: BloodGlucoseCategory, dark: Boolean): Color =
+    bloodGlucoseCategoryColors(category, dark).indicator
 
-// Universal clinical color for blood pressure stages (ISH 2020 / WHO).
-fun bloodPressureStageColor(stage: BloodPressureStage, dark: Boolean): Color {
-    return when (stage) {
-        BloodPressureStage.LOW -> if (dark) Color(0xFF29B6F6) else Color(0xFF0288D1)
-        BloodPressureStage.NORMAL -> if (dark) Color(0xFF4CAF50) else Color(0xFF2E7D32)
-        BloodPressureStage.HIGH_NORMAL -> if (dark) Color(0xFFFFB300) else Color(0xFFF57F17)
-        BloodPressureStage.GRADE_1_HYPERTENSION -> if (dark) Color(0xFFFF7043) else Color(0xFFE64A19)
-        BloodPressureStage.GRADE_2_HYPERTENSION -> if (dark) Color(0xFFE53935) else Color(0xFFD32F2F)
-        BloodPressureStage.HYPERTENSIVE_CRISIS -> if (dark) Color(0xFFFF1744) else Color(0xFFC2185B)
-    }
-}
+// Universal clinical color for blood pressure stages (matches details screen reference table).
+fun bloodPressureStageColor(stage: BloodPressureStage, dark: Boolean): Color =
+    bloodPressureStageColors(stage, dark).indicator
 
-// Clinical stage bands for Weight and Pulse using international medical color standards:
-// - Blue: Low / Underweight / Bradycardia (cool/low threshold)
-// - Medical Green: Normal / Optimal healthy target corridor
-// - Amber / Warm Orange: Overweight (pre-obesity caution threshold)
-// - Soft Red: Obese / Tachycardia (elevated clinical risk threshold)
+// Universal clinical color for resting pulse zones (matches details screen reference table).
+fun pulseZoneColor(zone: PulseZone, dark: Boolean): Color =
+    pulseZoneColors(zone, dark).indicator
+
+// Universal clinical color for WHO BMI categories (matches details screen reference table).
+fun bmiCategoryColor(category: BmiCategory, dark: Boolean): Color =
+    bmiCategoryColors(category, dark).indicator
+
+// Clinical stage bands for Weight and Pulse using the canonical reference palette:
 fun stageBandsFor(
     type: MeasurementType,
     dark: Boolean,
     latestHeightCm: Double? = null,
 ): List<StageBand> {
-    val fillAlpha = if (dark) 0.24f else 0.18f
-    val strokeAlpha = if (dark) 0.55f else 0.40f
+    val defaultFillAlpha = if (dark) 0.22f else 0.16f
+    val defaultStrokeAlpha = if (dark) 0.50f else 0.35f
 
-    // Universal clinical palette
-    val green = if (dark) Color(0xFF81C784) else Color(0xFF4CAF50)
-    val blue = if (dark) Color(0xFF64B5F6) else Color(0xFF1E88E5)
-    val amber = if (dark) Color(0xFFFFB74D) else Color(0xFFFB8C00)
-    val red = if (dark) Color(0xFFE57373) else Color(0xFFE53935)
+    // Vivid alphas for alert bands (orange overweight and red tachycardia/obese) so they don't look faint/pinkish
+    val orangeFillAlpha = if (dark) 0.38f else 0.34f
+    val orangeStrokeAlpha = if (dark) 0.80f else 0.70f
 
-    fun band(range: ClosedFloatingPointRange<Double>, color: Color) = StageBand(
+    val redFillAlpha = if (dark) 0.42f else 0.38f
+    val redStrokeAlpha = if (dark) 0.85f else 0.75f
+
+    fun band(
+        range: ClosedFloatingPointRange<Double>,
+        stageColor: StageColor,
+        fillAlpha: Float = defaultFillAlpha,
+        strokeAlpha: Float = defaultStrokeAlpha,
+    ) = StageBand(
         range = range,
-        fillColor = color.copy(alpha = fillAlpha),
-        strokeColor = color.copy(alpha = strokeAlpha),
+        fillColor = stageColor.indicator.copy(alpha = fillAlpha),
+        strokeColor = stageColor.indicator.copy(alpha = strokeAlpha),
     )
 
     return when (type) {
         MeasurementType.PULSE -> listOf(
-            band(0.0..60.0, blue),                         // Bradycardia (<60 bpm)
-            band(60.0..100.0, green),                      // Normal Resting (60–100 bpm)
-            band(100.0..Double.POSITIVE_INFINITY, red),    // Tachycardia (>100 bpm)
+            band(0.0..60.0, pulseZoneColors(PulseZone.BRADYCARDIA, dark)),
+            band(60.0..100.0, pulseZoneColors(PulseZone.NORMAL, dark)),
+            band(
+                100.0..Double.POSITIVE_INFINITY,
+                pulseZoneColors(PulseZone.TACHYCARDIA, dark),
+                fillAlpha = redFillAlpha,
+                strokeAlpha = redStrokeAlpha,
+            ),
         )
         MeasurementType.WEIGHT -> {
             if ((latestHeightCm != null) && (latestHeightCm > 0.0)) {
                 val heightM = latestHeightCm / 100.0
                 val h2 = heightM * heightM
                 listOf(
-                    band(0.0..(18.5 * h2), blue),                       // Underweight (BMI < 18.5)
-                    band((18.5 * h2)..(25.0 * h2), green),              // Normal BMI (18.5–24.9)
-                    band((25.0 * h2)..(30.0 * h2), amber),              // Overweight (25.0–29.9)
-                    band((30.0 * h2)..Double.POSITIVE_INFINITY, red),   // Obese (BMI ≥ 30)
+                    band(0.0..(18.5 * h2), bmiCategoryColors(BmiCategory.UNDERWEIGHT, dark)),
+                    band((18.5 * h2)..(25.0 * h2), bmiCategoryColors(BmiCategory.NORMAL, dark)),
+                    band(
+                        (25.0 * h2)..(30.0 * h2),
+                        bmiCategoryColors(BmiCategory.OVERWEIGHT, dark),
+                        fillAlpha = orangeFillAlpha,
+                        strokeAlpha = orangeStrokeAlpha,
+                    ),
+                    band(
+                        (30.0 * h2)..Double.POSITIVE_INFINITY,
+                        bmiCategoryColors(BmiCategory.OBESE, dark),
+                        fillAlpha = redFillAlpha,
+                        strokeAlpha = redStrokeAlpha,
+                    ),
                 )
             } else {
                 emptyList()

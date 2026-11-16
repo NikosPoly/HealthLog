@@ -176,10 +176,10 @@ class TargetRangeBandTest {
     @Test
     fun glucoseCategoryColor_mapsToUniversalPalette() {
         val dark = false
-        assertEquals(Color(0xFF1E88E5), glucoseCategoryColor(BloodGlucoseCategory.HYPOGLYCEMIA, dark))
-        assertEquals(Color(0xFF4CAF50), glucoseCategoryColor(BloodGlucoseCategory.NORMAL, dark))
-        assertEquals(Color(0xFFFB8C00), glucoseCategoryColor(BloodGlucoseCategory.PREDIABETES, dark))
-        assertEquals(Color(0xFFE53935), glucoseCategoryColor(BloodGlucoseCategory.DIABETES, dark))
+        assertEquals(bloodGlucoseCategoryColors(BloodGlucoseCategory.HYPOGLYCEMIA, dark).indicator, glucoseCategoryColor(BloodGlucoseCategory.HYPOGLYCEMIA, dark))
+        assertEquals(bloodGlucoseCategoryColors(BloodGlucoseCategory.NORMAL, dark).indicator, glucoseCategoryColor(BloodGlucoseCategory.NORMAL, dark))
+        assertEquals(bloodGlucoseCategoryColors(BloodGlucoseCategory.PREDIABETES, dark).indicator, glucoseCategoryColor(BloodGlucoseCategory.PREDIABETES, dark))
+        assertEquals(bloodGlucoseCategoryColors(BloodGlucoseCategory.DIABETES, dark).indicator, glucoseCategoryColor(BloodGlucoseCategory.DIABETES, dark))
     }
 
     @Test
@@ -241,12 +241,9 @@ class TargetRangeBandTest {
     @Test
     fun bloodPressureStageColor_mapsToUniversalPalette() {
         val dark = false
-        assertEquals(Color(0xFF0288D1), bloodPressureStageColor(BloodPressureStage.LOW, dark))
-        assertEquals(Color(0xFF2E7D32), bloodPressureStageColor(BloodPressureStage.NORMAL, dark))
-        assertEquals(Color(0xFFF57F17), bloodPressureStageColor(BloodPressureStage.HIGH_NORMAL, dark))
-        assertEquals(Color(0xFFE64A19), bloodPressureStageColor(BloodPressureStage.GRADE_1_HYPERTENSION, dark))
-        assertEquals(Color(0xFFD32F2F), bloodPressureStageColor(BloodPressureStage.GRADE_2_HYPERTENSION, dark))
-        assertEquals(Color(0xFFC2185B), bloodPressureStageColor(BloodPressureStage.HYPERTENSIVE_CRISIS, dark))
+        for (stage in BloodPressureStage.entries) {
+            assertEquals(bloodPressureStageColors(stage, dark).indicator, bloodPressureStageColor(stage, dark))
+        }
     }
 
     @Test
@@ -339,5 +336,84 @@ class TargetRangeBandTest {
         val darkTheme = true
         assertEquals(bloodPressureStageColors(BloodPressureStage.NORMAL, darkTheme), stageColorFor(bp, darkTheme))
         assertEquals(pulseZoneColors(PulseZone.BRADYCARDIA, darkTheme), stageColorFor(brady, darkTheme))
+    }
+
+    @Test
+    fun pulseZoneColor_and_bmiCategoryColor_matchReferenceColors() {
+        val dark = false
+        assertEquals(pulseZoneColors(PulseZone.NORMAL, dark).indicator, pulseZoneColor(PulseZone.NORMAL, dark))
+        assertEquals(pulseZoneColors(PulseZone.BRADYCARDIA, dark).indicator, pulseZoneColor(PulseZone.BRADYCARDIA, dark))
+        assertEquals(pulseZoneColors(PulseZone.TACHYCARDIA, dark).indicator, pulseZoneColor(PulseZone.TACHYCARDIA, dark))
+
+        assertEquals(bmiCategoryColors(BmiCategory.NORMAL, dark).indicator, bmiCategoryColor(BmiCategory.NORMAL, dark))
+        assertEquals(bmiCategoryColors(BmiCategory.OBESE, dark).indicator, bmiCategoryColor(BmiCategory.OBESE, dark))
+    }
+
+    @Test
+    fun pulsePointProvider_resolvesColorsByRestingHeartRateZone() {
+        val bradyPoint = LineCartesianLayer.Point(
+            component = ShapeComponent(fill = Fill(Color.Blue), shape = CircleShape),
+            size = 8.dp,
+        )
+        val normalPoint = LineCartesianLayer.Point(
+            component = ShapeComponent(fill = Fill(Color.Green), shape = CircleShape),
+            size = 8.dp,
+        )
+        val tachyPoint = LineCartesianLayer.Point(
+            component = ShapeComponent(fill = Fill(Color.Red), shape = CircleShape),
+            size = 8.dp,
+        )
+
+        val provider = PulsePointProvider(
+            pointsByZone = mapOf(
+                PulseZone.BRADYCARDIA to bradyPoint,
+                PulseZone.NORMAL to normalPoint,
+                PulseZone.TACHYCARDIA to tachyPoint,
+            ),
+            fallbackPoint = normalPoint,
+        )
+
+        assertEquals(bradyPoint, provider.getPoint(LineCartesianLayerModel.Entry(100.0, 52.0)))
+        assertEquals(normalPoint, provider.getPoint(LineCartesianLayerModel.Entry(101.0, 75.0)))
+        assertEquals(tachyPoint, provider.getPoint(LineCartesianLayerModel.Entry(102.0, 147.0)))
+    }
+
+    @Test
+    fun weightPointProvider_resolvesColorsByBmiWhenHeightProvided() {
+        val normalPoint = LineCartesianLayer.Point(
+            component = ShapeComponent(fill = Fill(Color.Green), shape = CircleShape),
+            size = 8.dp,
+        )
+        val obesePoint = LineCartesianLayer.Point(
+            component = ShapeComponent(fill = Fill(Color.Red), shape = CircleShape),
+            size = 8.dp,
+        )
+        val fallback = LineCartesianLayer.Point(
+            component = ShapeComponent(fill = Fill(Color.Gray), shape = CircleShape),
+            size = 8.dp,
+        )
+
+        val heightCm = 180.0
+        val providerWithHeight = WeightPointProvider(
+            latestHeightCm = heightCm,
+            pointsByCategory = mapOf(
+                BmiCategory.NORMAL to normalPoint,
+                BmiCategory.OBESE to obesePoint,
+            ),
+            fallbackPoint = fallback,
+        )
+
+        // 72 kg, 180 cm -> BMI 22.2 -> Normal
+        assertEquals(normalPoint, providerWithHeight.getPoint(LineCartesianLayerModel.Entry(100.0, 72.0)))
+        // 110 kg, 180 cm -> BMI 34.0 -> Obese
+        assertEquals(obesePoint, providerWithHeight.getPoint(LineCartesianLayerModel.Entry(101.0, 110.0)))
+
+        // Without height -> fallback
+        val providerWithoutHeight = WeightPointProvider(
+            latestHeightCm = null,
+            pointsByCategory = mapOf(BmiCategory.NORMAL to normalPoint),
+            fallbackPoint = fallback,
+        )
+        assertEquals(fallback, providerWithoutHeight.getPoint(LineCartesianLayerModel.Entry(100.0, 72.0)))
     }
 }
