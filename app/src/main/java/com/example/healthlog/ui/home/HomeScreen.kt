@@ -16,7 +16,8 @@ import com.example.healthlog.model.MeasurementType
 fun HomeScreen(
     viewModel: HomeViewModel,
     onOpenHistory: () -> Unit,
-    onOpenGuide: (MeasurementType) -> Unit = {}
+    onOpenGuide: (MeasurementType) -> Unit = {},
+    isDialogVisible: Boolean = true
 ) {
     val selectedType by viewModel.selectedType.collectAsState()
 
@@ -36,6 +37,7 @@ fun HomeScreen(
         onDismissEntry = viewModel::closeEntry,
         onSave = viewModel::save,
         onOpenHistory = onOpenHistory,
-        onOpenGuide = onOpenGuide
+        onOpenGuide = onOpenGuide,
+        isDialogVisible = isDialogVisible
     )
 }

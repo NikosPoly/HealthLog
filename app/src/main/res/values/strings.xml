@@ -47,6 +47,16 @@
     <string name="stats_lowest_diastolic">Lowest Diastolic</string>
     <string name="stats_last_entry">Last Entry</string>
 
+    <!-- Condition Breakdown / Insights -->
+    <string name="insights_title">Condition Breakdown</string>
+    <string name="insights_arrhythmia_none">None detected (%1$d readings)</string>
+    <string name="insights_arrhythmia_detected">%1$d of %2$d readings (%3$d%%)</string>
+    <string name="insights_advice_arm_inconsistent">Arm Consistency: You frequently switch arms. Clinical guidelines (ISH 2020) recommend measuring consistently on the arm with the higher reading to keep trends accurate.</string>
+    <string name="insights_advice_posture_standard">Posture Tip: Over a quarter of your readings were taken while standing or lying down. Clinical standards recommend sitting quietly with back supported.</string>
+    <string name="insights_advice_arrhythmia_warning">Cardiac Rhythm: Occasional irregular flags often stem from movement. Because arrhythmia was detected in multiple readings during this period, consider mentioning it to your doctor if it persists.</string>
+    <string name="insights_advice_glucose_mostly_before">Meal Timing: Most readings were taken before meals. Clinical guidelines (ADA/WHO) recommend balancing your log with readings 2 hours after meals to see how food impacts your blood sugar.</string>
+    <string name="insights_advice_glucose_mostly_after">Meal Timing: Most readings were taken after meals. Clinical guidelines (ADA/WHO) recommend balancing your log with fasting or pre-meal readings to establish your baseline blood sugar.</string>
+
     <!-- Buttons and actions used in several places -->
     <string name="action_back">Back</string>
     <string name="action_save">Save</string>

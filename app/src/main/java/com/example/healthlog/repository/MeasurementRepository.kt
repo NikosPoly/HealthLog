@@ -33,9 +33,9 @@ class MeasurementRepository(
 }
 
 // What is stored for a new measurement. A blood pressure measurement with a pulse also
-// stores its pulse as a separate Pulse measurement, with the same date and time, so it appears
-// in the Pulse history too. After saving, the two measurements are independent:
-// deleting one keeps the other.
+// stores its pulse as a separate Pulse measurement, with the same date and time and arrhythmia
+// status, so it appears in the Pulse history and condition stats too. After saving, the two
+// measurements are independent: deleting one keeps the other.
 internal fun measurementsToSave(measurement: Measurement): List<Measurement> {
     val pulse = measurement.tertiaryValue
 
@@ -45,6 +45,7 @@ internal fun measurementsToSave(measurement: Measurement): List<Measurement> {
             Measurement(
                 type = MeasurementType.PULSE,
                 value = pulse,
+                hasArrhythmia = measurement.hasArrhythmia,
                 timestamp = measurement.timestamp
             )
         )

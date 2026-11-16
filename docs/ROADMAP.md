@@ -43,9 +43,9 @@ This document outlines the architectural strategy, feature specifications, and i
   * Friendly native doctor vector avatar (`ic_doctor_guide.xml`) with conversational speech bubble clouds (`SpeechBubbleCard`, `LeftSpeechBubbleShape`) breaking the monotony of plain text.
   * Structured two-cloud layout: Cloud 1 for step-by-step checklist, Cloud 2 for essential tips and rules.
 
-### C. Condition Breakdown Statistics (Insights)
-* **Purpose:** Calculate aggregate percentages of measurements taken under various clinical conditions over the selected chart period (e.g., `% Left vs. Right arm`, `% Sitting vs. Standing`, `% Before vs. After meal`, arrhythmia detection frequency).
-* **UI Integration:** Insights summary card or modal bottom sheet on the History/Chart screen.
+### C. Condition Breakdown Statistics & Clinical Insights (Completed)
+* **Purpose:** Calculate aggregate percentages of measurements taken under various clinical conditions over the selected chart period (e.g., `% Left vs. Right arm`, `% Sitting vs. Standing vs. Lying`, `% Before vs. After meal`, arrhythmia detection frequency).
+* **UI Integration:** Dedicated `ConditionInsightsCard` placed directly below `PeriodCard` on the Chart page, featuring progress ratio bars, balanced arrhythmia alerts, and inlined conversational doctor speech bubble clouds with an attentive doctor avatar (`ic_doctor_warning.xml`).
 
 ### D. History List Filtering & Discovery
 * **Purpose:** Quick filtering of history entries by health status.
@@ -95,12 +95,12 @@ This document outlines the architectural strategy, feature specifications, and i
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│ PHASE 1: Clinical Guidance & Reference Standards (Current Focus)       │
+│ PHASE 1: Clinical Guidance & Reference Standards (Completed)           │
 │ 1.1 Medical Organization Guidelines & Stage Badges (Completed)         │
 │ 1.2 "How to Measure" Educational Guide (Completed)                     │
-│ 1.3 Condition Breakdown Statistics (Arm, Meal, Posture insights)       │
+│ 1.3 Condition Breakdown Statistics & Insights (Completed)              │
 ├────────────────────────────────────────────────────────────────────────┤
-│ PHASE 2: Data Visualization, Filtering & Doctor Reporting              │
+│ PHASE 2: Data Visualization, Filtering & Doctor Reporting (Next Focus) │
 │ 2.1 Chart Normal Ranges / Target Bands (Vico charts)                   │
 │ 2.2 History List Filtering (All, Elevated/Abnormal, Conditions)        │
 │ 2.3 Doctor Report Export (On-device PDF generation, CSV, Print/Share)   │
@@ -128,8 +128,9 @@ This document outlines the architectural strategy, feature specifications, and i
    * Contextual `(?)` info button on `NewEntryDialog` title bar that opens the metric's protocol directly, returning back with typed values intact.
    * Conversational UI: native vector doctor avatar (`ic_doctor_guide.xml`) with custom speech cloud bubble (`LeftSpeechBubbleShape`) for friendly, approachable instructions.
    * Fully localized in English and Greek; 100% test coverage with automated unit and instrumented UI tests.
-3. **Condition Breakdown Statistics (Next Step):**
-   * Aggregate insights (% left vs. right arm, % sitting vs. standing, meal context, arrhythmia rate) on the History/Chart screen.
+3. **Condition Breakdown Statistics & Clinical Insights (Completed):**
+   * Aggregate condition breakdowns (% left vs. right arm, % sitting vs. standing vs. lying, meal context, arrhythmia frequency) on the History/Chart screen.
+   * Smart clinical advice cards with speech bubble clouds delivered by an attentive doctor avatar (`ic_doctor_warning.xml`).
 
 #### **Phase 2: Discovery & Doctor Communication**
 4. **Chart Target Zones & Stage Coloring (2.1):**
@@ -209,20 +210,21 @@ This document outlines the architectural strategy, feature specifications, and i
   * Full English (`values/strings.xml`) and Greek (`values-el/strings.xml`) translations.
   * Unit tests (`MeasurementProtocolTest.kt`) and instrumented UI tests (`MeasurementGuideScreenTest.kt`, `NewEntryDialogTest.kt`) all passing.
 
-#### Milestone 1.3: Condition Breakdown Statistics (Next Step)
-* **Goal:** Present aggregate percentages of measurements taken under various clinical conditions over the selected chart period.
-* **Step 1 — Aggregation Calculation:**
-  * Pure calculation functions in `PeriodStatsCalculation.kt` calculating percentages:
-    * Arm distribution: % Left vs % Right.
-    * Posture distribution: % Sitting vs % Lying vs % Standing.
-    * Meal context: % Before vs % After meal.
-    * Arrhythmia detection frequency.
-* **Step 2 — Unit Tests:**
-  * Comprehensive tests in `PeriodStatsCalculationTest.kt` verifying rounding and empty/mixed data sets.
-* **Step 3 — UI Presentation:**
-  * Add an "Insights" section / card below the Period Card in `HistoryContent.kt`.
-* **Step 4 — Instrumented Tests:**
-  * Verify in `ChartPageTest.kt` that condition percentages update when switching chart periods.
+#### Milestone 1.3: Condition Breakdown Statistics & Clinical Insights (Completed)
+* **Goal:** Present aggregate percentages of measurements taken under various clinical conditions over the selected chart period, accompanied by balanced clinical advice.
+* **Step 1 — Aggregation Calculation & Domain Models (`ui/history/chart/stats/PeriodStatsCalculation.kt`):**
+  * Added `ConditionDistribution<T>`, `ArrhythmiaStats`, `ClinicalAdviceNote`, and `ConditionBreakdown`.
+  * Implemented pure `periodConditionStats()` calculating counts, percentages, and condition breakdowns for arm, posture, arrhythmia, and meal context.
+  * Added evidence-based clinical advice evaluators (`evaluateArmAdvice`, `evaluatePositionAdvice`, `evaluateArrhythmiaAdvice`, `evaluateMealAdvice`) with false-positive prevention thresholds (e.g. minimum 5 readings and $\ge 25\%$ or $\ge 3$ detections for arrhythmia alerts).
+* **Step 2 — Unit Tests (`PeriodStatsCalculationTest.kt`):**
+  * 18 unit tests covering empty periods, pure/mixed arm distributions, posture distributions, meal distributions, arrhythmia frequency, threshold gating, and clinical advice evaluations.
+* **Step 3 — UI Presentation & Localization (`ui/history/chart/ConditionInsightsCard.kt`):**
+  * Created `ConditionInsightsCard` placed directly below `PeriodCard` on the Chart page (hidden for metrics without clinical conditions like Weight/Height and for empty periods).
+  * Segmented distribution progress bars showing proportional visual fills with localized tags and counts/percentages.
+  * Inlined conversational clinical advice warnings placed directly below their relevant condition section using an attentive doctor avatar (`ic_doctor_warning.xml`) and `LeftSpeechBubbleShape` with natural left text alignment.
+  * Full localization in English (`values/strings.xml`) and Greek (`values-el/strings.xml`).
+* **Step 4 — Instrumented Tests (`ChartPageTest.kt`):**
+  * Added UI tests verifying condition breakdown rendering (arm, position, arrhythmia), dynamic updates when switching chart periods, and verifying cards remain hidden for Weight and empty periods.
 
 ---
 

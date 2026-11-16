@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="243dp"
+    android:height="295dp"
+    android:viewportWidth="243"
+    android:viewportHeight="295">
+
+    <group android:translateX="-22">
+
+        <!-- Hair (back) -->
+        <path
+            android:fillColor="#1E1A1D"
+            android:pathData="M62,190 C56,120 75,20 145,15 C215,20 236,110 240,190 L205,178 L88,178 Z" />
+
+        <!-- Neck -->
+        <path
+            android:fillColor="#F2A67E"
+            android:pathData="M124,135 H166 V185 H124 Z" />
+
+        <!-- White coat -->
+        <path
+            android:fillColor="#F2F3F7"
+            android:pathData="M28,295 C30,232 50,188 105,168 L185,168 C240,188 262,232 262,295 Z" />
+
+        <!-- Coat lapel shading -->
+        <path
+            android:fillColor="#E0E2EB"
+            android:pathData="M105,168 L132,214 L108,295 L88,295 C86,240 92,190 105,168 Z" />
+        <path
+            android:fillColor="#E0E2EB"
+            android:pathData="M185,168 L158,214 L182,295 L202,295 C204,240 198,190 185,168 Z" />
+
+        <!-- Scrubs -->
+        <path
+            android:fillColor="#17436B"
+            android:pathData="M112,165 L178,165 L182,295 L108,295 Z" />
+
+        <!-- V-neck skin -->
+        <path
+            android:fillColor="#F2A67E"
+            android:pathData="M120,160 L145,208 L170,160 Z" />
+
+        <!-- Ears -->
+        <path
+            android:fillColor="#F9BC98"
+            android:pathData="M82,95 A9,10 0 1 0 100,95 A9,10 0 1 0 82,95 Z" />
+        <path
+            android:fillColor="#F9BC98"
+            android:pathData="M190,95 A9,10 0 1 0 208,95 A9,10 0 1 0 190,95 Z" />
+
+        <!-- Face -->
+        <path
+            android:fillColor="#FBC8A8"
+            android:pathData="M93,92 A52,58 0 1 0 197,92 A52,58 0 1 0 93,92 Z" />
+
+        <!-- Bangs -->
+        <path
+            android:fillColor="#1E1A1D"
+            android:pathData="M90,90 C86,44 114,26 145,26 C178,26 202,46 200,90 C188,70 166,62 142,68 C120,72 104,78 90,90 Z" />
+
+        <!-- Eyebrows (focused / serious expression) -->
+        <path
+            android:fillColor="#00000000"
+            android:pathData="M112,74 Q123,72 134,78"
+            android:strokeColor="#141012"
+            android:strokeLineCap="round"
+            android:strokeWidth="2.5" />
+        <path
+            android:fillColor="#00000000"
+            android:pathData="M156,78 Q167,72 178,74"
+            android:strokeColor="#141012"
+            android:strokeLineCap="round"
+            android:strokeWidth="2.5" />
+
+        <!-- Eyes -->
+        <path
+            android:fillColor="#1A1A1A"
+            android:pathData="M117,90 A5,6 0 1 0 127,90 A5,6 0 1 0 117,90 Z" />
+        <path
+            android:fillColor="#1A1A1A"
+            android:pathData="M163,90 A5,6 0 1 0 173,90 A5,6 0 1 0 163,90 Z" />
+
+        <!-- Nose -->
+        <path
+            android:fillColor="#00000000"
+            android:pathData="M142,98 Q145,104 149,100"
+            android:strokeColor="#E08A63"
+            android:strokeLineCap="round"
+            android:strokeWidth="2" />
+
+        <!-- Mouth (composed / serious closed lips) -->
+        <path
+            android:fillColor="#962828"
+            android:pathData="M131,116 Q145,114.5 159,116 Q145,120.5 131,116 Z" />
+        <path
+            android:fillColor="#00000000"
+            android:pathData="M131,116 Q145,115 159,116"
+            android:strokeColor="#5E1616"
+            android:strokeLineCap="round"
+            android:strokeWidth="1.2" />
+
+        <!-- Stethoscope: left tube -->
+        <path
+            android:fillColor="#00000000"
+            android:pathData="M119,155 C108,176 105,212 104,232"
+            android:strokeColor="#5E6069"
+            android:strokeLineCap="round"
+            android:strokeWidth="4" />
+        <!-- Chest piece -->
+        <path
+            android:fillColor="#F2F3F7"
+            android:pathData="M90,247 A14,14 0 1 0 118,247 A14,14 0 1 0 90,247 Z"
+            android:strokeColor="#2B2D33"
+            android:strokeWidth="3" />
+        <path
+            android:fillColor="#2B2D33"
+            android:pathData="M98,247 A6,6 0 1 0 110,247 A6,6 0 1 0 98,247 Z" />
+
+        <!-- Stethoscope: right tube -->
+        <path
+            android:fillColor="#00000000"
+            android:pathData="M171,155 C181,176 169,205 168,238 C168,270 196,270 196,238 C196,226 193,216 190,208"
+            android:strokeColor="#5E6069"
+            android:strokeLineCap="round"
+            android:strokeWidth="4" />
+        <!-- Tips -->
+        <path
+            android:fillColor="#00000000"
+            android:pathData="M171,274 L178,274 M183,274 L190,273"
+            android:strokeColor="#2B2D33"
+            android:strokeLineCap="round"
+            android:strokeWidth="4" />
+
+    </group>
+
+    <!-- Warning badge on top right -->
+    <!-- White cutout ring / border -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M200,14 A38,38 0 1,0 200,90 A38,38 0 1,0 200,14 Z" />
+
+    <!-- Orange warning badge circle -->
+    <path
+        android:fillColor="#EF6C00"
+        android:pathData="M200,19 A33,33 0 1,0 200,85 A33,33 0 1,0 200,19 Z" />
+
+    <!-- Exclamation mark bar -->
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M200,34 L200,58"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round"
+        android:strokeWidth="6" />
+
+    <!-- Exclamation mark dot -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M200,67 A3.5,3.5 0 1,0 200,74 A3.5,3.5 0 1,0 200,67 Z" />
+
+</vector>
