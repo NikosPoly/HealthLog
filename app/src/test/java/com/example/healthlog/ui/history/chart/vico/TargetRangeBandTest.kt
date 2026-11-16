@@ -8,8 +8,14 @@ import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.guidelines.BloodGlucoseCategory
 import com.example.healthlog.guidelines.BloodPressureStage
+import com.example.healthlog.guidelines.BmiCategory
+import com.example.healthlog.guidelines.PulseZone
 import com.example.healthlog.guidelines.evaluateDiastolicStage
 import com.example.healthlog.guidelines.evaluateSystolicStage
+import com.example.healthlog.ui.details.references.bloodGlucoseCategoryColors
+import com.example.healthlog.ui.details.references.bloodPressureStageColors
+import com.example.healthlog.ui.details.references.bmiCategoryColors
+import com.example.healthlog.ui.details.references.pulseZoneColors
 import com.example.healthlog.model.MealContext
 import com.example.healthlog.model.MeasurementType
 import com.patrykandpatrick.vico.compose.cartesian.data.LineCartesianLayerModel
@@ -296,5 +302,42 @@ class TargetRangeBandTest {
         // Diastolic 80 mmHg -> resolves to NORMAL (normalSquare: Square, Green)
         val diaPoint = diastolicProvider.getPoint(LineCartesianLayerModel.Entry(1000.0, 80.0))
         assertEquals(normalSquare, diaPoint)
+    }
+
+    @Test
+    fun stageColorFor_resolvesConditionColorsAcrossAllTypes() {
+        val dark = false
+
+        // Blood pressure (120/80) -> Normal -> normal stage colors
+        val bp = Measurement(type = MeasurementType.BLOOD_PRESSURE, value = 120.0, secondaryValue = 80.0)
+        assertEquals(bloodPressureStageColors(BloodPressureStage.NORMAL, dark), stageColorFor(bp, dark))
+
+        // Blood glucose (fasting 135) -> Diabetes -> diabetes stage colors
+        val glucose = Measurement(
+            type = MeasurementType.BLOOD_SUGAR,
+            value = 135.0,
+            mealContext = MealContext.BEFORE_MEAL.name,
+        )
+        assertEquals(bloodGlucoseCategoryColors(BloodGlucoseCategory.DIABETES, dark), stageColorFor(glucose, dark))
+
+        // Pulse (50) -> Bradycardia -> bradycardia stage colors
+        val brady = Measurement(type = MeasurementType.PULSE, value = 50.0)
+        assertEquals(pulseZoneColors(PulseZone.BRADYCARDIA, dark), stageColorFor(brady, dark))
+
+        // Weight with height (72 kg, 180 cm) -> Normal BMI -> normal BMI colors
+        val weight = Measurement(type = MeasurementType.WEIGHT, value = 72.0)
+        assertEquals(bmiCategoryColors(BmiCategory.NORMAL, dark), stageColorFor(weight, dark, latestHeightCm = 180.0))
+
+        // Weight without height -> null (fallback to theme surface)
+        assertNull(stageColorFor(weight, dark, latestHeightCm = null))
+
+        // Height -> null (fallback to theme surface)
+        val height = Measurement(type = MeasurementType.HEIGHT, value = 180.0)
+        assertNull(stageColorFor(height, dark))
+
+        // Dark theme test
+        val darkTheme = true
+        assertEquals(bloodPressureStageColors(BloodPressureStage.NORMAL, darkTheme), stageColorFor(bp, darkTheme))
+        assertEquals(pulseZoneColors(PulseZone.BRADYCARDIA, darkTheme), stageColorFor(brady, darkTheme))
     }
 }

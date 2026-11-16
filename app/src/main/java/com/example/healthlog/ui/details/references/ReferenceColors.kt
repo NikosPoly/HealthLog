@@ -17,9 +17,7 @@ data class StageColor(
 )
 
 // Resolves theme-aware colors for blood pressure stages (ISH 2020).
-@Composable
-fun bloodPressureStageColor(stage: BloodPressureStage): StageColor {
-    val dark = isSystemInDarkTheme()
+fun bloodPressureStageColors(stage: BloodPressureStage, dark: Boolean): StageColor {
     return when (stage) {
         BloodPressureStage.LOW -> if (dark) {
             StageColor(Color(0xFF102838), Color(0xFF81D4FA), Color(0xFF29B6F6))
@@ -54,10 +52,12 @@ fun bloodPressureStageColor(stage: BloodPressureStage): StageColor {
     }
 }
 
-// Resolves theme-aware colors for blood glucose categories (WHO / IDF).
 @Composable
-fun bloodGlucoseCategoryColor(category: BloodGlucoseCategory): StageColor {
-    val dark = isSystemInDarkTheme()
+fun bloodPressureStageColor(stage: BloodPressureStage): StageColor =
+    bloodPressureStageColors(stage, isSystemInDarkTheme())
+
+// Resolves theme-aware colors for blood glucose categories (WHO / IDF).
+fun bloodGlucoseCategoryColors(category: BloodGlucoseCategory, dark: Boolean): StageColor {
     return when (category) {
         BloodGlucoseCategory.HYPOGLYCEMIA -> if (dark) {
             StageColor(Color(0xFF102838), Color(0xFF81D4FA), Color(0xFF0288D1))
@@ -82,10 +82,12 @@ fun bloodGlucoseCategoryColor(category: BloodGlucoseCategory): StageColor {
     }
 }
 
-// Resolves theme-aware colors for resting pulse zones (WHF / WHO).
 @Composable
-fun pulseZoneColor(zone: PulseZone): StageColor {
-    val dark = isSystemInDarkTheme()
+fun bloodGlucoseCategoryColor(category: BloodGlucoseCategory): StageColor =
+    bloodGlucoseCategoryColors(category, isSystemInDarkTheme())
+
+// Resolves theme-aware colors for resting pulse zones (WHF / WHO).
+fun pulseZoneColors(zone: PulseZone, dark: Boolean): StageColor {
     return when (zone) {
         PulseZone.BRADYCARDIA -> if (dark) {
             StageColor(Color(0xFF102838), Color(0xFF81D4FA), Color(0xFF0288D1))
@@ -105,10 +107,12 @@ fun pulseZoneColor(zone: PulseZone): StageColor {
     }
 }
 
-// Resolves theme-aware colors for WHO BMI categories.
 @Composable
-fun bmiCategoryColor(category: BmiCategory): StageColor {
-    val dark = isSystemInDarkTheme()
+fun pulseZoneColor(zone: PulseZone): StageColor =
+    pulseZoneColors(zone, isSystemInDarkTheme())
+
+// Resolves theme-aware colors for WHO BMI categories.
+fun bmiCategoryColors(category: BmiCategory, dark: Boolean): StageColor {
     return when (category) {
         BmiCategory.UNDERWEIGHT -> if (dark) {
             StageColor(Color(0xFF102838), Color(0xFF81D4FA), Color(0xFF0288D1))
@@ -132,6 +136,10 @@ fun bmiCategoryColor(category: BmiCategory): StageColor {
         }
     }
 }
+
+@Composable
+fun bmiCategoryColor(category: BmiCategory): StageColor =
+    bmiCategoryColors(category, isSystemInDarkTheme())
 
 // String resource mappings for clinical stages.
 val BloodPressureStage.labelRes: Int
