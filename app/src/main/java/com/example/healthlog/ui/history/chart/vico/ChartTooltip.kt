@@ -5,11 +5,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.healthlog.database.Measurement
+import com.example.healthlog.guidelines.GuidelineEvaluation
+import com.example.healthlog.guidelines.evaluateMeasurement
+import com.example.healthlog.ui.details.references.labelRes
 import com.example.healthlog.ui.format.decimalSeparator
 import com.example.healthlog.ui.format.formatMeasurementValue
 import com.example.healthlog.ui.format.formatTimestamp
@@ -27,27 +31,49 @@ import com.patrykandpatrick.vico.compose.common.component.rememberShapeComponent
 import com.patrykandpatrick.vico.compose.common.component.rememberTextComponent
 import kotlin.math.abs
 
+// Resolves the string resource ID for the clinical stage of a measurement.
+fun stageLabelResFor(measurement: Measurement, latestHeightCm: Double? = null): Int? {
+    return when (val evaluation = evaluateMeasurement(measurement, latestHeightCm)) {
+        is GuidelineEvaluation.BloodPressure -> evaluation.stage.labelRes
+        is GuidelineEvaluation.BloodGlucose -> evaluation.category.labelRes
+        is GuidelineEvaluation.Pulse -> evaluation.zone.labelRes
+        is GuidelineEvaluation.Weight -> evaluation.bmiEvaluation?.category?.labelRes
+        is GuidelineEvaluation.Height, null -> null
+    }
+}
+
 // The box shown when a dot is tapped: how it looks, what it says, and when it opens.
 // Used by EntryChart; it must be called inside its ProvideVicoTheme.
 
-// The box's text: the value as in the history list, then date and time.
+// The box's text: the value as in the history list, then clinical stage (if applicable), then date and time.
 // Blood pressure shows systolic and diastolic together (with the pulse).
 @Composable
 internal fun rememberEntryMarker(
     // The chart's measurements, oldest first.
-    oldestFirst: List<Measurement>
+    oldestFirst: List<Measurement>,
+    latestHeight: Double? = null,
 ): DefaultCartesianMarker {
+    val resources = LocalResources.current
     val separator = decimalSeparator()
     val dateTimeFormatter = rememberDateTimeFormatter()
-    val markerFormatter = remember(oldestFirst, separator, dateTimeFormatter) {
+    val markerFormatter = remember(oldestFirst, separator, dateTimeFormatter, latestHeight) {
         val measurementAt = oldestFirst.associateBy { it.timestamp / MILLIS_PER_DAY }
         DefaultCartesianMarker.ValueFormatter { _, targets ->
             val measurement = measurementAt[targets.first().x]
             if (measurement == null) {
                 ""
             } else {
-                formatMeasurementValue(measurement, separator) + "\n" +
-                    formatTimestamp(measurement.timestamp, dateTimeFormatter)
+                val valueText = formatMeasurementValue(measurement, separator)
+                val stageText = stageLabelResFor(measurement, latestHeight)?.let {
+                    resources.getString(it)
+                }
+                val timeText = formatTimestamp(measurement.timestamp, dateTimeFormatter)
+
+                if (stageText != null) {
+                    "$valueText\n$stageText\n$timeText"
+                } else {
+                    "$valueText\n$timeText"
+                }
             }
         }
     }
@@ -57,9 +83,9 @@ internal fun rememberEntryMarker(
             style = TextStyle(
                 color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 12.sp,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
             ),
-            lineCount = 2,
+            lineCount = 3,
             padding = Insets(8.dp, 4.dp),
             background = rememberShapeComponent(
                 fill = Fill(MaterialTheme.colorScheme.surface),

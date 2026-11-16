@@ -39,12 +39,29 @@ internal class DateAxisFormatter(locale: Locale, skeleton: String) : CartesianVa
 
 // The value axis fits the measurements with some room above and below, instead of
 // starting at 0, so small changes (e.g. in weight) are visible.
-internal class PaddedRange(private val minMargin: Double) : CartesianLayerRangeProvider {
+// When target ranges (e.g. normal clinical thresholds) are present, the axis bounds
+// comfortably include them as well.
+internal class PaddedRange(
+    private val minMargin: Double,
+    private val targetRanges: List<ClosedFloatingPointRange<Double>> = emptyList(),
+) : CartesianLayerRangeProvider {
+    fun getMinY(minY: Double, maxY: Double): Double {
+        val effectiveMinY = if (targetRanges.isEmpty()) minY else minOf(minY, targetRanges.minOf { it.start })
+        val effectiveMaxY = if (targetRanges.isEmpty()) maxY else maxOf(maxY, targetRanges.maxOf { it.endInclusive })
+        return floor(effectiveMinY - margin(effectiveMinY, effectiveMaxY)).coerceAtLeast(0.0)
+    }
+
+    fun getMaxY(minY: Double, maxY: Double): Double {
+        val effectiveMinY = if (targetRanges.isEmpty()) minY else minOf(minY, targetRanges.minOf { it.start })
+        val effectiveMaxY = if (targetRanges.isEmpty()) maxY else maxOf(maxY, targetRanges.maxOf { it.endInclusive })
+        return ceil(effectiveMaxY + margin(effectiveMinY, effectiveMaxY))
+    }
+
     override fun getMinY(minY: Double, maxY: Double, extraStore: ExtraStore): Double =
-        floor(minY - margin(minY, maxY)).coerceAtLeast(0.0)
+        getMinY(minY, maxY)
 
     override fun getMaxY(minY: Double, maxY: Double, extraStore: ExtraStore): Double =
-        ceil(maxY + margin(minY, maxY))
+        getMaxY(minY, maxY)
 
     private fun margin(minY: Double, maxY: Double) = max((maxY - minY) * 0.1, minMargin)
 }

@@ -27,6 +27,7 @@ fun ChartPage(
     // The latest tap anywhere on the screen, or null before the first one. Passed on to the
     // chart, which uses it to close the box of a tapped dot.
     screenTap: ScreenTap?,
+    latestHeight: Double? = null,
     onOpenDetails: ((Long) -> Unit)? = null
 ) {
     val inPeriod = remember(measurements, period) {
@@ -45,6 +46,7 @@ fun ChartPage(
             type = type,
             inPeriod = inPeriod,
             screenTap = screenTap,
+            latestHeight = latestHeight,
             onOpenDetails = onOpenDetails
         )
 

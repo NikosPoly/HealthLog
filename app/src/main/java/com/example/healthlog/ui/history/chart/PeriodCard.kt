@@ -35,6 +35,7 @@ fun PeriodCard(
     // Passed on to the chart (see ChartPage).
     screenTap: ScreenTap?,
     modifier: Modifier = Modifier,
+    latestHeight: Double? = null,
     onOpenDetails: ((Long) -> Unit)? = null
 ) {
     if (inPeriod.isEmpty()) {
@@ -71,7 +72,8 @@ fun PeriodCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(240.dp)
-                    .semantics { contentDescription = description }
+                    .semantics { contentDescription = description },
+                latestHeight = latestHeight
             )
 
             items.below.forEach { (start, end) ->

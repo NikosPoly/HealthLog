@@ -145,6 +145,11 @@ fun HistoryContent(
                     )
                 }
 
+                // Latest height is used to calculate healthy weight ranges and BMI target bands.
+                val latestHeight = remember(measurementsByType) {
+                    measurementsByType[MeasurementType.HEIGHT]?.firstOrNull()?.value
+                }
+
                 HorizontalPager(
                     state = pagerState,
                     modifier = Modifier.fillMaxSize()
@@ -159,6 +164,7 @@ fun HistoryContent(
                                 measurements = measurements,
                                 period = period,
                                 screenTap = screenTap,
+                                latestHeight = latestHeight,
                                 onOpenDetails = onOpenDetails
                             )
                         } else {

@@ -55,13 +55,15 @@ fun EntryChart(
     measurements: List<Measurement>,
     // The latest tap anywhere on the screen, or null before the first one.
     screenTap: ScreenTap?,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    latestHeight: Double? = null,
 ) {
-    // When any of these three changes, the chart is drawn from scratch, without the box
+    // When any of these changes, the chart is drawn from scratch, without the box
     // of a tapped dot:
     // - chartInstance is new every time the chart is shown (e.g. after swiping back to it)
     // - measurements change with the period and the data
     // - closeCount goes up on every tap outside the chart
+    // - latestHeight changes (for weight healthy target range)
     val chartInstance = remember { Any() }
     var closeCount by remember { mutableIntStateOf(0) }
     val chartPosition = remember { ElementPosition() }
@@ -71,10 +73,11 @@ fun EntryChart(
         if (screenTap != null && !chartPosition.contains(screenTap.position)) closeCount++
     }
 
-    key(chartInstance, measurements, closeCount) {
+    key(chartInstance, measurements, closeCount, latestHeight) {
         VicoLineChart(
             type = type,
             measurements = measurements,
+            latestHeight = latestHeight,
             modifier = modifier.onGloballyPositioned { chartPosition.coordinates = it }
         )
     }
@@ -85,6 +88,7 @@ fun EntryChart(
 private fun VicoLineChart(
     type: MeasurementType,
     measurements: List<Measurement>,
+    latestHeight: Double?,
     modifier: Modifier
 ) {
     val oldestFirst = remember(measurements) { measurements.sortedBy { it.timestamp } }
@@ -93,6 +97,15 @@ private fun VicoLineChart(
     val field = type.fields[0]
     val separator = decimalSeparator()
     val locale = Locale.forLanguageTag(stringResource(R.string.format_locale))
+
+    // Clinical target ranges (normal pulse zone, healthy weight range).
+    val targetRanges = remember(type, latestHeight) {
+        targetRangesFor(type, latestHeight)
+    }
+    val targetDecoration = rememberTargetBandDecoration(type, latestHeight)
+    val decorations = remember(targetDecoration) {
+        listOfNotNull(targetDecoration)
+    }
 
     // Long periods show month and year on the axis; shorter ones day and month.
     val longPeriod = oldestFirst.last().timestamp - oldestFirst.first().timestamp >
@@ -107,8 +120,12 @@ private fun VicoLineChart(
         )
     }
     // Whole-number types get a wider minimum range, so their axis steps stay whole numbers.
-    val rangeProvider = remember(field.maxDecimals) {
-        PaddedRange(minMargin = if (field.maxDecimals > 0) 1.0 else 5.0)
+    // Includes target ranges so normal zones are always visible in the chart window.
+    val rangeProvider = remember(field.maxDecimals, targetRanges) {
+        PaddedRange(
+            minMargin = if (field.maxDecimals > 0) 1.0 else 5.0,
+            targetRanges = targetRanges,
+        )
     }
 
     val markerController = rememberTapOnDotController()
@@ -119,7 +136,7 @@ private fun VicoLineChart(
             rememberDotLine(MaterialTheme.colorScheme.primary),
             rememberDotLine(MaterialTheme.colorScheme.tertiary)
         )
-        val marker = rememberEntryMarker(oldestFirst)
+        val marker = rememberEntryMarker(oldestFirst, latestHeight)
 
         CartesianChartHost(
             chart = rememberCartesianChart(
@@ -129,6 +146,7 @@ private fun VicoLineChart(
                 ),
                 startAxis = VerticalAxis.rememberStart(valueFormatter = yFormatter),
                 bottomAxis = HorizontalAxis.rememberBottom(valueFormatter = xFormatter),
+                decorations = decorations,
                 // One day: the base unit of the time axis.
                 // (The lambda receives the model and the x range, which aren't needed.)
                 getXStep = { _, _, _ -> 1.0 },
