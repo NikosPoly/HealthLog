@@ -101,7 +101,7 @@ This document outlines the architectural strategy, feature specifications, and i
 │ 1.3 Condition Breakdown Statistics & Insights (Completed)              │
 ├────────────────────────────────────────────────────────────────────────┤
 │ PHASE 2: Data Visualization, Filtering & Doctor Reporting (Next Focus) │
-│ 2.1 Chart Normal Ranges / Target Bands (Vico charts)                   │
+│ 2.1 Chart Normal Ranges / Target Bands (Vico charts) (Completed)       │
 │ 2.2 History List Filtering (All, Elevated/Abnormal, Conditions)        │
 │ 2.3 Doctor Report Export (On-device PDF generation, CSV, Print/Share)   │
 ├────────────────────────────────────────────────────────────────────────┤
@@ -133,9 +133,10 @@ This document outlines the architectural strategy, feature specifications, and i
    * Smart clinical advice cards with speech bubble clouds delivered by an attentive doctor avatar (`ic_doctor_warning.xml`).
 
 #### **Phase 2: Discovery & Doctor Communication**
-4. **Chart Target Zones & Stage Coloring (2.1):**
-   * Shaded normal bands on Vico line charts using the thresholds established in Phase 1.
-   * Stage-colored data points (dots) and stage-tinted tooltip callouts when tapping points.
+4. **Chart Target Zones & Stage Coloring (2.1) (Completed):**
+   * Shaded normal and alert target bands on Vico line charts (Pulse and dynamic height-based WHO BMI categories).
+   * Contextual dot shapes and dynamic stage-colored data points across all metrics with 1.5 dp halos.
+   * Stage-tinted tooltip callouts matching pinpoint condition colors and accessible chart shape legends.
 5. **History List Filtering (2.2):**
    * Filter entries by status (*All*, *Elevated/High*, *Specific Condition*).
 6. **Doctor Export Report (PDF/CSV):**
@@ -230,17 +231,27 @@ This document outlines the architectural strategy, feature specifications, and i
 
 ### Phase 2: Discovery & Doctor Communication
 
-#### Milestone 2.1: Chart Target Zones & Stage-Colored Data Points
-* **Goal:** Display shaded normal target bands, stage-colored data points, and stage-tinted tooltip callouts on Vico line charts.
-* **Step 1 — Target Band Decoration (`ui/history/chart/vico/`):**
-  * Use Vico's threshold range decorations / shaded line ranges matching the normal guideline thresholds established in Phase 1 (e.g. green zone for systolic 90–129 mmHg and diastolic 60–84 mmHg, fasting glucose 70–99 mg/dL).
-* **Step 2 — Dynamic Bounds per Metric:**
-  * Dynamically assign target band Y-ranges based on current `MeasurementType` (e.g. 70–99 mg/dL for blood sugar, 60–100 bpm for pulse, 18.5–24.9 for BMI).
-* **Step 3 — Stage-Colored Data Points & Tooltip Badge:**
-  * Dynamically tint individual chart data points (dots) using their clinical stage color (e.g. green for normal, orange for high-normal/prediabetes, red for hypertension/diabetes).
-  * Display the clinical stage chip inside the tap tooltip / detail callout bubble alongside the value, timestamp, and clinical conditions.
-* **Step 4 — Visual Testing & Verification:**
-  * Test rendering with different chart periods and data sets in `ChartPageTest.kt`.
+#### Milestone 2.1: Chart Target Zones & Stage-Colored Data Points (Completed)
+* **Goal:** Display shaded clinical target bands, contextual dot shapes, stage-colored data points, isolated neutral canvas, and stage-tinted tooltip callouts on Vico line charts.
+* **Step 1 — Clinical Stage Bands & Canvas Isolation (`ui/history/chart/vico/TargetBandDecoration.kt`):**
+  * Created custom `TargetBandDecoration` rendering horizontal semi-transparent clinical bands on Pulse and Weight charts.
+  * **Pulse:** Bands for Bradycardia (<60 bpm, blue), Normal (60–100 bpm, green), and Tachycardia (>100 bpm, red).
+  * **Weight:** Dynamic bands calculated from latest user height for Underweight (<18.5, blue), Normal (18.5–25, green), Overweight (25–30, orange), and Obese (≥30 BMI, red).
+  * **Vivid Opacity Calibration:** Calibrated fill and stroke alphas for red (`0.38f`/`0.75f`) and orange (`0.34f`/`0.70f`) alert zones to prevent washed-out pinkish appearances on light canvas backgrounds.
+  * **Isolated Canvas:** Wrapped the chart and legends in a dedicated `surfaceContainerHighest` card canvas (`RoundedCornerShape(16.dp)`) in `PeriodCard.kt` to prevent card tint bleed.
+* **Step 2 — Contextual Shapes & Stage-Colored Data Points (`ui/history/chart/vico/EntryChart.kt`):**
+  * **Blood Pressure:** Systolic Circle and Diastolic Diamond dots dynamically tinted by ISH stage color (Normal, High-Normal, Grade 1, Grade 2, Crisis).
+  * **Blood Sugar:** Before-meal Circle and Post-meal Square dots dynamically tinted by WHO category (Hypoglycemia, Normal, Prediabetes, Diabetes).
+  * **Pulse & Weight:** Dynamic `PulsePointProvider` and `WeightPointProvider` coloring dots by pulse zone and WHO BMI category matching target bands and reference tables.
+  * **Contrast Halos:** 1.5 dp surface halos on every point to guarantee visibility over lines and bands.
+  * **Shape Legends:** Added accessible contextual shape legends below Blood Pressure and Blood Glucose charts.
+* **Step 3 — Stage-Tethered Tooltips & Color Harmonization (`ChartTooltip.kt`, `ReferenceColors.kt`):**
+  * Chart tooltip displays the clinical stage chip dynamically tinted in the pinpoint's exact condition-based color.
+  * Harmonized single source of truth across chart bands, dots, tooltips, and Details screen reference tables.
+  * Calibrated indicator palette: softened `NORMAL` green (`#387A40` / `#66BB6A`) and golden-amber (`#FF8F00` / `#FFB300`) with zero ambiguity against red.
+* **Step 4 — Automated Testing & Verification:**
+  * 21 dedicated unit tests in `TargetRangeBandTest.kt` verifying band ranges, BMI math, point providers, and color resolution (all 199 unit tests passing).
+  * 17 instrumented tests in `ChartPageTest.kt` verifying chart rendering, stats, condition insights, and the new contextual shape legends.
 
 #### Milestone 2.2: History List Filtering
 * **Goal:** Allow users to filter the history list to quickly find abnormal or specific readings.
