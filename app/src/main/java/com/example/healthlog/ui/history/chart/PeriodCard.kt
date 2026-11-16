@@ -83,14 +83,50 @@ fun PeriodCard(
                 latestHeight = latestHeight
             )
 
-            if (type == MeasurementType.BLOOD_SUGAR) {
-                GlucoseChartLegend()
+            when (type) {
+                MeasurementType.BLOOD_SUGAR -> GlucoseChartLegend()
+                MeasurementType.BLOOD_PRESSURE -> BloodPressureChartLegend()
+                else -> Unit
             }
 
             items.below.forEach { (start, end) ->
                 StatPair(start, end)
             }
         }
+    }
+}
+
+// Explains blood pressure dot shapes: Circle for Systolic, Square for Diastolic.
+@Composable
+private fun BloodPressureChartLegend(modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .background(MaterialTheme.colorScheme.onSurfaceVariant, CircleShape)
+        )
+        Spacer(Modifier.width(6.dp))
+        Text(
+            text = stringResource(R.string.field_systolic),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.width(16.dp))
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .background(MaterialTheme.colorScheme.onSurfaceVariant, RoundedCornerShape(1.dp))
+        )
+        Spacer(Modifier.width(6.dp))
+        Text(
+            text = stringResource(R.string.field_diastolic),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 

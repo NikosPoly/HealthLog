@@ -11,6 +11,7 @@ import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.healthlog.guidelines.BloodGlucoseCategory
+import com.example.healthlog.guidelines.BloodPressureStage
 import com.example.healthlog.guidelines.calculateHealthyWeightRange
 import com.example.healthlog.model.MeasurementType
 import com.patrykandpatrick.vico.compose.cartesian.CartesianDrawingContext
@@ -58,6 +59,18 @@ fun glucoseCategoryColor(category: BloodGlucoseCategory, dark: Boolean): Color {
         BloodGlucoseCategory.NORMAL -> if (dark) Color(0xFF81C784) else Color(0xFF4CAF50)
         BloodGlucoseCategory.PREDIABETES -> if (dark) Color(0xFFFFB74D) else Color(0xFFFB8C00)
         BloodGlucoseCategory.DIABETES -> if (dark) Color(0xFFE57373) else Color(0xFFE53935)
+    }
+}
+
+// Universal clinical color for blood pressure stages (ISH 2020 / WHO).
+fun bloodPressureStageColor(stage: BloodPressureStage, dark: Boolean): Color {
+    return when (stage) {
+        BloodPressureStage.LOW -> if (dark) Color(0xFF29B6F6) else Color(0xFF0288D1)
+        BloodPressureStage.NORMAL -> if (dark) Color(0xFF4CAF50) else Color(0xFF2E7D32)
+        BloodPressureStage.HIGH_NORMAL -> if (dark) Color(0xFFFFB300) else Color(0xFFF57F17)
+        BloodPressureStage.GRADE_1_HYPERTENSION -> if (dark) Color(0xFFFF7043) else Color(0xFFE64A19)
+        BloodPressureStage.GRADE_2_HYPERTENSION -> if (dark) Color(0xFFE53935) else Color(0xFFD32F2F)
+        BloodPressureStage.HYPERTENSIVE_CRISIS -> if (dark) Color(0xFFFF1744) else Color(0xFFC2185B)
     }
 }
 

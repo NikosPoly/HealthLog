@@ -11,6 +11,30 @@ enum class BloodPressureStage {
     HYPERTENSIVE_CRISIS     // Systolic > 180 and/or Diastolic > 120 mmHg
 }
 
+// Evaluates systolic blood pressure value into an ISH 2020 stage.
+fun evaluateSystolicStage(systolic: Double): BloodPressureStage {
+    return when {
+        systolic > 180.0 -> BloodPressureStage.HYPERTENSIVE_CRISIS
+        systolic >= 160.0 -> BloodPressureStage.GRADE_2_HYPERTENSION
+        systolic >= 140.0 -> BloodPressureStage.GRADE_1_HYPERTENSION
+        systolic >= 130.0 -> BloodPressureStage.HIGH_NORMAL
+        systolic < 90.0 -> BloodPressureStage.LOW
+        else -> BloodPressureStage.NORMAL
+    }
+}
+
+// Evaluates diastolic blood pressure value into an ISH 2020 stage.
+fun evaluateDiastolicStage(diastolic: Double): BloodPressureStage {
+    return when {
+        diastolic > 120.0 -> BloodPressureStage.HYPERTENSIVE_CRISIS
+        diastolic >= 100.0 -> BloodPressureStage.GRADE_2_HYPERTENSION
+        diastolic >= 90.0 -> BloodPressureStage.GRADE_1_HYPERTENSION
+        diastolic >= 85.0 -> BloodPressureStage.HIGH_NORMAL
+        diastolic < 60.0 -> BloodPressureStage.LOW
+        else -> BloodPressureStage.NORMAL
+    }
+}
+
 // Evaluates systolic and diastolic blood pressure values into an ISH 2020 stage.
 // Evaluated with priority to higher cardiovascular risk.
 fun evaluateBloodPressure(systolic: Double, diastolic: Double): BloodPressureStage {

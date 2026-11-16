@@ -19,7 +19,10 @@ import androidx.compose.ui.unit.dp
 import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.guidelines.BloodGlucoseCategory
+import com.example.healthlog.guidelines.BloodPressureStage
 import com.example.healthlog.guidelines.evaluateBloodGlucose
+import com.example.healthlog.guidelines.evaluateDiastolicStage
+import com.example.healthlog.guidelines.evaluateSystolicStage
 import com.example.healthlog.model.MealContext
 import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.ui.format.decimalSeparator
@@ -139,10 +142,10 @@ private fun VicoLineChart(
 
     // Takes the chart's colors and text styles from the app's Material theme.
     ProvideVicoTheme(rememberM3VicoTheme()) {
-        val lines = if (type == MeasurementType.BLOOD_SUGAR) {
-            listOf(rememberGlucoseLine(oldestFirst, MaterialTheme.colorScheme.primary))
-        } else {
-            listOf(
+        val lines = when (type) {
+            MeasurementType.BLOOD_PRESSURE -> rememberBloodPressureLines(oldestFirst)
+            MeasurementType.BLOOD_SUGAR -> listOf(rememberGlucoseLine(oldestFirst, MaterialTheme.colorScheme.primary))
+            else -> listOf(
                 rememberDotLine(MaterialTheme.colorScheme.primary),
                 rememberDotLine(MaterialTheme.colorScheme.tertiary),
             )
@@ -285,4 +288,93 @@ internal class GlucosePointProvider(
 
     override fun getLargestPoint(extraStore: ExtraStore): LineCartesianLayer.Point = fallbackPoint
 }
+
+// Blood pressure lines: Systolic (Circle dots) and Diastolic (Square dots),
+// each dot colored by its respective ISH 2020 hypertension stage.
+@Composable
+private fun rememberBloodPressureLines(
+    oldestFirst: List<Measurement>,
+): List<LineCartesianLayer.Line> {
+    val dark = isSystemInDarkTheme()
+    val systolicLineColor = MaterialTheme.colorScheme.primary
+    val diastolicLineColor = MaterialTheme.colorScheme.tertiary
+
+    val measurementByX = remember(oldestFirst) {
+        oldestFirst.associateBy { it.timestamp / MILLIS_PER_DAY }
+    }
+
+    val systolicPoints = remember(dark) {
+        BloodPressureStage.entries.associateWith { stage ->
+            val color = bloodPressureStageColor(stage, dark)
+            val component = ShapeComponent(fill = Fill(color), shape = CircleShape)
+            LineCartesianLayer.Point(component, size = 8.dp)
+        }
+    }
+
+    val diastolicPoints = remember(dark) {
+        val squareShape = RoundedCornerShape(1.dp)
+        BloodPressureStage.entries.associateWith { stage ->
+            val color = bloodPressureStageColor(stage, dark)
+            val component = ShapeComponent(fill = Fill(color), shape = squareShape)
+            LineCartesianLayer.Point(component, size = 8.dp)
+        }
+    }
+
+    val systolicFallback = remember(systolicPoints) { systolicPoints.values.first() }
+    val diastolicFallback = remember(diastolicPoints) { diastolicPoints.values.first() }
+
+    val systolicPointProvider = remember(measurementByX, systolicPoints, systolicFallback) {
+        BloodPressurePointProvider(
+            isSystolic = true,
+            measurementByX = measurementByX,
+            pointsByStage = systolicPoints,
+            fallbackPoint = systolicFallback
+        )
+    }
+
+    val diastolicPointProvider = remember(measurementByX, diastolicPoints, diastolicFallback) {
+        BloodPressurePointProvider(
+            isSystolic = false,
+            measurementByX = measurementByX,
+            pointsByStage = diastolicPoints,
+            fallbackPoint = diastolicFallback
+        )
+    }
+
+    return listOf(
+        LineCartesianLayer.rememberLine(
+            fill = remember(systolicLineColor) { LineCartesianLayer.LineFill.single(Fill(systolicLineColor)) },
+            pointProvider = systolicPointProvider,
+        ),
+        LineCartesianLayer.rememberLine(
+            fill = remember(diastolicLineColor) { LineCartesianLayer.LineFill.single(Fill(diastolicLineColor)) },
+            pointProvider = diastolicPointProvider,
+        ),
+    )
+}
+
+internal class BloodPressurePointProvider(
+    private val isSystolic: Boolean,
+    private val measurementByX: Map<Double, Measurement>,
+    private val pointsByStage: Map<BloodPressureStage, LineCartesianLayer.Point>,
+    private val fallbackPoint: LineCartesianLayer.Point,
+) : LineCartesianLayer.PointProvider {
+    fun getPoint(entry: LineCartesianLayerModel.Entry): LineCartesianLayer.Point {
+        if (entry.x !in measurementByX) return fallbackPoint
+        val stage = if (isSystolic) {
+            evaluateSystolicStage(entry.y)
+        } else {
+            evaluateDiastolicStage(entry.y)
+        }
+        return pointsByStage[stage] ?: fallbackPoint
+    }
+
+    override fun getPoint(
+        entry: LineCartesianLayerModel.Entry,
+        extraStore: ExtraStore,
+    ): LineCartesianLayer.Point = getPoint(entry)
+
+    override fun getLargestPoint(extraStore: ExtraStore): LineCartesianLayer.Point = fallbackPoint
+}
+
 
