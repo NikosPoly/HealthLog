@@ -35,6 +35,8 @@
     <string name="chart_period_all">All</string>
     <string name="chart_empty">No entries in this period.</string>
     <string name="chart_description">Chart of %1$s</string>
+    <string name="chart_legend_before_meal">Before meal</string>
+    <string name="chart_legend_after_meal_2h">2h after meal</string>
 
     <!-- Chart stats -->
     <string name="stats_count">Entries</string>

@@ -10,9 +10,12 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.guidelines.GuidelineEvaluation
 import com.example.healthlog.guidelines.evaluateMeasurement
+import com.example.healthlog.model.MealContext
+import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.ui.details.references.labelRes
 import com.example.healthlog.ui.format.decimalSeparator
 import com.example.healthlog.ui.format.formatMeasurementValue
@@ -67,10 +70,26 @@ internal fun rememberEntryMarker(
                 val stageText = stageLabelResFor(measurement, latestHeight)?.let {
                     resources.getString(it)
                 }
+                val mealText = if (measurement.type == MeasurementType.BLOOD_SUGAR) {
+                    when (MealContext.fromNameOrNull(measurement.mealContext)) {
+                        MealContext.BEFORE_MEAL -> resources.getString(R.string.meal_before)
+                        MealContext.AFTER_MEAL_2H -> resources.getString(R.string.meal_after_2h)
+                        null -> null
+                    }
+                } else {
+                    null
+                }
                 val timeText = formatTimestamp(measurement.timestamp, dateTimeFormatter)
 
-                if (stageText != null) {
-                    "$valueText\n$stageText\n$timeText"
+                val line2 = when {
+                    stageText != null && mealText != null -> "$mealText • $stageText"
+                    stageText != null -> stageText
+                    mealText != null -> mealText
+                    else -> null
+                }
+
+                if (line2 != null) {
+                    "$valueText\n$line2\n$timeText"
                 } else {
                     "$valueText\n$timeText"
                 }

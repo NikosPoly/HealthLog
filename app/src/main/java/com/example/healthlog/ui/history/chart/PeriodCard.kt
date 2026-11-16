@@ -1,10 +1,17 @@
 package com.example.healthlog.ui.history.chart
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -76,9 +83,48 @@ fun PeriodCard(
                 latestHeight = latestHeight
             )
 
+            if (type == MeasurementType.BLOOD_SUGAR) {
+                GlucoseChartLegend()
+            }
+
             items.below.forEach { (start, end) ->
                 StatPair(start, end)
             }
         }
     }
 }
+
+// Explains blood glucose dot shapes: Circle for Before meal, Square for 2h after meal.
+@Composable
+private fun GlucoseChartLegend(modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .background(MaterialTheme.colorScheme.onSurfaceVariant, CircleShape)
+        )
+        Spacer(Modifier.width(6.dp))
+        Text(
+            text = stringResource(R.string.chart_legend_before_meal),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.width(16.dp))
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .background(MaterialTheme.colorScheme.onSurfaceVariant, RoundedCornerShape(1.dp))
+        )
+        Spacer(Modifier.width(6.dp))
+        Text(
+            text = stringResource(R.string.chart_legend_after_meal_2h),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+

@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.example.healthlog.guidelines.BloodGlucoseCategory
 import com.example.healthlog.guidelines.calculateHealthyWeightRange
 import com.example.healthlog.model.MeasurementType
 import com.patrykandpatrick.vico.compose.cartesian.CartesianDrawingContext
@@ -43,6 +44,20 @@ fun targetRangesFor(
         MeasurementType.BLOOD_PRESSURE,
         MeasurementType.BLOOD_SUGAR,
         MeasurementType.HEIGHT -> emptyList()
+    }
+}
+
+// Universal clinical color for blood glucose evaluation categories:
+// - Blue: Hypoglycemia (< 70 mg/dL)
+// - Green: Normal (Fasting 70–99 mg/dL | 2h Post-meal < 140 mg/dL)
+// - Amber: Prediabetes (Fasting 100–125 mg/dL | 2h Post-meal 140–199 mg/dL)
+// - Red: Diabetes (Fasting ≥ 126 mg/dL | 2h Post-meal ≥ 200 mg/dL)
+fun glucoseCategoryColor(category: BloodGlucoseCategory, dark: Boolean): Color {
+    return when (category) {
+        BloodGlucoseCategory.HYPOGLYCEMIA -> if (dark) Color(0xFF64B5F6) else Color(0xFF1E88E5)
+        BloodGlucoseCategory.NORMAL -> if (dark) Color(0xFF81C784) else Color(0xFF4CAF50)
+        BloodGlucoseCategory.PREDIABETES -> if (dark) Color(0xFFFFB74D) else Color(0xFFFB8C00)
+        BloodGlucoseCategory.DIABETES -> if (dark) Color(0xFFE57373) else Color(0xFFE53935)
     }
 }
 

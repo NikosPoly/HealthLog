@@ -1,8 +1,18 @@
 package com.example.healthlog.ui.history.chart.vico
 
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
+import com.example.healthlog.guidelines.BloodGlucoseCategory
+import com.example.healthlog.model.MealContext
 import com.example.healthlog.model.MeasurementType
+import com.patrykandpatrick.vico.compose.cartesian.data.LineCartesianLayerModel
+import com.patrykandpatrick.vico.compose.cartesian.layer.LineCartesianLayer
+import com.patrykandpatrick.vico.compose.common.Fill
+import com.patrykandpatrick.vico.compose.common.component.ShapeComponent
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -149,8 +159,62 @@ class TargetRangeBandTest {
         val sugarFasting = Measurement(
             type = MeasurementType.BLOOD_SUGAR,
             value = 95.0,
-            mealContext = "FASTING"
+            mealContext = MealContext.BEFORE_MEAL.name,
         )
         assertNotNull(stageLabelResFor(sugarFasting))
+    }
+
+    @Test
+    fun glucoseCategoryColor_mapsToUniversalPalette() {
+        val dark = false
+        assertEquals(Color(0xFF1E88E5), glucoseCategoryColor(BloodGlucoseCategory.HYPOGLYCEMIA, dark))
+        assertEquals(Color(0xFF4CAF50), glucoseCategoryColor(BloodGlucoseCategory.NORMAL, dark))
+        assertEquals(Color(0xFFFB8C00), glucoseCategoryColor(BloodGlucoseCategory.PREDIABETES, dark))
+        assertEquals(Color(0xFFE53935), glucoseCategoryColor(BloodGlucoseCategory.DIABETES, dark))
+    }
+
+    @Test
+    fun glucosePointProvider_resolvesShapesAndColorsByMealContextAndEvaluation() {
+        val time1 = 1000L * 86_400_000L
+        val time2 = 1001L * 86_400_000L
+        val m1 = Measurement(
+            id = 1,
+            type = MeasurementType.BLOOD_SUGAR,
+            value = 130.0,
+            mealContext = MealContext.BEFORE_MEAL.name,
+            timestamp = time1,
+        )
+        val m2 = Measurement(
+            id = 2,
+            type = MeasurementType.BLOOD_SUGAR,
+            value = 130.0,
+            mealContext = MealContext.AFTER_MEAL_2H.name,
+            timestamp = time2,
+        )
+        val measurements = listOf(m1, m2)
+        val measurementByX = measurements.associateBy { it.timestamp / MILLIS_PER_DAY }
+
+        val beforePoint = LineCartesianLayer.Point(
+            component = ShapeComponent(fill = Fill(Color.Red), shape = CircleShape),
+            size = 8.dp,
+        )
+        val afterPoint = LineCartesianLayer.Point(
+            component = ShapeComponent(fill = Fill(Color.Green), shape = RoundedCornerShape(1.dp)),
+            size = 8.dp,
+        )
+        val points: Map<Pair<BloodGlucoseCategory, MealContext?>, LineCartesianLayer.Point> = mapOf(
+            Pair(BloodGlucoseCategory.DIABETES, MealContext.BEFORE_MEAL) to beforePoint,
+            Pair(BloodGlucoseCategory.NORMAL, MealContext.AFTER_MEAL_2H) to afterPoint,
+        )
+
+        val provider = GlucosePointProvider(measurementByX, points, beforePoint)
+
+        // 130 before meal evaluates to DIABETES -> returns beforePoint (Circle, Red)
+        val point1 = provider.getPoint(LineCartesianLayerModel.Entry(1000.0, 130.0))
+        assertEquals(beforePoint, point1)
+
+        // 130 after meal evaluates to NORMAL -> returns afterPoint (Square, Green)
+        val point2 = provider.getPoint(LineCartesianLayerModel.Entry(1001.0, 130.0))
+        assertEquals(afterPoint, point2)
     }
 }
