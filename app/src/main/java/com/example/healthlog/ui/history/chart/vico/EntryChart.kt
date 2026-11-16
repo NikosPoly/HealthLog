@@ -142,11 +142,27 @@ private fun VicoLineChart(
 
     // Takes the chart's colors and text styles from the app's Material theme.
     ProvideVicoTheme(rememberM3VicoTheme()) {
+        val dark = isSystemInDarkTheme()
+        val primary = MaterialTheme.colorScheme.primary
+        val chartPrimary = remember(dark, primary) {
+            if (dark) {
+                primary
+            } else {
+                // Lighten the primary line in light theme for crisp contrast over target bands
+                Color(
+                    red = (primary.red * 0.70f + 0.30f).coerceIn(0f, 1f),
+                    green = (primary.green * 0.70f + 0.30f).coerceIn(0f, 1f),
+                    blue = (primary.blue * 0.70f + 0.30f).coerceIn(0f, 1f),
+                    alpha = 1f,
+                )
+            }
+        }
+
         val lines = when (type) {
             MeasurementType.BLOOD_PRESSURE -> rememberBloodPressureLines(oldestFirst)
-            MeasurementType.BLOOD_SUGAR -> listOf(rememberGlucoseLine(oldestFirst, MaterialTheme.colorScheme.primary))
+            MeasurementType.BLOOD_SUGAR -> listOf(rememberGlucoseLine(oldestFirst, chartPrimary))
             else -> listOf(
-                rememberDotLine(MaterialTheme.colorScheme.primary),
+                rememberDotLine(chartPrimary),
                 rememberDotLine(MaterialTheme.colorScheme.tertiary),
             )
         }
@@ -199,8 +215,16 @@ private fun chartModel(oldestFirst: List<Measurement>, type: MeasurementType): C
 
 // A line in one color, with a dot on every measurement.
 @Composable
-private fun rememberDotLine(color: Color): LineCartesianLayer.Line {
-    val dot = rememberShapeComponent(fill = Fill(color), shape = CircleShape)
+private fun rememberDotLine(
+    color: Color,
+    outlineColor: Color = MaterialTheme.colorScheme.surface,
+): LineCartesianLayer.Line {
+    val dot = rememberShapeComponent(
+        fill = Fill(color),
+        shape = CircleShape,
+        strokeFill = Fill(outlineColor),
+        strokeThickness = 1.5.dp,
+    )
 
     return LineCartesianLayer.rememberLine(
         fill = remember(color) { LineCartesianLayer.LineFill.single(Fill(color)) },
@@ -218,7 +242,8 @@ private fun rememberGlucoseLine(
     color: Color,
 ): LineCartesianLayer.Line {
     val dark = isSystemInDarkTheme()
-    val pointProvider = rememberGlucosePointProvider(oldestFirst, dark)
+    val outlineColor = MaterialTheme.colorScheme.surface
+    val pointProvider = rememberGlucosePointProvider(oldestFirst, dark, outlineColor)
 
     return LineCartesianLayer.rememberLine(
         fill = remember(color) { LineCartesianLayer.LineFill.single(Fill(color)) },
@@ -230,11 +255,12 @@ private fun rememberGlucoseLine(
 private fun rememberGlucosePointProvider(
     oldestFirst: List<Measurement>,
     dark: Boolean,
+    outlineColor: Color = MaterialTheme.colorScheme.surface,
 ): LineCartesianLayer.PointProvider {
     val circleShape = CircleShape
     val squareShape = RoundedCornerShape(1.dp)
 
-    val points = remember(dark) {
+    val points = remember(dark, outlineColor) {
         val map = mutableMapOf<Pair<BloodGlucoseCategory, MealContext?>, LineCartesianLayer.Point>()
         for (cat in BloodGlucoseCategory.entries) {
             val color = glucoseCategoryColor(cat, dark)
@@ -242,6 +268,8 @@ private fun rememberGlucosePointProvider(
             val circleComponent = ShapeComponent(
                 fill = Fill(color),
                 shape = circleShape,
+                strokeFill = Fill(outlineColor),
+                strokeThickness = 1.5.dp,
             )
             map[Pair(cat, MealContext.BEFORE_MEAL)] = LineCartesianLayer.Point(circleComponent, size = 8.dp)
             map[Pair(cat, null)] = LineCartesianLayer.Point(circleComponent, size = 8.dp)
@@ -250,6 +278,8 @@ private fun rememberGlucosePointProvider(
             val squareComponent = ShapeComponent(
                 fill = Fill(color),
                 shape = squareShape,
+                strokeFill = Fill(outlineColor),
+                strokeThickness = 1.5.dp,
             )
             map[Pair(cat, MealContext.AFTER_MEAL_2H)] = LineCartesianLayer.Point(squareComponent, size = 8.dp)
         }
@@ -298,24 +328,35 @@ private fun rememberBloodPressureLines(
     val dark = isSystemInDarkTheme()
     val systolicLineColor = MaterialTheme.colorScheme.primary
     val diastolicLineColor = MaterialTheme.colorScheme.tertiary
+    val outlineColor = MaterialTheme.colorScheme.surface
 
     val measurementByX = remember(oldestFirst) {
         oldestFirst.associateBy { it.timestamp / MILLIS_PER_DAY }
     }
 
-    val systolicPoints = remember(dark) {
+    val systolicPoints = remember(dark, outlineColor) {
         BloodPressureStage.entries.associateWith { stage ->
             val color = bloodPressureStageColor(stage, dark)
-            val component = ShapeComponent(fill = Fill(color), shape = CircleShape)
+            val component = ShapeComponent(
+                fill = Fill(color),
+                shape = CircleShape,
+                strokeFill = Fill(outlineColor),
+                strokeThickness = 1.5.dp,
+            )
             LineCartesianLayer.Point(component, size = 8.dp)
         }
     }
 
-    val diastolicPoints = remember(dark) {
+    val diastolicPoints = remember(dark, outlineColor) {
         val squareShape = RoundedCornerShape(1.dp)
         BloodPressureStage.entries.associateWith { stage ->
             val color = bloodPressureStageColor(stage, dark)
-            val component = ShapeComponent(fill = Fill(color), shape = squareShape)
+            val component = ShapeComponent(
+                fill = Fill(color),
+                shape = squareShape,
+                strokeFill = Fill(outlineColor),
+                strokeThickness = 1.5.dp,
+            )
             LineCartesianLayer.Point(component, size = 8.dp)
         }
     }

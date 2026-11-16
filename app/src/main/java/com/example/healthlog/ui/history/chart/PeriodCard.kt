@@ -20,6 +20,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -72,21 +73,36 @@ fun PeriodCard(
 
             StatPair(items.above.first, items.above.second)
 
-            EntryChart(
-                type = type,
-                measurements = inPeriod,
-                screenTap = screenTap,
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(240.dp)
-                    .semantics { contentDescription = description },
-                latestHeight = latestHeight
-            )
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                    .padding(horizontal = 8.dp, vertical = 12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                EntryChart(
+                    type = type,
+                    measurements = inPeriod,
+                    screenTap = screenTap,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(240.dp)
+                        .semantics { contentDescription = description },
+                    latestHeight = latestHeight
+                )
 
-            when (type) {
-                MeasurementType.BLOOD_SUGAR -> GlucoseChartLegend()
-                MeasurementType.BLOOD_PRESSURE -> BloodPressureChartLegend()
-                else -> Unit
+                when (type) {
+                    MeasurementType.BLOOD_SUGAR -> {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        GlucoseChartLegend()
+                    }
+                    MeasurementType.BLOOD_PRESSURE -> {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        BloodPressureChartLegend()
+                    }
+                    else -> Unit
+                }
             }
 
             items.below.forEach { (start, end) ->

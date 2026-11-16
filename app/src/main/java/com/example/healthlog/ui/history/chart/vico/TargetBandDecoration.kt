@@ -84,8 +84,8 @@ fun stageBandsFor(
     dark: Boolean,
     latestHeightCm: Double? = null,
 ): List<StageBand> {
-    val fillAlpha = if (dark) 0.16f else 0.12f
-    val strokeAlpha = if (dark) 0.35f else 0.25f
+    val fillAlpha = if (dark) 0.24f else 0.18f
+    val strokeAlpha = if (dark) 0.55f else 0.40f
 
     // Universal clinical palette
     val green = if (dark) Color(0xFF81C784) else Color(0xFF4CAF50)
