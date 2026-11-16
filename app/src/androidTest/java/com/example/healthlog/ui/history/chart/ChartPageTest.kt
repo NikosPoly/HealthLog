@@ -14,6 +14,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.BodyPosition
+import com.example.healthlog.model.MealContext
 import com.example.healthlog.model.MeasurementArm
 import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.ui.theme.HealthLogTheme
@@ -171,6 +172,44 @@ class ChartPageTest {
         exactly("130/85 mmHg").assertCountEquals(2)
         // No pulse anywhere.
         composeRule.onAllNodesWithText("bpm", substring = true).assertCountEquals(0)
+    }
+
+    @Test
+    fun bloodPressure_showsShapeLegendForSystolicAndDiastolic() {
+        val measurements = listOf(
+            bloodPressure(1, systolic = 120.0, diastolic = 80.0, ago = hour)
+        )
+        open(MeasurementType.BLOOD_PRESSURE, measurements, ChartPeriod.ALL)
+
+        text(R.string.field_systolic).assertExists()
+        text(R.string.field_diastolic).assertExists()
+    }
+
+    @Test
+    fun bloodSugar_showsShapeLegendForMealContexts() {
+        val measurements = listOf(
+            Measurement(
+                id = 1,
+                type = MeasurementType.BLOOD_SUGAR,
+                value = 100.0,
+                mealContext = MealContext.BEFORE_MEAL.name,
+                timestamp = now - hour,
+            )
+        )
+        open(MeasurementType.BLOOD_SUGAR, measurements, ChartPeriod.ALL)
+
+        text(R.string.chart_legend_before_meal).assertExists()
+        text(R.string.chart_legend_after_meal_2h).assertExists()
+    }
+
+    @Test
+    fun pulse_doesNotShowShapeLegends() {
+        open(MeasurementType.PULSE, listOf(pulse(1, 70.0, hour)), ChartPeriod.ALL)
+
+        text(R.string.field_systolic).assertDoesNotExist()
+        text(R.string.field_diastolic).assertDoesNotExist()
+        text(R.string.chart_legend_before_meal).assertDoesNotExist()
+        text(R.string.chart_legend_after_meal_2h).assertDoesNotExist()
     }
 
     @Test
