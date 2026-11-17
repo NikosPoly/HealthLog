@@ -80,6 +80,22 @@ The app is available in Greek and English.
   - **Stage-tethered interactive tooltips:** tapping any point reveals an interactive tooltip bubble with exact timestamp, values, clinical conditions, and a stage chip dynamically tinted in the pinpoint's exact condition color.
   - **Chart shape legends:** clean, accessible legend directly below Blood Pressure (Systolic Circle / Diastolic Square) and Blood Glucose (Before meal Circle / 2h after meal Square) charts.
   - **Mode toggle:** a "See Chart" / "See Entries" button switches the history between the list and a line chart over time.
+- **Doctor Report Export (PDF & CSV to Downloads):**
+  - **Quick access:** dedicated download action button (`ic_download.xml`) in the History top app bar.
+  - **Export options bottom sheet:** clean modal dialog allowing configuration of format (**Doctor Report PDF** or **Spreadsheet CSV**), measurement scope (**Current metric** or **All metrics**), and date span (**Last 7 Days**, **Last 30 Days**, **All Time**, or **Pick Dates** via custom date range picker).
+  - **Live matching entries counter & validation:** dynamically computes the matching records count and disables the download button when 0 entries match the criteria.
+  - **Native A4 clinical PDF report:**
+    - Formatted with standard A4 margins (595 × 842 pt) and clean clinical typography.
+    - **Header:** HealthLog branding, title, generated timestamp, metric scope, and date range subtitle.
+    - **Summary statistics box:** total entries count, clinical average, lowest, and highest readings.
+    - **Trajectory mini-graph:** smooth vital signs trajectory chart with shaded canvas and min/max markers.
+    - **Chronological table:** Date, Time, formatted values (e.g. `120/80 (72 bpm)`), clinical guideline stage evaluations with stage color badges, and physical condition tags (Arm, Body Posture, Meal Context, Arrhythmia).
+    - **Pagination:** automatic multi-page detection with repeating headers and bottom page numbers (`Page X`).
+  - **Raw CSV spreadsheet export:**
+    - RFC 4180 compliant CSV stream containing all readings, pulse, units, clinical stages, and condition tags.
+    - Encoded with UTF-8 Byte Order Mark (BOM: `EF BB BF`) for instant compatibility with Microsoft Excel without mojibake/garbled text.
+  - **Direct Downloads save:** saves exports directly into the public `Downloads/HealthLog/` device folder via `MediaStore.Downloads` without intrusive system share sheets (no third-party Gmail, Messages, or Quick Share popups).
+  - **Instant completion feedback:** shows a concise finish snackbar upon download completion in English and Greek.
 - **Chart periods:** 7 days, 1 month, 6 months, 1 year or all, as chips in one rounded track
 - **Period card:** the chart and its stats in one rounded card: entries and average above the
   chart, highest and lowest below it (for blood pressure, the highest and lowest systolic and
@@ -153,6 +169,8 @@ healthlog/
     │       └── vico/        the chart itself, its tooltip and axes (the only place Vico is used)
     ├── details/             measurement details screen: single-entry breakdown, clinical context tags
     │   └── references/      clinical reference cards, visual gauge meters, and stage badges
+    ├── export/              doctor reports & data export: ExportDialog, PdfReportGenerator,
+    │                        CsvReportGenerator, ExportFileManager, ExportConfig
     ├── format/              display text: values, dates, "time ago", messages, per-language formats
     └── theme/               colors, typography and theme, plus the type colors (TypeTheme)
                              and the type icons (TypeIcon)
@@ -183,6 +201,7 @@ Dedicated vector icons illustrate every clinical option and dialog action:
 - **Filtering Actions:** `ic_filter.xml` (filter action and badge), `ic_close.xml` (chip dismissal)
 - **Conversational Doctor Avatars:** `ic_doctor_guide.xml` (friendly educational guide avatar), `ic_doctor_warning.xml` (serious, attentive avatar with alert badge for clinical warnings)
 - **Custom Date & Time:** `ic_calendar.xml`
+- **Export & Download Actions:** `ic_download.xml` (top app bar export action), `ic_format_pdf.xml` (doctor PDF report badge), `ic_format_csv.xml` (spreadsheet CSV data badge)
 
 These are rendered inside `OptionSelectorGroup` as compact, single-choice chips with icon presentation and accessible content descriptions, keeping the entry dialog uncluttered and easy to tap.
 
@@ -229,6 +248,9 @@ There are two kinds of tests:
 - `PeriodStatsCalculationTest`: count, highest, lowest, average, and condition breakdowns (arm, posture, arrhythmia, meal context distributions and balanced clinical advice rules)
 - `MeasurementProtocolTest`: evidence-based clinical preparation checklist and tips per vital sign
 - `HistoryFilterTest`: clinical stage filtering, physical conditions, rolling and custom date ranges, compound matching (OR/AND), and rotation state saver serialization
+- `ExportConfigTest`: export configuration models, metric scope filtering, and chronological sorting
+- `ExportConfigPdfTest`: PDF export configuration defaults and date range filtering
+- `CsvReportGeneratorTest`: RFC 4180 CSV escaping (commas, quotes, newlines) and multi-metric filtering
 - `TimeAgoTest`: the "time ago" of the last measurement (hours, yesterday, days, months, years)
 
 **Instrumented tests** (`app/src/androidTest`, run on an emulator or device):
@@ -237,6 +259,8 @@ There are two kinds of tests:
 - `HistoryContentTest`: the history's tabs, swiping, empty pages, entry details navigation, deleting, the See Chart
   button and the period chips
 - `HistoryFilterUiTest`: history list filtering, FilterBar toggling, bottom sheet opening, deferred apply on Done, individual chip removal, quick reset, and dynamic live result count
+- `ExportDialogUiTest`: export bottom sheet format selection (PDF/CSV), metric scope (Current/All), date range chips, custom date picker dialog, dynamic action validation, and dismiss handling
+- `ExportGeneratorsDeviceTest`: on-device creation and validation of standard A4 PDF documents (`%PDF` magic header), RFC 4180 CSV files with UTF-8 BOM, and MediaStore public Downloads insertion
 - `ChartPageTest`: the chart page: the period card (chart or empty message, stats), contextual shape legends, condition breakdown statistics and clinical insights, and the last entry card
 - `MeasurementDetailsScreenTest`: the details screen layout, clinical condition tags, back navigation and deletion
 - `MeasurementGuideScreenTest`: the educational guide screen, tabs, doctor speech bubble cards, and back navigation
@@ -302,7 +326,7 @@ For detailed specifications and architectural decisions, see the complete [Produ
 ### Phase 2: Data Visualization, Filtering & Doctor Reporting
 - [x] Charts: normal target ranges, shaded clinical bands, contextual dot shapes, and stage coloring on Vico line charts (Completed)
 - [x] History list: filtering for out-of-range / flagged values and clinical conditions
-- [ ] Doctor reporting: on-device PDF generation, printing, and CSV export for medical appointments (100% local and private)
+- [x] Doctor reporting: on-device PDF generation, printing, and CSV export for medical appointments (100% local and private)
 
 ### Phase 3: Health Journal & Medication Management
 - [ ] Per-measurement contextual notes
