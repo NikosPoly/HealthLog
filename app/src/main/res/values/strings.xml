@@ -293,4 +293,10 @@
     <string name="date_picker_end_date">End date</string>
     <string name="filter_date_chip_desc">Remove date filter</string>
     <string name="filter_no_results_for_filter">No readings match the selected filter</string>
+    <string name="filter_show_all">Show all (%d)</string>
+    <plurals name="filter_show_entries">
+        <item quantity="one">Show %d entry</item>
+        <item quantity="other">Show %d entries</item>
+    </plurals>
+    <string name="filter_no_matching_entries">No matching entries (0)</string>
 </resources>

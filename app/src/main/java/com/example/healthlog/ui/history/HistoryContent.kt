@@ -111,6 +111,11 @@ fun HistoryContent(
     // The type whose page is shown. It changes halfway through a swipe.
     val shownType = types[pagerState.currentPage]
 
+    // Latest height is used to calculate healthy weight ranges and BMI target bands / filters.
+    val latestHeight = remember(measurementsByType) {
+        measurementsByType[MeasurementType.HEIGHT]?.firstOrNull()?.value
+    }
+
     // The whole screen takes the shown type's color. Each page below also has its own
     // type's color, so while swiping the two pages show their own colors side by side.
     TypeTheme(shownType) {
@@ -174,10 +179,6 @@ fun HistoryContent(
                     )
                 }
 
-                // Latest height is used to calculate healthy weight ranges and BMI target bands.
-                val latestHeight = remember(measurementsByType) {
-                    measurementsByType[MeasurementType.HEIGHT]?.firstOrNull()?.value
-                }
 
                 HorizontalPager(
                     state = pagerState,
@@ -214,6 +215,8 @@ fun HistoryContent(
             FilterBottomSheet(
                 type = shownType,
                 filterState = filterStateByType[shownType] ?: HistoryFilterState(),
+                measurements = measurementsByType[shownType].orEmpty(),
+                latestHeight = latestHeight,
                 onApply = { stages, conditions, dateFilter ->
                     onSetFilters(shownType, stages, conditions, dateFilter)
                 },

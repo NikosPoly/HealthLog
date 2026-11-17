@@ -287,4 +287,10 @@
     <string name="date_picker_end_date">Λήξη</string>
     <string name="filter_date_chip_desc">Αφαίρεση φίλτρου ημερομηνίας</string>
     <string name="filter_no_results_for_filter">Δεν υπάρχουν εγγραφές για το επιλεγμένο φίλτρο</string>
+    <string name="filter_show_all">Εμφάνιση όλων (%d)</string>
+    <plurals name="filter_show_entries">
+        <item quantity="one">Εμφάνιση %d εγγραφής</item>
+        <item quantity="other">Εμφάνιση %d εγγραφών</item>
+    </plurals>
+    <string name="filter_no_matching_entries">Χωρίς αποτελέσματα (0)</string>
 </resources>

@@ -43,11 +43,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.healthlog.R
+import com.example.healthlog.database.Measurement
 import com.example.healthlog.guidelines.BloodGlucoseCategory
 import com.example.healthlog.guidelines.BloodPressureStage
 import com.example.healthlog.guidelines.BmiCategory
@@ -70,6 +72,8 @@ import java.time.format.FormatStyle
 fun FilterBottomSheet(
     type: MeasurementType,
     filterState: HistoryFilterState,
+    measurements: List<Measurement> = emptyList(),
+    latestHeight: Double? = null,
     onApply: (Set<ClinicalStageFilter>, Set<MeasurementConditionFilter>, DateFilter?) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
@@ -97,6 +101,26 @@ fun FilterBottomSheet(
     val isDraftActive = draftStages.isNotEmpty() ||
         draftConditions.isNotEmpty() ||
         (draftDateFilter != null)
+
+    val draftFilterState = remember(draftStages, draftConditions, draftDateFilter) {
+        HistoryFilterState(
+            stages = draftStages,
+            conditions = draftConditions,
+            dateFilter = draftDateFilter,
+        )
+    }
+
+    val matchingCount = remember(measurements, draftFilterState, latestHeight) {
+        if (!draftFilterState.isActive) {
+            measurements.size
+        } else {
+            filterMeasurements(
+                measurements = measurements,
+                filter = draftFilterState,
+                latestHeightCm = latestHeight,
+            ).size
+        }
+    }
 
     val scrollState = rememberScrollState()
 
@@ -355,6 +379,13 @@ fun FilterBottomSheet(
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // Dynamic count label based on matching results for draft filters.
+            val buttonText = when {
+                !isDraftActive -> stringResource(R.string.filter_show_all, matchingCount)
+                matchingCount == 0 -> stringResource(R.string.filter_no_matching_entries)
+                else -> pluralStringResource(R.plurals.filter_show_entries, matchingCount, matchingCount)
+            }
+
             // Apply / Done Action (commits draft stages, conditions, and date filter)
             Button(
                 onClick = {
@@ -366,7 +397,7 @@ fun FilterBottomSheet(
                     .padding(bottom = 24.dp),
                 shape = RoundedCornerShape(12.dp),
             ) {
-                Text(stringResource(R.string.filter_done))
+                Text(buttonText)
             }
         }
     }
