@@ -311,4 +311,6 @@
     <string name="export_entries_count">Θα εξαχθούν %d εγγραφές</string>
     <string name="export_no_entries">Δεν υπάρχουν μετρήσεις σε αυτό το διάστημα</string>
     <string name="export_completed">Η εξαγωγή ολοκληρώθηκε</string>
+    <string name="export_pdf_saved_to_downloads">Η αναφορά PDF αποθηκεύτηκε στις Λήψεις</string>
+    <string name="export_save_failed">Αποτυχία αποθήκευσης του αρχείου εξαγωγής</string>
 </resources>

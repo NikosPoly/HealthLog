@@ -10,12 +10,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import com.example.healthlog.R
 import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.ui.export.ExportConfig
+import com.example.healthlog.ui.export.ExportFileManager
+import com.example.healthlog.ui.export.ExportFormat
+import com.example.healthlog.ui.export.PdfReportGenerator
+import com.example.healthlog.ui.export.filterExportMeasurements
 import com.example.healthlog.ui.history.chart.ChartPeriod
 import kotlinx.coroutines.launch
+import java.io.File
 
 // Connector: reads the HistoryViewModel's state, shows its messages,
 // and hands everything to the layout as plain values and callbacks.
@@ -57,6 +63,8 @@ fun HistoryScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val resources = LocalResources.current
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val latestHeight by viewModel.latestHeight.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.messages.collect { messageId ->
@@ -84,10 +92,43 @@ fun HistoryScreen(
         onClearFilters = viewModel::clearFilters,
         onOpenDetails = onOpenDetails,
         onExport = { config ->
-            scope.launch {
-                snackbarHostState.showSnackbar(
-                    resources.getString(R.string.export_completed),
-                )
+            if (config.format == ExportFormat.PDF) {
+                val measurements = filterExportMeasurements(measurementsByType, config)
+                if (measurements.isNotEmpty()) {
+                    val exportDir = File(context.cacheDir, "exports").apply { mkdirs() }
+                    val exportFile = File(exportDir, "HealthLog_Report_${System.currentTimeMillis()}.pdf")
+                    PdfReportGenerator(context).generateReport(
+                        config = config,
+                        measurements = measurements,
+                        outputFile = exportFile,
+                        latestHeightCm = latestHeight,
+                    )
+                    val uri = ExportFileManager.saveToDownloads(
+                        context = context,
+                        file = exportFile,
+                        mimeType = "application/pdf",
+                    )
+                    scope.launch {
+                        val message = if (uri != null) {
+                            resources.getString(R.string.export_pdf_saved_to_downloads)
+                        } else {
+                            resources.getString(R.string.export_save_failed)
+                        }
+                        snackbarHostState.showSnackbar(message)
+                    }
+                } else {
+                    scope.launch {
+                        snackbarHostState.showSnackbar(
+                            resources.getString(R.string.export_no_entries),
+                        )
+                    }
+                }
+            } else {
+                scope.launch {
+                    snackbarHostState.showSnackbar(
+                        resources.getString(R.string.export_completed),
+                    )
+                }
             }
             onExport(config)
         },
