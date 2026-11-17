@@ -10,6 +10,7 @@ import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.repository.MeasurementRepository
 import com.example.healthlog.ui.history.filter.ClinicalStageFilter
+import com.example.healthlog.ui.history.filter.DateFilter
 import com.example.healthlog.ui.history.filter.HistoryFilterState
 import com.example.healthlog.ui.history.filter.MeasurementConditionFilter
 import com.example.healthlog.ui.history.filter.filterMeasurements
@@ -104,13 +105,26 @@ class HistoryViewModel(
         filterStateByType.getValue(type).update { it.copy(conditions = it.conditions - condition) }
     }
 
-    // Sets both stage and condition filters simultaneously.
+    // Sets the date filter for a specific measurement type.
+    fun setDateFilter(type: MeasurementType, dateFilter: DateFilter?) {
+        filterStateByType.getValue(type).update { it.copy(dateFilter = dateFilter) }
+    }
+
+    // Clears the date filter for a specific measurement type.
+    fun clearDateFilter(type: MeasurementType) {
+        filterStateByType.getValue(type).update { it.copy(dateFilter = null) }
+    }
+
+    // Sets stage, condition, and date filters simultaneously.
     fun setFilters(
         type: MeasurementType,
         stages: Set<ClinicalStageFilter> = filterStateByType.getValue(type).value.stages,
         conditions: Set<MeasurementConditionFilter> = filterStateByType.getValue(type).value.conditions,
+        dateFilter: DateFilter? = filterStateByType.getValue(type).value.dateFilter,
     ) {
-        filterStateByType.getValue(type).update { it.copy(stages = stages, conditions = conditions) }
+        filterStateByType.getValue(type).update {
+            it.copy(stages = stages, conditions = conditions, dateFilter = dateFilter)
+        }
     }
 
     // Resets all filters for a specific measurement type back to default (no filtering).

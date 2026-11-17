@@ -390,4 +390,195 @@ class HistoryFilterTest {
         assertEquals(R.string.arrhythmia_yes, MeasurementConditionFilter.Arrhythmia(detected = true).labelRes)
         assertEquals(R.string.arrhythmia_no, MeasurementConditionFilter.Arrhythmia(detected = false).labelRes)
     }
+
+    @Test
+    fun filterMeasurements_dateFilter_today_filtersTodayReadings() {
+        val now = java.time.ZonedDateTime.of(2026, 11, 17, 15, 0, 0, 0, java.time.ZoneId.of("Europe/Athens"))
+        val todayReading = Measurement(
+            id = 1,
+            type = MeasurementType.PULSE,
+            value = 70.0,
+            timestamp = now.minusHours(2).toInstant().toEpochMilli(),
+        )
+        val yesterdayReading = Measurement(
+            id = 2,
+            type = MeasurementType.PULSE,
+            value = 72.0,
+            timestamp = now.minusDays(1).toInstant().toEpochMilli(),
+        )
+
+        val filtered = filterMeasurements(
+            measurements = listOf(todayReading, yesterdayReading),
+            filter = HistoryFilterState(dateFilter = DateFilter.Today),
+            now = now,
+        )
+        assertEquals(listOf(todayReading), filtered)
+    }
+
+    @Test
+    fun filterMeasurements_dateFilter_last7Days_filtersWithin7Days() {
+        val now = java.time.ZonedDateTime.of(2026, 11, 17, 15, 0, 0, 0, java.time.ZoneId.of("Europe/Athens"))
+        val threeDaysAgo = Measurement(
+            id = 1,
+            type = MeasurementType.PULSE,
+            value = 70.0,
+            timestamp = now.minusDays(3).toInstant().toEpochMilli(),
+        )
+        val tenDaysAgo = Measurement(
+            id = 2,
+            type = MeasurementType.PULSE,
+            value = 72.0,
+            timestamp = now.minusDays(10).toInstant().toEpochMilli(),
+        )
+
+        val filtered = filterMeasurements(
+            measurements = listOf(threeDaysAgo, tenDaysAgo),
+            filter = HistoryFilterState(dateFilter = DateFilter.Last7Days),
+            now = now,
+        )
+        assertEquals(listOf(threeDaysAgo), filtered)
+    }
+
+    @Test
+    fun filterMeasurements_dateFilter_last30Days_filtersWithin30Days() {
+        val now = java.time.ZonedDateTime.of(2026, 11, 17, 15, 0, 0, 0, java.time.ZoneId.of("Europe/Athens"))
+        val fifteenDaysAgo = Measurement(
+            id = 1,
+            type = MeasurementType.PULSE,
+            value = 70.0,
+            timestamp = now.minusDays(15).toInstant().toEpochMilli(),
+        )
+        val fortyDaysAgo = Measurement(
+            id = 2,
+            type = MeasurementType.PULSE,
+            value = 72.0,
+            timestamp = now.minusDays(40).toInstant().toEpochMilli(),
+        )
+
+        val filtered = filterMeasurements(
+            measurements = listOf(fifteenDaysAgo, fortyDaysAgo),
+            filter = HistoryFilterState(dateFilter = DateFilter.Last30Days),
+            now = now,
+        )
+        assertEquals(listOf(fifteenDaysAgo), filtered)
+    }
+
+    @Test
+    fun filterMeasurements_dateFilter_customRange_filtersExactDateSpan() {
+        val zone = java.time.ZoneId.of("Europe/Athens")
+        val now = java.time.ZonedDateTime.of(2026, 11, 17, 15, 0, 0, 0, zone)
+
+        // Range: 12 November to 28 November 2026
+        val customRange = DateFilter.CustomRange(
+            startDate = java.time.LocalDate.of(2026, 11, 12),
+            endDate = java.time.LocalDate.of(2026, 11, 28),
+        )
+
+        val beforeRange = Measurement(
+            id = 1,
+            type = MeasurementType.WEIGHT,
+            value = 70.0,
+            timestamp = java.time.LocalDate.of(2026, 11, 11).atTime(23, 59, 59).atZone(zone).toInstant().toEpochMilli(),
+        )
+        val startOfRange = Measurement(
+            id = 2,
+            type = MeasurementType.WEIGHT,
+            value = 71.0,
+            timestamp = java.time.LocalDate.of(2026, 11, 12).atStartOfDay(zone).toInstant().toEpochMilli(),
+        )
+        val middleOfRange = Measurement(
+            id = 3,
+            type = MeasurementType.WEIGHT,
+            value = 72.0,
+            timestamp = java.time.LocalDate.of(2026, 11, 20).atTime(12, 0).atZone(zone).toInstant().toEpochMilli(),
+        )
+        val endOfRange = Measurement(
+            id = 4,
+            type = MeasurementType.WEIGHT,
+            value = 73.0,
+            timestamp = java.time.LocalDate.of(2026, 11, 28).atTime(23, 59, 59).atZone(zone).toInstant().toEpochMilli(),
+        )
+        val afterRange = Measurement(
+            id = 5,
+            type = MeasurementType.WEIGHT,
+            value = 74.0,
+            timestamp = java.time.LocalDate.of(2026, 11, 29).atStartOfDay(zone).toInstant().toEpochMilli(),
+        )
+
+        val filtered = filterMeasurements(
+            measurements = listOf(beforeRange, startOfRange, middleOfRange, endOfRange, afterRange),
+            filter = HistoryFilterState(dateFilter = customRange),
+            now = now,
+        )
+        assertEquals(listOf(startOfRange, middleOfRange, endOfRange), filtered)
+    }
+
+    @Test
+    fun customRange_fromUtcMillis_createsExpectedLocalDateRange() {
+        val startUtc = java.time.LocalDate.of(2026, 11, 12).atStartOfDay(java.time.ZoneId.of("UTC")).toInstant().toEpochMilli()
+        val endUtc = java.time.LocalDate.of(2026, 11, 28).atStartOfDay(java.time.ZoneId.of("UTC")).toInstant().toEpochMilli()
+
+        val range = DateFilter.CustomRange.fromUtcMillis(startUtc, endUtc)
+        assertEquals(java.time.LocalDate.of(2026, 11, 12), range.startDate)
+        assertEquals(java.time.LocalDate.of(2026, 11, 28), range.endDate)
+
+        val singleDay = DateFilter.CustomRange.fromUtcMillis(startUtc, null)
+        assertEquals(java.time.LocalDate.of(2026, 11, 12), singleDay.startDate)
+        assertEquals(java.time.LocalDate.of(2026, 11, 12), singleDay.endDate)
+    }
+
+    @Test
+    fun filterMeasurements_combiningStageConditionAndDate_appliesAllTogether() {
+        val zone = java.time.ZoneId.of("Europe/Athens")
+        val now = java.time.ZonedDateTime.of(2026, 11, 17, 15, 0, 0, 0, zone)
+
+        val customRange = DateFilter.CustomRange(
+            startDate = java.time.LocalDate.of(2026, 11, 12),
+            endDate = java.time.LocalDate.of(2026, 11, 28),
+        )
+
+        val match = Measurement(
+            id = 1,
+            type = MeasurementType.BLOOD_PRESSURE,
+            value = 145.0,
+            secondaryValue = 92.0,
+            arm = MeasurementArm.LEFT.name,
+            timestamp = java.time.LocalDate.of(2026, 11, 15).atTime(10, 0).atZone(zone).toInstant().toEpochMilli(),
+        )
+        val wrongDate = Measurement(
+            id = 2,
+            type = MeasurementType.BLOOD_PRESSURE,
+            value = 145.0,
+            secondaryValue = 92.0,
+            arm = MeasurementArm.LEFT.name,
+            timestamp = java.time.LocalDate.of(2026, 11, 5).atTime(10, 0).atZone(zone).toInstant().toEpochMilli(),
+        )
+        val wrongArm = Measurement(
+            id = 3,
+            type = MeasurementType.BLOOD_PRESSURE,
+            value = 145.0,
+            secondaryValue = 92.0,
+            arm = MeasurementArm.RIGHT.name,
+            timestamp = java.time.LocalDate.of(2026, 11, 15).atTime(10, 0).atZone(zone).toInstant().toEpochMilli(),
+        )
+        val wrongStage = Measurement(
+            id = 4,
+            type = MeasurementType.BLOOD_PRESSURE,
+            value = 120.0,
+            secondaryValue = 80.0,
+            arm = MeasurementArm.LEFT.name,
+            timestamp = java.time.LocalDate.of(2026, 11, 15).atTime(10, 0).atZone(zone).toInstant().toEpochMilli(),
+        )
+
+        val filtered = filterMeasurements(
+            measurements = listOf(match, wrongDate, wrongArm, wrongStage),
+            filter = HistoryFilterState(
+                stages = setOf(ClinicalStageFilter.BloodPressure(BloodPressureStage.GRADE_1_HYPERTENSION)),
+                conditions = setOf(MeasurementConditionFilter.Arm(MeasurementArm.LEFT)),
+                dateFilter = customRange,
+            ),
+            now = now,
+        )
+        assertEquals(listOf(match), filtered)
+    }
 }

@@ -282,5 +282,12 @@
     <string name="filter_section_conditions">Conditions</string>
     <string name="filter_all_conditions">All Conditions</string>
     <string name="filter_condition_chip_desc">Remove condition filter</string>
+    <string name="filter_section_date">Date Range</string>
+    <string name="date_filter_all_time">All Time</string>
+    <string name="date_filter_today">Today</string>
+    <string name="date_filter_7_days">Last 7 Days</string>
+    <string name="date_filter_30_days">Last 30 Days</string>
+    <string name="date_filter_custom">Pick Dates</string>
+    <string name="filter_date_chip_desc">Remove date filter</string>
     <string name="filter_no_results_for_filter">No readings match the selected filter</string>
 </resources>

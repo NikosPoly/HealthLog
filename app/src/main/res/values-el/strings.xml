@@ -276,5 +276,12 @@
     <string name="filter_section_conditions">Συνθήκες</string>
     <string name="filter_all_conditions">Όλες οι συνθήκες</string>
     <string name="filter_condition_chip_desc">Αφαίρεση φίλτρου συνθήκης</string>
+    <string name="filter_section_date">Χρονικό διάστημα</string>
+    <string name="date_filter_all_time">Όλες οι ημερομηνίες</string>
+    <string name="date_filter_today">Σήμερα</string>
+    <string name="date_filter_7_days">Τελευταίες 7 ημέρες</string>
+    <string name="date_filter_30_days">Τελευταίες 30 ημέρες</string>
+    <string name="date_filter_custom">Επιλογή ημερομηνιών</string>
+    <string name="filter_date_chip_desc">Αφαίρεση φίλτρου ημερομηνίας</string>
     <string name="filter_no_results_for_filter">Δεν υπάρχουν εγγραφές για το επιλεγμένο φίλτρο</string>
 </resources>
