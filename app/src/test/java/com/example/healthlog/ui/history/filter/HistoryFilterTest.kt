@@ -23,7 +23,7 @@ class HistoryFilterTest {
             Measurement(id = 3, type = MeasurementType.PULSE, value = 110.0),
         )
 
-        val result = filterMeasurements(list, HistoryFilterState(stage = null))
+        val result = filterMeasurements(list, HistoryFilterState(stages = emptySet()))
         assertEquals(list, result)
         assertFalse(HistoryFilterState().isActive)
     }
@@ -37,21 +37,40 @@ class HistoryFilterTest {
 
         val bradycardiaFiltered = filterMeasurements(
             measurements,
-            HistoryFilterState(stage = ClinicalStageFilter.Pulse(PulseZone.BRADYCARDIA)),
+            HistoryFilterState(stages = setOf(ClinicalStageFilter.Pulse(PulseZone.BRADYCARDIA))),
         )
         assertEquals(listOf(bradycardia), bradycardiaFiltered)
 
         val normalFiltered = filterMeasurements(
             measurements,
-            HistoryFilterState(stage = ClinicalStageFilter.Pulse(PulseZone.NORMAL)),
+            HistoryFilterState(stages = setOf(ClinicalStageFilter.Pulse(PulseZone.NORMAL))),
         )
         assertEquals(listOf(normal), normalFiltered)
 
         val tachycardiaFiltered = filterMeasurements(
             measurements,
-            HistoryFilterState(stage = ClinicalStageFilter.Pulse(PulseZone.TACHYCARDIA)),
+            HistoryFilterState(stages = setOf(ClinicalStageFilter.Pulse(PulseZone.TACHYCARDIA))),
         )
         assertEquals(listOf(tachycardia), tachycardiaFiltered)
+    }
+
+    @Test
+    fun filterMeasurements_pulse_filtersByMultipleZonesTogether() {
+        val bradycardia = Measurement(id = 1, type = MeasurementType.PULSE, value = 55.0)
+        val normal = Measurement(id = 2, type = MeasurementType.PULSE, value = 75.0)
+        val tachycardia = Measurement(id = 3, type = MeasurementType.PULSE, value = 110.0)
+        val measurements = listOf(bradycardia, normal, tachycardia)
+
+        val multiFiltered = filterMeasurements(
+            measurements,
+            HistoryFilterState(
+                stages = setOf(
+                    ClinicalStageFilter.Pulse(PulseZone.BRADYCARDIA),
+                    ClinicalStageFilter.Pulse(PulseZone.TACHYCARDIA),
+                ),
+            ),
+        )
+        assertEquals(listOf(bradycardia, tachycardia), multiFiltered)
     }
 
     @Test
@@ -63,13 +82,13 @@ class HistoryFilterTest {
 
         val stage1Filtered = filterMeasurements(
             measurements,
-            HistoryFilterState(stage = ClinicalStageFilter.BloodPressure(BloodPressureStage.GRADE_1_HYPERTENSION)),
+            HistoryFilterState(stages = setOf(ClinicalStageFilter.BloodPressure(BloodPressureStage.GRADE_1_HYPERTENSION))),
         )
         assertEquals(listOf(stage1), stage1Filtered)
 
         val crisisFiltered = filterMeasurements(
             measurements,
-            HistoryFilterState(stage = ClinicalStageFilter.BloodPressure(BloodPressureStage.HYPERTENSIVE_CRISIS)),
+            HistoryFilterState(stages = setOf(ClinicalStageFilter.BloodPressure(BloodPressureStage.HYPERTENSIVE_CRISIS))),
         )
         assertEquals(listOf(crisis), crisisFiltered)
     }
@@ -99,13 +118,13 @@ class HistoryFilterTest {
 
         val prediabetesFiltered = filterMeasurements(
             measurements,
-            HistoryFilterState(stage = ClinicalStageFilter.Glucose(BloodGlucoseCategory.PREDIABETES)),
+            HistoryFilterState(stages = setOf(ClinicalStageFilter.Glucose(BloodGlucoseCategory.PREDIABETES))),
         )
         assertEquals(listOf(prediabetesPostMeal), prediabetesFiltered)
 
         val diabetesFiltered = filterMeasurements(
             measurements,
-            HistoryFilterState(stage = ClinicalStageFilter.Glucose(BloodGlucoseCategory.DIABETES)),
+            HistoryFilterState(stages = setOf(ClinicalStageFilter.Glucose(BloodGlucoseCategory.DIABETES))),
         )
         assertEquals(listOf(diabetesFasting), diabetesFiltered)
     }
@@ -121,22 +140,35 @@ class HistoryFilterTest {
 
         val normalFiltered = filterMeasurements(
             measurements = measurements,
-            filter = HistoryFilterState(stage = ClinicalStageFilter.Weight(BmiCategory.NORMAL)),
+            filter = HistoryFilterState(stages = setOf(ClinicalStageFilter.Weight(BmiCategory.NORMAL))),
             latestHeightCm = 180.0,
         )
         assertEquals(listOf(normal), normalFiltered)
 
         val overweightFiltered = filterMeasurements(
             measurements = measurements,
-            filter = HistoryFilterState(stage = ClinicalStageFilter.Weight(BmiCategory.OVERWEIGHT)),
+            filter = HistoryFilterState(stages = setOf(ClinicalStageFilter.Weight(BmiCategory.OVERWEIGHT))),
             latestHeightCm = 180.0,
         )
         assertEquals(listOf(overweight), overweightFiltered)
 
+        // Multiple selection: Normal weight AND Underweight together
+        val normalAndUnderweightFiltered = filterMeasurements(
+            measurements = measurements,
+            filter = HistoryFilterState(
+                stages = setOf(
+                    ClinicalStageFilter.Weight(BmiCategory.UNDERWEIGHT),
+                    ClinicalStageFilter.Weight(BmiCategory.NORMAL),
+                ),
+            ),
+            latestHeightCm = 180.0,
+        )
+        assertEquals(listOf(underweight, normal), normalAndUnderweightFiltered)
+
         // Without height, weight cannot be classified into BMI stages -> empty list
         val withoutHeightFiltered = filterMeasurements(
             measurements = measurements,
-            filter = HistoryFilterState(stage = ClinicalStageFilter.Weight(BmiCategory.NORMAL)),
+            filter = HistoryFilterState(stages = setOf(ClinicalStageFilter.Weight(BmiCategory.NORMAL))),
             latestHeightCm = null,
         )
         assertTrue(withoutHeightFiltered.isEmpty())

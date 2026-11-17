@@ -83,9 +83,14 @@ class HistoryViewModel(
     fun filterStateOf(type: MeasurementType): StateFlow<HistoryFilterState> =
         filterStateByType.getValue(type).asStateFlow()
 
-    // Sets or clears the clinical stage filter for a specific measurement type.
-    fun setStageFilter(type: MeasurementType, stage: ClinicalStageFilter?) {
-        filterStateByType.getValue(type).update { it.copy(stage = stage) }
+    // Sets the clinical stage filters for a specific measurement type.
+    fun setStageFilters(type: MeasurementType, stages: Set<ClinicalStageFilter>) {
+        filterStateByType.getValue(type).update { it.copy(stages = stages) }
+    }
+
+    // Removes an individual clinical stage filter for a specific measurement type.
+    fun removeStageFilter(type: MeasurementType, stage: ClinicalStageFilter) {
+        filterStateByType.getValue(type).update { it.copy(stages = it.stages - stage) }
     }
 
     // Resets all filters for a specific measurement type back to default (no filtering).

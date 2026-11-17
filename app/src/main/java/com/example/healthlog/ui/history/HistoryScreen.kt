@@ -23,18 +23,27 @@ fun HistoryScreen(
     selectedType: MeasurementType,
     onSelectType: (MeasurementType) -> Unit,
     onOpenDetails: (Long) -> Unit = {},
-    onBack: () -> Unit
+    onBack: () -> Unit,
 ) {
-    // The list of every type, for the pages of the history.
+    // The raw list of every type, for charts.
     val measurementsByType = MeasurementType.entries.associateWith { type ->
         viewModel.measurementsOf(type).collectAsState().value
     }
+    // The filtered list of every type, for the entry list.
+    val filteredMeasurementsByType = MeasurementType.entries.associateWith { type ->
+        viewModel.filteredMeasurementsOf(type).collectAsState().value
+    }
+    // Filter criteria per type.
+    val filterStateByType = MeasurementType.entries.associateWith { type ->
+        viewModel.filterStateOf(type).collectAsState().value
+    }
+
     val measurementToDelete by viewModel.measurementToDelete.collectAsState()
 
     // List or chart. Kept here, inside the history screen: it stays while the history
     // is open (also on rotation and when changing tabs), and the history always opens
     // on the list.
-    var showChart by rememberSaveable { mutableStateOf(false) }
+    var showChart by rememberSaveable { mutableStateOf(value = false) }
 
     // The period of the chart. All when the history opens; back to All when another tab
     // is shown (selectedType is its key), but kept on rotation.
@@ -51,6 +60,8 @@ fun HistoryScreen(
 
     HistoryContent(
         measurementsByType = measurementsByType,
+        filteredMeasurementsByType = filteredMeasurementsByType,
+        filterStateByType = filterStateByType,
         selectedType = selectedType,
         showChart = showChart,
         period = period,
@@ -60,9 +71,12 @@ fun HistoryScreen(
         onSelectType = onSelectType,
         onToggleChart = { showChart = !showChart },
         onSelectPeriod = { period = it },
+        onSetStageFilters = viewModel::setStageFilters,
+        onRemoveStageFilter = viewModel::removeStageFilter,
+        onClearFilters = viewModel::clearFilters,
         onOpenDetails = onOpenDetails,
         onRequestDelete = viewModel::requestDelete,
         onConfirmDelete = viewModel::confirmDelete,
-        onCancelDelete = viewModel::cancelDelete
+        onCancelDelete = viewModel::cancelDelete,
     )
 }

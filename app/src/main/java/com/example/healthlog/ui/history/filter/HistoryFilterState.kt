@@ -6,12 +6,12 @@ import com.example.healthlog.guidelines.evaluateMeasurement
 
 // Represents the active filter criteria applied to the history list of a measurement type.
 data class HistoryFilterState(
-    val stage: ClinicalStageFilter? = null,
+    val stages: Set<ClinicalStageFilter> = emptySet(),
     // Note: conditions (Commit 2) and date range (Commit 3) will be added here.
 ) {
     // True when at least one filtering constraint is active.
     val isActive: Boolean
-        get() = stage != null
+        get() = stages.isNotEmpty()
 }
 
 // Pure function that filters a list of measurements according to the given filter criteria.
@@ -32,21 +32,23 @@ fun matchesFilter(
     filter: HistoryFilterState,
     latestHeightCm: Double? = null,
 ): Boolean {
-    val stageFilter = filter.stage ?: return true
+    if (filter.stages.isEmpty()) return true
     val evaluation = evaluateMeasurement(measurement, latestHeightCm) ?: return false
 
-    return when (stageFilter) {
-        is ClinicalStageFilter.BloodPressure -> {
-            (evaluation is GuidelineEvaluation.BloodPressure) && (evaluation.stage == stageFilter.stage)
-        }
-        is ClinicalStageFilter.Glucose -> {
-            (evaluation is GuidelineEvaluation.BloodGlucose) && (evaluation.category == stageFilter.category)
-        }
-        is ClinicalStageFilter.Pulse -> {
-            (evaluation is GuidelineEvaluation.Pulse) && (evaluation.zone == stageFilter.zone)
-        }
-        is ClinicalStageFilter.Weight -> {
-            (evaluation is GuidelineEvaluation.Weight) && (evaluation.bmiEvaluation?.category == stageFilter.category)
+    return filter.stages.any { stageFilter ->
+        when (stageFilter) {
+            is ClinicalStageFilter.BloodPressure -> {
+                (evaluation is GuidelineEvaluation.BloodPressure) && (evaluation.stage == stageFilter.stage)
+            }
+            is ClinicalStageFilter.Glucose -> {
+                (evaluation is GuidelineEvaluation.BloodGlucose) && (evaluation.category == stageFilter.category)
+            }
+            is ClinicalStageFilter.Pulse -> {
+                (evaluation is GuidelineEvaluation.Pulse) && (evaluation.zone == stageFilter.zone)
+            }
+            is ClinicalStageFilter.Weight -> {
+                (evaluation is GuidelineEvaluation.Weight) && (evaluation.bmiEvaluation?.category == stageFilter.category)
+            }
         }
     }
 }
