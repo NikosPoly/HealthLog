@@ -14,6 +14,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import com.example.healthlog.R
 import com.example.healthlog.model.MeasurementType
+import com.example.healthlog.ui.export.CsvReportGenerator
 import com.example.healthlog.ui.export.ExportConfig
 import com.example.healthlog.ui.export.ExportFileManager
 import com.example.healthlog.ui.export.ExportFormat
@@ -92,41 +93,47 @@ fun HistoryScreen(
         onClearFilters = viewModel::clearFilters,
         onOpenDetails = onOpenDetails,
         onExport = { config ->
-            if (config.format == ExportFormat.PDF) {
-                val measurements = filterExportMeasurements(measurementsByType, config)
-                if (measurements.isNotEmpty()) {
-                    val exportDir = File(context.cacheDir, "exports").apply { mkdirs() }
-                    val exportFile = File(exportDir, "HealthLog_Report_${System.currentTimeMillis()}.pdf")
+            val measurements = filterExportMeasurements(measurementsByType, config)
+            if (measurements.isNotEmpty()) {
+                val exportDir = File(context.cacheDir, "exports").apply { mkdirs() }
+                val timestamp = System.currentTimeMillis()
+
+                val (exportFile, mimeType, successResId) = if (config.format == ExportFormat.PDF) {
+                    val file = File(exportDir, "HealthLog_Report_$timestamp.pdf")
                     PdfReportGenerator(context).generateReport(
                         config = config,
                         measurements = measurements,
-                        outputFile = exportFile,
+                        outputFile = file,
                         latestHeightCm = latestHeight,
                     )
-                    val uri = ExportFileManager.saveToDownloads(
-                        context = context,
-                        file = exportFile,
-                        mimeType = "application/pdf",
-                    )
-                    scope.launch {
-                        val message = if (uri != null) {
-                            resources.getString(R.string.export_pdf_saved_to_downloads)
-                        } else {
-                            resources.getString(R.string.export_save_failed)
-                        }
-                        snackbarHostState.showSnackbar(message)
-                    }
+                    Triple(file, "application/pdf", R.string.export_pdf_saved_to_downloads)
                 } else {
-                    scope.launch {
-                        snackbarHostState.showSnackbar(
-                            resources.getString(R.string.export_no_entries),
-                        )
+                    val file = File(exportDir, "HealthLog_Data_$timestamp.csv")
+                    CsvReportGenerator(context).generateReport(
+                        measurements = measurements,
+                        outputFile = file,
+                        latestHeightCm = latestHeight,
+                    )
+                    Triple(file, "text/csv", R.string.export_csv_saved_to_downloads)
+                }
+
+                val uri = ExportFileManager.saveToDownloads(
+                    context = context,
+                    file = exportFile,
+                    mimeType = mimeType,
+                )
+                scope.launch {
+                    val message = if (uri != null) {
+                        resources.getString(successResId)
+                    } else {
+                        resources.getString(R.string.export_save_failed)
                     }
+                    snackbarHostState.showSnackbar(message)
                 }
             } else {
                 scope.launch {
                     snackbarHostState.showSnackbar(
-                        resources.getString(R.string.export_completed),
+                        resources.getString(R.string.export_no_entries),
                     )
                 }
             }
