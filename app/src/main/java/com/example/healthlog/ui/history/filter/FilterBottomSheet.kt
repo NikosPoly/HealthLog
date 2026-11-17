@@ -34,6 +34,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -44,6 +45,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.healthlog.R
 import com.example.healthlog.guidelines.BloodGlucoseCategory
@@ -55,8 +57,11 @@ import com.example.healthlog.model.MealContext
 import com.example.healthlog.model.MeasurementArm
 import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.ui.format.formatLocale
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
 // Bottom sheet allowing users to filter measurements by clinical stage, conditions, and date range.
 // Selection is kept in a local draft state and only applied to the history list when "Done" is clicked.
@@ -403,6 +408,44 @@ fun FilterBottomSheet(
         ) {
             DateRangePicker(
                 state = dateRangePickerState,
+                title = {
+                    Text(
+                        text = stringResource(R.string.date_filter_custom),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 4.dp),
+                    )
+                },
+                headline = {
+                    val startMillis = dateRangePickerState.selectedStartDateMillis
+                    val endMillis = dateRangePickerState.selectedEndDateMillis
+                    val startLocalDate = startMillis?.let {
+                        Instant.ofEpochMilli(it).atZone(ZoneId.of("UTC")).toLocalDate()
+                    }
+                    val endLocalDate = endMillis?.let {
+                        Instant.ofEpochMilli(it).atZone(ZoneId.of("UTC")).toLocalDate()
+                    }
+
+                    val dateFormatter = remember(locale) {
+                        DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale)
+                    }
+
+                    val startText = startLocalDate?.format(dateFormatter)
+                        ?: stringResource(R.string.date_picker_start_date)
+
+                    val endText = endLocalDate?.format(dateFormatter)
+                        ?: stringResource(R.string.date_picker_end_date)
+
+                    Text(
+                        text = "$startText – $endText",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 12.dp),
+                    )
+                },
+                showModeToggle = false,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
