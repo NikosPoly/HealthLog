@@ -29,6 +29,8 @@
     <string name="chart_period_all">Όλα</string>
     <string name="chart_empty">Δεν υπάρχουν καταχωρίσεις σε αυτή την περίοδο.</string>
     <string name="chart_description">Γράφημα: %1$s</string>
+    <string name="chart_legend_before_meal">Πριν το γεύμα</string>
+    <string name="chart_legend_after_meal_2h">2 ώρες μετά</string>
 
     <!-- Chart stats -->
     <string name="stats_count">Καταχωρίσεις</string>

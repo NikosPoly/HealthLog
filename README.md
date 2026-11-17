@@ -60,9 +60,18 @@ The app is available in Greek and English.
 - **Blood pressure includes the pulse:** saving a blood pressure also saves its pulse as a
   separate Pulse measurement, so it appears in both histories. The two measurements are
   independent: deleting one keeps the other
-- **Charts per measurement type:** a "See Chart" / "See Entries" button switches the history
-  between the list and a line chart over time (blood pressure: systolic and diastolic). Tapping a
-  point shows its value, date and time
+- **Interactive Vico charts & clinical target zones:**
+  - **Horizontal target bands:** shaded clinical bands rendered across the chart background for **Pulse** (Bradycardia <60 bpm, Normal 60–100 bpm, Tachycardia >100 bpm) and **Weight** (WHO BMI categories: Underweight, Normal, Overweight, Obese, dynamically computed from the user's latest height).
+  - **Calibrated vivid alert opacities:** alert zones (Red Tachycardia/Obesity and Orange Overweight) use calibrated vivid fills and strokes to prevent washed-out or pinkish appearances over light canvas backgrounds.
+  - **Isolated neutral canvas:** wrapped in a dedicated `surfaceContainerHighest` card canvas (`RoundedCornerShape(16.dp)`) preventing card tint bleed from the surrounding theme.
+  - **Contextual dot shapes & dynamic stage coloring:**
+    - **Blood Pressure:** Systolic Circle and Diastolic Diamond dots dynamically tinted by ISH stage color (Low, Normal, High-Normal, Grade 1, Grade 2, Crisis).
+    - **Blood Sugar:** Fasting/Before-meal Circle and Postprandial Square dots dynamically tinted by WHO category (Hypoglycemia, Normal, Prediabetes, Diabetes).
+    - **Pulse & Weight:** Dynamic point providers tinting dots by resting heart rate zone and WHO BMI category matching target bands and reference tables.
+    - **High-contrast halos:** 1.5 dp surface halos on every point to guarantee high contrast over lines and target bands.
+  - **Stage-tethered interactive tooltips:** tapping any point reveals an interactive tooltip bubble with exact timestamp, values, clinical conditions, and a stage chip dynamically tinted in the pinpoint's exact condition color.
+  - **Chart shape legends:** clean, accessible legend directly below Blood Pressure (Systolic Circle / Diastolic Square) and Blood Glucose (Before meal Circle / 2h after meal Square) charts.
+  - **Mode toggle:** a "See Chart" / "See Entries" button switches the history between the list and a line chart over time.
 - **Chart periods:** 7 days, 1 month, 6 months, 1 year or all, as chips in one rounded track
 - **Period card:** the chart and its stats in one rounded card: entries and average above the
   chart, highest and lowest below it (for blood pressure, the highest and lowest systolic and
@@ -206,6 +215,7 @@ There are two kinds of tests:
 - `ValidationMessagesTest`: how range limits are shown in error messages
 - `MeasurementRepositoryTest`: what is stored when a measurement is saved and ID lookups
 - `ChartPeriodTest`: which measurements each chart period includes
+- `TargetRangeBandTest`: clinical target band ranges, dynamic BMI height calculations, point providers (Pulse, Weight, Glucose, Blood Pressure), and stage color resolution
 - `PeriodStatsCalculationTest`: count, highest, lowest, average, and condition breakdowns (arm, posture, arrhythmia, meal context distributions and balanced clinical advice rules)
 - `MeasurementProtocolTest`: evidence-based clinical preparation checklist and tips per vital sign
 - `TimeAgoTest`: the "time ago" of the last measurement (hours, yesterday, days, months, years)
@@ -215,7 +225,7 @@ There are two kinds of tests:
 - `NewEntryDialogTest`: the new-entry dialog's UI
 - `HistoryContentTest`: the history's tabs, swiping, empty pages, entry details navigation, deleting, the See Chart
   button and the period chips
-- `ChartPageTest`: the chart page: the period card (chart or empty message, stats), condition breakdown statistics and clinical insights, and the last entry card
+- `ChartPageTest`: the chart page: the period card (chart or empty message, stats), contextual shape legends, condition breakdown statistics and clinical insights, and the last entry card
 - `MeasurementDetailsScreenTest`: the details screen layout, clinical condition tags, back navigation and deletion
 - `MeasurementGuideScreenTest`: the educational guide screen, tabs, doctor speech bubble cards, and back navigation
 
@@ -271,14 +281,14 @@ To assemble the benchmark build:
 HealthLog follows an offline-first, privacy-by-design architecture with zero server operating costs.
 For detailed specifications and architectural decisions, see the complete [Product Roadmap](docs/ROADMAP.md).
 
-### Phase 1: Clinical Guidance & Reference Standards (In Progress)
+### Phase 1: Clinical Guidance & Reference Standards (Completed)
 - [x] Dedicated measurement details screen with clinical condition tags and interactive chart navigation
-- [ ] Medical organization guidelines & reference tables on details screen (AHA/ESC blood pressure stages, ADA glucose ranges, WHO BMI, resting pulse zones)
-- [ ] Educational "How to Measure" guide (contextual helpers on entry dialogs and reference sheets)
-- [ ] Condition breakdown statistics (aggregate % of measurements taken under various conditions: arm, meal context, posture, arrhythmia rate)
+- [x] Medical organization guidelines & reference tables on details screen (ISH 2020 blood pressure stages, WHO/IDF glucose ranges, WHO BMI, resting pulse zones)
+- [x] Educational "How to Measure" guide (contextual helpers on entry dialogs and reference sheets)
+- [x] Condition breakdown statistics (aggregate % of measurements taken under various conditions: arm, meal context, posture, arrhythmia rate)
 
 ### Phase 2: Data Visualization, Filtering & Doctor Reporting
-- [ ] Charts: normal target ranges and shaded zones on Vico line charts
+- [x] Charts: normal target ranges, shaded clinical bands, contextual dot shapes, and stage coloring on Vico line charts (Completed)
 - [ ] History list: filtering for out-of-range / flagged values and clinical conditions
 - [ ] Doctor reporting: on-device PDF generation, printing, and CSV export for medical appointments (100% local and private)
 
