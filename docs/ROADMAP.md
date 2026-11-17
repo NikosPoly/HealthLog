@@ -102,7 +102,7 @@ This document outlines the architectural strategy, feature specifications, and i
 ├────────────────────────────────────────────────────────────────────────┤
 │ PHASE 2: Data Visualization, Filtering & Doctor Reporting (Next Focus) │
 │ 2.1 Chart Normal Ranges / Target Bands (Vico charts) (Completed)       │
-│ 2.2 History List Filtering (All, Elevated/Abnormal, Conditions)        │
+│ 2.2 History List Filtering (Stages, Conditions, Dates) (Completed)    │
 │ 2.3 Doctor Report Export (On-device PDF generation, CSV, Print/Share)   │
 ├────────────────────────────────────────────────────────────────────────┤
 │ PHASE 3: Health Journal & Medication Management                        │
@@ -137,8 +137,11 @@ This document outlines the architectural strategy, feature specifications, and i
    * Shaded normal and alert target bands on Vico line charts (Pulse and dynamic height-based WHO BMI categories).
    * Contextual dot shapes and dynamic stage-colored data points across all metrics with 1.5 dp halos.
    * Stage-tinted tooltip callouts matching pinpoint condition colors and accessible chart shape legends.
-5. **History List Filtering (2.2):**
-   * Filter entries by status (*All*, *Elevated/High*, *Specific Condition*).
+5. **History List Filtering (2.2) (Completed):**
+   * Space-saving `FilterBar` (~40dp) and `FilterBottomSheet` with deferred draft application on "Done".
+   * Multi-stage clinical filtering (BP, Glucose, Pulse, Weight), physical condition filtering (Arm, Posture, Meal Context, Arrhythmia Yes & No), and date filtering (Today, 7 days, 30 days, Custom date span picker).
+   * Live matching results counter on confirmation button (`Show all (52)`, `Show 12 entries`, `No matching entries (0)`).
+   * State preservation across screen rotation via custom bundle-safe Savers, smooth landscape scrollability, and full Greek/English localization.
 6. **Doctor Export Report (PDF/CSV):**
    * The most effective answer to Item E: allows patients to export and share comprehensive reports with their doctor.
 
@@ -253,16 +256,24 @@ This document outlines the architectural strategy, feature specifications, and i
   * 21 dedicated unit tests in `TargetRangeBandTest.kt` verifying band ranges, BMI math, point providers, and color resolution (all 199 unit tests passing).
   * 17 instrumented tests in `ChartPageTest.kt` verifying chart rendering, stats, condition insights, and the new contextual shape legends.
 
-#### Milestone 2.2: History List Filtering
-* **Goal:** Allow users to filter the history list to quickly find abnormal or specific readings.
-* **Step 1 — Filter State Model (`ui/history/`):**
-  * Define `HistoryFilter`: `All`, `FlaggedHigh` (Stage 1/2 or Crisis), or `Condition(MealContext/Arm/Posture)`.
-* **Step 2 — ViewModel Filtering Pipeline:**
-  * Expose filtered `StateFlow<List<Measurement>>` in `HistoryViewModel` reacting to the selected filter chip.
-* **Step 3 — Filter Chips UI (`ui/history/`):**
-  * Horizontally scrollable `FilterChip` row placed above `EntryList`.
-* **Step 4 — Empty State & Automated Tests:**
-  * Handle and test empty filter results (e.g. "No high readings in this period") in `HistoryContentTest.kt`.
+#### Milestone 2.2: History List Filtering (Completed)
+* **Goal:** Allow users to filter the history entry list to quickly discover abnormal, contextual, or time-bounded readings without cluttering screen real estate.
+* **Step 1 — Clinical Stages & Physical Conditions Domain Filtering:**
+  * Implemented `ClinicalStageFilter` covering Blood Pressure stages (ISH 2020), Glucose categories (WHO/IDF), Pulse zones (WHF/WHO), and BMI categories (WHO) with multi-stage selection.
+  * Implemented `MeasurementConditionFilter` covering Arm (`Left`, `Right`), Body Posture (`Sitting`, `Standing`, `Lying down`), Meal Context (`Before meal`, `2h After meal`), and Arrhythmia (`Yes` / detected, `No` / not detected).
+  * Implemented compound filter matching in `HistoryFilterState`: multi-selection OR matching within the same category and AND matching across different categories.
+* **Step 2 — Date Range Filtering & Picker Dialog:**
+  * Implemented `DateFilter` with rolling presets (`All Time`, `Today`, `Last 7 Days`, `Last 30 Days`) and `CustomRange(startDate, endDate)`.
+  * Material 3 `DateRangePicker` dialog with optimized concise labels in English (`Start date – End date`) and Greek (`Έναρξη – Λήξη`) preventing layout overflow.
+  * Seamless UTC midnight conversion to local calendar days without timezone drift.
+* **Step 3 — Space-Saving FilterBar & FilterBottomSheet:**
+  * Slim (~40dp) `FilterBar` placed directly above `EntryList` keeping 85%+ of the screen clear for measurement cards. Shows active filter count badge (`Filter (N)`), active date chip, stage chips with clinical badge colors, condition chips with multi-color icons, and a quick one-tap `Reset` action.
+  * Material 3 `ModalBottomSheet` with deferred application: draft selections are only applied to the background history list once confirmed with "Done".
+  * Live matching results counter on confirmation button (`Show all (52)`, `Show 12 entries`, `No matching entries (0)`).
+  * Full landscape scrollability and device rotation resilience using custom bundle-safe `Saver` implementations (`StageSetSaver`, `ConditionSetSaver`, `DateFilterSaver`).
+* **Step 4 — Comprehensive Automated Testing:**
+  * 22 dedicated unit tests in `HistoryFilterTest.kt` verifying stage filtering, condition combinations, date spans, and rotation roundtrip serialization (all 222 app unit tests passing).
+  * 6 dedicated instrumented Compose tests in `HistoryFilterUiTest.kt` verifying FilterBar toggling, bottom sheet opening, deferred apply, chip removal, quick reset, and dynamic button counter (all 16 connected history tests passing on emulator).
 
 #### Milestone 2.3: Doctor Report Export (PDF & CSV)
 * **Goal:** Enable users to export, print, or share a clean medical report directly with their physician (100% on-device, private, zero cost).
