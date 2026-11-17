@@ -290,13 +290,20 @@ class HistoryFilterTest {
     fun filterMeasurements_arrhythmia_filtersByDetectedArrhythmia() {
         val normalPulse = Measurement(id = 1, type = MeasurementType.PULSE, value = 72.0, hasArrhythmia = false)
         val irregularPulse = Measurement(id = 2, type = MeasurementType.PULSE, value = 85.0, hasArrhythmia = true)
-        val measurements = listOf(normalPulse, irregularPulse)
+        val nullArrhythmia = Measurement(id = 3, type = MeasurementType.PULSE, value = 68.0, hasArrhythmia = null)
+        val measurements = listOf(normalPulse, irregularPulse, nullArrhythmia)
 
-        val arrhythmiaFiltered = filterMeasurements(
+        val arrhythmiaYesFiltered = filterMeasurements(
             measurements,
-            HistoryFilterState(conditions = setOf(MeasurementConditionFilter.Arrhythmia)),
+            HistoryFilterState(conditions = setOf(MeasurementConditionFilter.Arrhythmia(detected = true))),
         )
-        assertEquals(listOf(irregularPulse), arrhythmiaFiltered)
+        assertEquals(listOf(irregularPulse), arrhythmiaYesFiltered)
+
+        val arrhythmiaNoFiltered = filterMeasurements(
+            measurements,
+            HistoryFilterState(conditions = setOf(MeasurementConditionFilter.Arrhythmia(detected = false))),
+        )
+        assertEquals(listOf(normalPulse, nullArrhythmia), arrhythmiaNoFiltered)
     }
 
     @Test
@@ -346,7 +353,7 @@ class HistoryFilterTest {
                 conditions = setOf(
                     MeasurementConditionFilter.Arm(MeasurementArm.LEFT),
                     MeasurementConditionFilter.Position(BodyPosition.SITTING),
-                    MeasurementConditionFilter.Arrhythmia,
+                    MeasurementConditionFilter.Arrhythmia(detected = true),
                 ),
             ),
         )
@@ -364,8 +371,8 @@ class HistoryFilterTest {
 
     @Test
     fun availableConditionsForType_returnsExpectedConditionsForEachType() {
-        assertEquals(6, availableConditionsForType(MeasurementType.BLOOD_PRESSURE).size)
-        assertEquals(1, availableConditionsForType(MeasurementType.PULSE).size)
+        assertEquals(7, availableConditionsForType(MeasurementType.BLOOD_PRESSURE).size)
+        assertEquals(2, availableConditionsForType(MeasurementType.PULSE).size)
         assertEquals(2, availableConditionsForType(MeasurementType.BLOOD_SUGAR).size)
         assertTrue(availableConditionsForType(MeasurementType.WEIGHT).isEmpty())
         assertTrue(availableConditionsForType(MeasurementType.HEIGHT).isEmpty())
@@ -380,6 +387,7 @@ class HistoryFilterTest {
         assertEquals(R.string.arm_left, MeasurementConditionFilter.Arm(MeasurementArm.LEFT).labelRes)
         assertEquals(R.string.position_sitting, MeasurementConditionFilter.Position(BodyPosition.SITTING).labelRes)
         assertEquals(R.string.meal_before, MeasurementConditionFilter.Meal(MealContext.BEFORE_MEAL).labelRes)
-        assertEquals(R.string.arrhythmia_yes, MeasurementConditionFilter.Arrhythmia.labelRes)
+        assertEquals(R.string.arrhythmia_yes, MeasurementConditionFilter.Arrhythmia(detected = true).labelRes)
+        assertEquals(R.string.arrhythmia_no, MeasurementConditionFilter.Arrhythmia(detected = false).labelRes)
     }
 }

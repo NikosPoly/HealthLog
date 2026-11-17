@@ -273,5 +273,8 @@
     <string name="filter_done">Τέλος</string>
     <string name="filter_badge_count">Φίλτρα (%d)</string>
     <string name="filter_stage_chip_desc">Αφαίρεση φίλτρου σταδίου</string>
+    <string name="filter_section_conditions">Συνθήκες</string>
+    <string name="filter_all_conditions">Όλες οι συνθήκες</string>
+    <string name="filter_condition_chip_desc">Αφαίρεση φίλτρου συνθήκης</string>
     <string name="filter_no_results_for_filter">Δεν υπάρχουν εγγραφές για το επιλεγμένο φίλτρο</string>
 </resources>

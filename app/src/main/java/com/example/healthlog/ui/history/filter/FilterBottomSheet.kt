@@ -20,6 +20,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -33,30 +34,34 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.healthlog.R
 import com.example.healthlog.model.MeasurementType
 
-// Bottom sheet allowing users to filter measurements by clinical stage (and later conditions & date).
+// Bottom sheet allowing users to filter measurements by clinical stage and physical conditions.
 // Selection is kept in a local draft state and only applied to the history list when "Done" is clicked.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FilterBottomSheet(
     type: MeasurementType,
     filterState: HistoryFilterState,
-    onApply: (Set<ClinicalStageFilter>) -> Unit,
+    onApply: (Set<ClinicalStageFilter>, Set<MeasurementConditionFilter>) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val isDark = isSystemInDarkTheme()
     val availableStages = availableStagesForType(type)
+    val availableConditions = availableConditionsForType(type)
 
-    // Local draft of selected stages; only committed when "Done" is clicked.
+    // Local drafts of selected filters; only committed when "Done" is clicked.
     var draftStages by remember(filterState.stages) { mutableStateOf(filterState.stages) }
-    val isDraftActive = draftStages.isNotEmpty()
+    var draftConditions by remember(filterState.conditions) { mutableStateOf(filterState.conditions) }
+    val isDraftActive = draftStages.isNotEmpty() || draftConditions.isNotEmpty()
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -85,7 +90,12 @@ fun FilterBottomSheet(
                 )
 
                 if (isDraftActive) {
-                    TextButton(onClick = { draftStages = emptySet() }) {
+                    TextButton(
+                        onClick = {
+                            draftStages = emptySet()
+                            draftConditions = emptySet()
+                        },
+                    ) {
                         Text(
                             text = stringResource(R.string.filter_reset),
                             color = MaterialTheme.colorScheme.error,
@@ -159,13 +169,69 @@ fun FilterBottomSheet(
                     }
                 }
 
+                Spacer(modifier = Modifier.height(20.dp))
+            }
+
+            // Section 2: Physical Measurement Conditions (if applicable to this metric)
+            if (availableConditions.isNotEmpty()) {
+                Text(
+                    text = stringResource(R.string.filter_section_conditions),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(bottom = 10.dp),
+                )
+
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    // "All Conditions" chip (active when no condition is selected)
+                    FilterChip(
+                        selected = draftConditions.isEmpty(),
+                        onClick = { draftConditions = emptySet() },
+                        label = {
+                            Text(stringResource(R.string.filter_all_conditions))
+                        },
+                        shape = RoundedCornerShape(8.dp),
+                    )
+
+                    availableConditions.forEach { condition ->
+                        val isSelected = condition in draftConditions
+
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = {
+                                draftConditions = if (isSelected) {
+                                    draftConditions - condition
+                                } else {
+                                    draftConditions + condition
+                                }
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(condition.iconRes),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp),
+                                    tint = Color.Unspecified,
+                                )
+                            },
+                            label = {
+                                Text(stringResource(condition.labelRes))
+                            },
+                            shape = RoundedCornerShape(8.dp),
+                        )
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
-            // Apply / Done Action (commits draft state to history screen)
+            // Apply / Done Action (commits both draft stages & conditions)
             Button(
                 onClick = {
-                    onApply(draftStages)
+                    onApply(draftStages, draftConditions)
                     onDismiss()
                 },
                 modifier = Modifier

@@ -79,10 +79,11 @@ fun matchesFilter(
         if (meal !in selectedMeals) return false
     }
 
-    // 5. Arrhythmia check
-    val requiresArrhythmia = filter.conditions.contains(MeasurementConditionFilter.Arrhythmia)
-    if (requiresArrhythmia && (measurement.hasArrhythmia != true)) {
-        return false
+    // 5. Arrhythmia check (OR among selected arrhythmia conditions)
+    val selectedArrhythmias = filter.conditions.filterIsInstance<MeasurementConditionFilter.Arrhythmia>().map { it.detected }
+    if (selectedArrhythmias.isNotEmpty()) {
+        val isDetected = measurement.hasArrhythmia == true
+        if (isDetected !in selectedArrhythmias) return false
     }
 
     return true

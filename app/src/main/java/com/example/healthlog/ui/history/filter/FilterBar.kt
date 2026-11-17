@@ -20,6 +20,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -45,6 +46,7 @@ fun FilterBar(
     filterState: HistoryFilterState,
     onOpenFilterSheet: () -> Unit,
     onRemoveStage: (ClinicalStageFilter) -> Unit,
+    onRemoveCondition: (MeasurementConditionFilter) -> Unit,
     onClearAll: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -64,7 +66,7 @@ fun FilterBar(
             selected = filterState.isActive,
             onClick = onOpenFilterSheet,
             label = {
-                val activeCount = filterState.stages.size
+                val activeCount = filterState.stages.size + filterState.conditions.size
                 val labelText = if (activeCount > 0) {
                     stringResource(R.string.filter_badge_count, activeCount)
                 } else {
@@ -122,6 +124,44 @@ fun FilterBar(
                             contentDescription = stringResource(R.string.filter_stage_chip_desc),
                             modifier = Modifier.size(12.dp),
                             tint = colors.content,
+                        )
+                    }
+                }
+            }
+        }
+
+        // Active measurement condition chips with native multi-color icons.
+        filterState.conditions.forEach { condition ->
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            ) {
+                Row(
+                    modifier = Modifier.padding(start = 8.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Icon(
+                        painter = painterResource(condition.iconRes),
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = Color.Unspecified,
+                    )
+                    Text(
+                        text = stringResource(condition.labelRes),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Medium,
+                    )
+                    IconButton(
+                        onClick = { onRemoveCondition(condition) },
+                        modifier = Modifier.size(20.dp),
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_close),
+                            contentDescription = stringResource(R.string.filter_condition_chip_desc),
+                            modifier = Modifier.size(12.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }

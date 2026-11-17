@@ -2,11 +2,12 @@ package com.example.healthlog.ui.history.filter
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
-import com.example.healthlog.R
 import com.example.healthlog.model.BodyPosition
 import com.example.healthlog.model.MealContext
 import com.example.healthlog.model.MeasurementArm
 import com.example.healthlog.model.MeasurementType
+import com.example.healthlog.model.arrhythmiaIcon
+import com.example.healthlog.model.arrhythmiaLabel
 
 // Represents a physical measurement condition/metadata that a user can filter by in history.
 sealed interface MeasurementConditionFilter {
@@ -34,10 +35,10 @@ sealed interface MeasurementConditionFilter {
         override val iconRes: Int = meal.iconRes
     }
 
-    // Arrhythmia / irregular heart rhythm detection (for Blood Pressure and Pulse).
-    data object Arrhythmia : MeasurementConditionFilter {
-        override val labelRes: Int = R.string.arrhythmia_yes
-        override val iconRes: Int = R.drawable.ic_arrhythmia_yes
+    // Arrhythmia / irregular heart rhythm detection (Yes or No).
+    data class Arrhythmia(val detected: Boolean) : MeasurementConditionFilter {
+        override val labelRes: Int = arrhythmiaLabel(detected)
+        override val iconRes: Int = arrhythmiaIcon(detected)
     }
 }
 
@@ -50,10 +51,12 @@ fun availableConditionsForType(type: MeasurementType): List<MeasurementCondition
             MeasurementConditionFilter.Position(BodyPosition.SITTING),
             MeasurementConditionFilter.Position(BodyPosition.STANDING),
             MeasurementConditionFilter.Position(BodyPosition.LYING_DOWN),
-            MeasurementConditionFilter.Arrhythmia,
+            MeasurementConditionFilter.Arrhythmia(detected = true),
+            MeasurementConditionFilter.Arrhythmia(detected = false),
         )
         MeasurementType.PULSE -> listOf(
-            MeasurementConditionFilter.Arrhythmia,
+            MeasurementConditionFilter.Arrhythmia(detected = true),
+            MeasurementConditionFilter.Arrhythmia(detected = false),
         )
         MeasurementType.BLOOD_SUGAR -> listOf(
             MeasurementConditionFilter.Meal(MealContext.BEFORE_MEAL),

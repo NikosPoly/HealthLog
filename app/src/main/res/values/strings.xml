@@ -279,5 +279,8 @@
     <string name="filter_done">Done</string>
     <string name="filter_badge_count">Filter (%d)</string>
     <string name="filter_stage_chip_desc">Remove stage filter</string>
+    <string name="filter_section_conditions">Conditions</string>
+    <string name="filter_all_conditions">All Conditions</string>
+    <string name="filter_condition_chip_desc">Remove condition filter</string>
     <string name="filter_no_results_for_filter">No readings match the selected filter</string>
 </resources>
