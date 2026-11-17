@@ -1,37 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Download/Export: an arrow pointing down to a tray, inside a soft circle.
-     Used for the export/download button on the history top bar.
-     Multi-colored: show it with tint = Color.Unspecified, so the colors are kept. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="24dp"
-    android:height="24dp"
-    android:viewportWidth="24"
-    android:viewportHeight="24">
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+
+    <group
+        android:pivotX="256"
+        android:pivotY="256"
+        android:scaleX="0.8"
+        android:scaleY="0.8">
+
+    <!-- File outline -->
     <path
-        android:fillColor="#E3F2FD"
-        android:pathData="M2,12A10,10 0 1 1 22,12A10,10 0 1 1 2,12Z" />
-    <path
-        android:strokeColor="#90CAF9"
-        android:strokeWidth="1.2"
+        android:strokeColor="#2196F3"
+        android:strokeWidth="28"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
-        android:pathData="M2,12A10,10 0 1 1 22,12A10,10 0 1 1 2,12Z" />
+        android:pathData="M128,14 H325 L445,143 V437 Q445,497 385,497 H128 Q68,497 68,437 V74 Q68,14 128,14 Z" />
+
+    <!-- Folded corner -->
     <path
-        android:strokeColor="#1E88E5"
-        android:strokeWidth="2.0"
+        android:strokeColor="#2196F3"
+        android:strokeWidth="28"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
-        android:pathData="M12,7V14.5" />
+        android:pathData="M325,20 V95 Q325,143 373,143 H440" />
+
+    <!-- Download arrow -->
     <path
-        android:strokeColor="#1E88E5"
-        android:strokeWidth="2.0"
+        android:strokeColor="#2196F3"
+        android:strokeWidth="28"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
-        android:pathData="M8.5,11.5L12,15L15.5,11.5" />
+        android:pathData="M258,182 V342 M186,270 L258,345 L330,270" />
+
+    <!-- Base line -->
     <path
-        android:strokeColor="#1E88E5"
-        android:strokeWidth="2.0"
+        android:strokeColor="#2196F3"
+        android:strokeWidth="28"
         android:strokeLineCap="round"
-        android:strokeLineJoin="round"
-        android:pathData="M7.5,17.5H16.5" />
+        android:pathData="M158,412 H358" />
+
+    </group>
 </vector>
