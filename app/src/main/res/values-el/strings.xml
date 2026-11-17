@@ -56,6 +56,7 @@
     <!-- Buttons and actions used in several places -->
     <string name="action_back">Πίσω</string>
     <string name="action_save">Αποθήκευση</string>
+    <string name="action_confirm">Επιβεβαίωση</string>
     <string name="action_cancel">Ακύρωση</string>
     <string name="action_delete">Διαγραφή</string>
 
@@ -263,4 +264,33 @@
     <string name="protocol_height_tip1">Σταθείτε όσο πιο ψηλά μπορείτε χωρίς να σηκώνετε τις φτέρνες από το έδαφος.</string>
     <string name="protocol_height_tip2">Στους ενήλικες, η μέτρηση του ύψους χρειάζεται επανέλεγχο μόνο μία φορά κάθε 1–2 χρόνια.</string>
     <string name="protocol_height_reference">Οδηγίες Ανάπτυξης &amp; Διατροφής CDC</string>
+
+    <!-- History List Filtering -->
+    <string name="action_filter">Φίλτρο</string>
+    <string name="filter_title">Φιλτράρισμα Εγγραφών</string>
+    <string name="filter_section_stage">Κλινικό Στάδιο</string>
+    <string name="filter_all_stages">Όλα τα στάδια</string>
+    <string name="filter_reset">Επαναφορά</string>
+    <string name="filter_done">Τέλος</string>
+    <string name="filter_badge_count">Φίλτρα (%d)</string>
+    <string name="filter_stage_chip_desc">Αφαίρεση φίλτρου σταδίου</string>
+    <string name="filter_section_conditions">Συνθήκες</string>
+    <string name="filter_all_conditions">Όλες οι συνθήκες</string>
+    <string name="filter_condition_chip_desc">Αφαίρεση φίλτρου συνθήκης</string>
+    <string name="filter_section_date">Χρονικό διάστημα</string>
+    <string name="date_filter_all_time">Όλες οι ημερομηνίες</string>
+    <string name="date_filter_today">Σήμερα</string>
+    <string name="date_filter_7_days">Τελευταίες 7 ημέρες</string>
+    <string name="date_filter_30_days">Τελευταίες 30 ημέρες</string>
+    <string name="date_filter_custom">Επιλογή ημερομηνιών</string>
+    <string name="date_picker_start_date">Έναρξη</string>
+    <string name="date_picker_end_date">Λήξη</string>
+    <string name="filter_date_chip_desc">Αφαίρεση φίλτρου ημερομηνίας</string>
+    <string name="filter_no_results_for_filter">Δεν υπάρχουν εγγραφές για το επιλεγμένο φίλτρο</string>
+    <string name="filter_show_all">Εμφάνιση όλων (%d)</string>
+    <plurals name="filter_show_entries">
+        <item quantity="one">Εμφάνιση %d εγγραφής</item>
+        <item quantity="other">Εμφάνιση %d εγγραφών</item>
+    </plurals>
+    <string name="filter_no_matching_entries">Χωρίς αποτελέσματα (0)</string>
 </resources>

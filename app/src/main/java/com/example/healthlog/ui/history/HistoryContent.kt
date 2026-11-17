@@ -18,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
@@ -36,6 +37,12 @@ import com.example.healthlog.ui.history.chart.ChartPeriod
 import com.example.healthlog.ui.history.chart.PeriodChips
 import com.example.healthlog.ui.history.chart.ScreenTap
 import com.example.healthlog.ui.history.chart.watchTaps
+import com.example.healthlog.ui.history.filter.ClinicalStageFilter
+import com.example.healthlog.ui.history.filter.DateFilter
+import com.example.healthlog.ui.history.filter.FilterBar
+import com.example.healthlog.ui.history.filter.FilterBottomSheet
+import com.example.healthlog.ui.history.filter.HistoryFilterState
+import com.example.healthlog.ui.history.filter.MeasurementConditionFilter
 import com.example.healthlog.ui.history.list.EntryList
 import com.example.healthlog.ui.theme.HealthLogTheme
 import com.example.healthlog.ui.theme.TypeTheme
@@ -46,13 +53,16 @@ import kotlinx.coroutines.launch
 // One page per measurement type, chosen with the tabs or by swiping left and right.
 // The button above the pages switches every page between the list and the chart.
 // In chart mode, the chips below it choose the period of the chart.
-// Everything is in the color of the shown type (see TypeTheme): red for blood pressure,
-// green for weight, and so on.
+// In list mode, a space-saving filter bar allows filtering by clinical stage, conditions, and date range.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryContent(
-    // The list of every type, newest first.
+    // The raw list of every type, newest first (used for charts).
     measurementsByType: Map<MeasurementType, List<Measurement>>,
+    // The filtered list of every type, newest first (used for entry list).
+    filteredMeasurementsByType: Map<MeasurementType, List<Measurement>> = measurementsByType,
+    // The active filter state per type.
+    filterStateByType: Map<MeasurementType, HistoryFilterState> = emptyMap(),
     // The type whose page is shown.
     selectedType: MeasurementType,
     // True: the pages show the chart; false: the list. The same for every tab.
@@ -67,10 +77,15 @@ fun HistoryContent(
     // Called by the button that switches between the list and the chart.
     onToggleChart: () -> Unit,
     onSelectPeriod: (ChartPeriod) -> Unit,
+    onSetFilters: (MeasurementType, Set<ClinicalStageFilter>, Set<MeasurementConditionFilter>, DateFilter?) -> Unit = { _, _, _, _ -> },
+    onRemoveStageFilter: (MeasurementType, ClinicalStageFilter) -> Unit = { _, _ -> },
+    onRemoveConditionFilter: (MeasurementType, MeasurementConditionFilter) -> Unit = { _, _ -> },
+    onRemoveDateFilter: (MeasurementType) -> Unit = {},
+    onClearFilters: (MeasurementType) -> Unit = {},
     onOpenDetails: (Long) -> Unit = {},
     onRequestDelete: (Measurement) -> Unit,
     onConfirmDelete: () -> Unit,
-    onCancelDelete: () -> Unit
+    onCancelDelete: () -> Unit,
 ) {
     // The pages, in the same order as on the home screen.
     val types = MeasurementType.entries
@@ -80,6 +95,9 @@ fun HistoryContent(
     // The latest tap anywhere on the screen. The chart pages use it to close the box of
     // a tapped dot when the tap is outside the chart.
     var screenTap by remember { mutableStateOf<ScreenTap?>(null) }
+
+    // Visibility state of the filter modal bottom sheet.
+    var showFilterSheet by rememberSaveable { mutableStateOf(value = false) }
 
     // Reports the shown page once it has settled, whether it changed by swiping or by
     // tapping a tab. Not halfway through a swipe: the ViewModel only hears about it at
@@ -92,6 +110,11 @@ fun HistoryContent(
 
     // The type whose page is shown. It changes halfway through a swipe.
     val shownType = types[pagerState.currentPage]
+
+    // Latest height is used to calculate healthy weight ranges and BMI target bands / filters.
+    val latestHeight = remember(measurementsByType) {
+        measurementsByType[MeasurementType.HEIGHT]?.firstOrNull()?.value
+    }
 
     // The whole screen takes the shown type's color. Each page below also has its own
     // type's color, so while swiping the two pages show their own colors side by side.
@@ -107,55 +130,63 @@ fun HistoryContent(
                                 painter = painterResource(R.drawable.ic_arrow_back),
                                 contentDescription = stringResource(R.string.action_back),
                                 // Multicolored icon: keep its own colors.
-                                tint = Color.Unspecified
+                                tint = Color.Unspecified,
                             )
                         }
-                    }
+                    },
                 )
             },
             snackbarHost = {
                 SnackbarHost(snackbarHostState)
-            }
+            },
         ) { padding ->
 
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(padding)
+                    .padding(padding),
             ) {
                 // One tab per type (see TypeTabs).
                 TypeTabs(
                     types = types,
                     selectedIndex = pagerState.currentPage,
-                    onSelect = { index -> scope.launch { pagerState.animateScrollToPage(index) } }
+                    onSelect = { index -> scope.launch { pagerState.animateScrollToPage(index) } },
                 )
 
                 // Outside the pages, so it stays in place while swiping.
                 ChartToggle(
                     showChart = showChart,
-                    onToggle = onToggleChart
+                    onToggle = onToggleChart,
                 )
 
-                // Only for the chart; the list always shows every measurement.
+                // Only for the chart; the list shows the space-saving filter bar.
                 if (showChart) {
                     PeriodChips(
                         selected = period,
                         onSelect = onSelectPeriod,
-                        modifier = Modifier.padding(top = 8.dp)
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                } else {
+                    val currentFilter = filterStateByType[shownType] ?: HistoryFilterState()
+                    FilterBar(
+                        filterState = currentFilter,
+                        onOpenFilterSheet = { showFilterSheet = true },
+                        onRemoveStage = { onRemoveStageFilter(shownType, it) },
+                        onRemoveCondition = { onRemoveConditionFilter(shownType, it) },
+                        onRemoveDate = { onRemoveDateFilter(shownType) },
+                        onClearAll = { onClearFilters(shownType) },
+                        modifier = Modifier.padding(top = 4.dp),
                     )
                 }
 
-                // Latest height is used to calculate healthy weight ranges and BMI target bands.
-                val latestHeight = remember(measurementsByType) {
-                    measurementsByType[MeasurementType.HEIGHT]?.firstOrNull()?.value
-                }
 
                 HorizontalPager(
                     state = pagerState,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
                 ) { page ->
                     val type = types[page]
                     val measurements = measurementsByType[type].orEmpty()
+                    val filteredMeasurements = filteredMeasurementsByType[type].orEmpty()
 
                     TypeTheme(type) {
                         if (showChart) {
@@ -165,18 +196,32 @@ fun HistoryContent(
                                 period = period,
                                 screenTap = screenTap,
                                 latestHeight = latestHeight,
-                                onOpenDetails = onOpenDetails
+                                onOpenDetails = onOpenDetails,
                             )
                         } else {
                             EntryList(
-                                measurements = measurements,
+                                measurements = filteredMeasurements,
                                 onOpenDetails = onOpenDetails,
-                                onRequestDelete = onRequestDelete
+                                onRequestDelete = onRequestDelete,
                             )
                         }
                     }
                 }
             }
+        }
+
+        // Filter modal bottom sheet for selecting clinical stages, physical conditions, and date range.
+        if (showFilterSheet) {
+            FilterBottomSheet(
+                type = shownType,
+                filterState = filterStateByType[shownType] ?: HistoryFilterState(),
+                measurements = measurementsByType[shownType].orEmpty(),
+                latestHeight = latestHeight,
+                onApply = { stages, conditions, dateFilter ->
+                    onSetFilters(shownType, stages, conditions, dateFilter)
+                },
+                onDismiss = { showFilterSheet = false },
+            )
         }
 
         // Shown outside the list, so it doesn't depend on the card being visible.
@@ -185,10 +230,10 @@ fun HistoryContent(
                 details = stringResource(
                     R.string.delete_dialog_details,
                     stringResource(measurement.type.label),
-                    formatMeasurementValue(measurement, decimalSeparator())
+                    formatMeasurementValue(measurement, decimalSeparator()),
                 ),
                 onConfirm = onConfirmDelete,
-                onDismiss = onCancelDelete
+                onDismiss = onCancelDelete,
             )
         }
     }
@@ -206,16 +251,16 @@ private fun HistoryContentPreview() {
                         type = MeasurementType.BLOOD_PRESSURE,
                         value = 120.0,
                         secondaryValue = 80.0,
-                        tertiaryValue = 72.0
+                        tertiaryValue = 72.0,
                     ),
                     Measurement(
                         id = 2,
                         type = MeasurementType.BLOOD_PRESSURE,
                         value = 130.0,
                         secondaryValue = 85.0,
-                        tertiaryValue = 75.0
-                    )
-                )
+                        tertiaryValue = 75.0,
+                    ),
+                ),
             ),
             selectedType = MeasurementType.BLOOD_PRESSURE,
             showChart = false,
@@ -228,7 +273,7 @@ private fun HistoryContentPreview() {
             onSelectPeriod = {},
             onRequestDelete = {},
             onConfirmDelete = {},
-            onCancelDelete = {}
+            onCancelDelete = {},
         )
     }
 }

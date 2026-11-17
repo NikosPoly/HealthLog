@@ -17,6 +17,14 @@ The app is available in Greek and English.
   right; newest first. Each entry is a card with its date and time, its value, a "Details"
   button to view the full entry, and a bin to delete it. The last selected type is remembered
   while the app is open
+- **History list filtering & quick discovery:**
+  - **Space-saving FilterBar:** slim 40dp top bar placed directly above the entry list leaving 85%+ of the screen clear for measurement cards. Shows an active filter badge (`Filter (N)`), active date chip, stage chips with clinical badge colors, condition chips with multi-color icons, and a quick one-tap `Reset` action.
+  - **Filter bottom sheet with deferred apply:** taps inside the sheet remain in draft state until the user clicks the confirmation button, keeping the background list undisturbed while browsing.
+  - **Multi-stage clinical filtering:** filter by medical classification (e.g. Underweight, Normal, Overweight, Obese, Grade 1/2 Hypertension, Tachycardia, etc.) with support for multi-stage selection within a metric.
+  - **Physical condition filtering:** filter by Arm (Left/Right), Body Posture (Sitting/Standing/Lying), Meal context (Before/After), and Arrhythmia (`Yes` / detected, `No` / not detected).
+  - **Date range filtering & picker dialog:** rolling presets (`All Time`, `Today`, `Last 7 Days`, `Last 30 Days`) plus custom range selection via Material 3 `DateRangePicker` dialog with optimized localization for English and Greek.
+  - **Live matching results counter:** dynamic confirmation button displaying real-time matching results (`Show all (52)`, `Show 12 entries`, `No matching entries (0)`) before committing.
+  - **Adaptive & rotation resilient:** fully scrollable in landscape mode, with uncommitted draft selections preserved across device rotation via custom bundle-safe state savers.
 - **Measurement details screen:** a dedicated screen displaying a single measurement in full detail:
   type-themed header, prominent values, absolute and relative timestamp, and compact clinical
   condition tags with icons (arm, posture, meal context, arrhythmia). Delete with confirmation
@@ -138,6 +146,7 @@ healthlog/
     │   └── newentry/        adding an entry: the new-entry dialog, its state and inputs
     ├── history/             history screen: the type tabs, the list/chart switch, deleting
     │   ├── list/            the list mode: the entry cards
+    │   ├── filter/          history filtering: FilterBar, FilterBottomSheet, and filter criteria
     │   └── chart/           the chart mode: the chart page, the period card, the last entry card,
     │       │                periods, screen taps
     │       ├── stats/       the stats in the period card: calculations, texts, the stat boxes
@@ -171,6 +180,7 @@ Dedicated vector icons illustrate every clinical option and dialog action:
 - **Body Position:** `ic_position_sitting.xml`, `ic_position_lying.xml`, `ic_position_standing.xml`
 - **Arrhythmia Presence:** `ic_arrhythmia_no.xml`, `ic_arrhythmia_yes.xml`
 - **Meal Context:** `ic_meal_before.xml`, `ic_meal_after.xml`
+- **Filtering Actions:** `ic_filter.xml` (filter action and badge), `ic_close.xml` (chip dismissal)
 - **Conversational Doctor Avatars:** `ic_doctor_guide.xml` (friendly educational guide avatar), `ic_doctor_warning.xml` (serious, attentive avatar with alert badge for clinical warnings)
 - **Custom Date & Time:** `ic_calendar.xml`
 
@@ -218,6 +228,7 @@ There are two kinds of tests:
 - `TargetRangeBandTest`: clinical target band ranges, dynamic BMI height calculations, point providers (Pulse, Weight, Glucose, Blood Pressure), and stage color resolution
 - `PeriodStatsCalculationTest`: count, highest, lowest, average, and condition breakdowns (arm, posture, arrhythmia, meal context distributions and balanced clinical advice rules)
 - `MeasurementProtocolTest`: evidence-based clinical preparation checklist and tips per vital sign
+- `HistoryFilterTest`: clinical stage filtering, physical conditions, rolling and custom date ranges, compound matching (OR/AND), and rotation state saver serialization
 - `TimeAgoTest`: the "time ago" of the last measurement (hours, yesterday, days, months, years)
 
 **Instrumented tests** (`app/src/androidTest`, run on an emulator or device):
@@ -225,6 +236,7 @@ There are two kinds of tests:
 - `NewEntryDialogTest`: the new-entry dialog's UI
 - `HistoryContentTest`: the history's tabs, swiping, empty pages, entry details navigation, deleting, the See Chart
   button and the period chips
+- `HistoryFilterUiTest`: history list filtering, FilterBar toggling, bottom sheet opening, deferred apply on Done, individual chip removal, quick reset, and dynamic live result count
 - `ChartPageTest`: the chart page: the period card (chart or empty message, stats), contextual shape legends, condition breakdown statistics and clinical insights, and the last entry card
 - `MeasurementDetailsScreenTest`: the details screen layout, clinical condition tags, back navigation and deletion
 - `MeasurementGuideScreenTest`: the educational guide screen, tabs, doctor speech bubble cards, and back navigation
@@ -289,7 +301,7 @@ For detailed specifications and architectural decisions, see the complete [Produ
 
 ### Phase 2: Data Visualization, Filtering & Doctor Reporting
 - [x] Charts: normal target ranges, shaded clinical bands, contextual dot shapes, and stage coloring on Vico line charts (Completed)
-- [ ] History list: filtering for out-of-range / flagged values and clinical conditions
+- [x] History list: filtering for out-of-range / flagged values and clinical conditions
 - [ ] Doctor reporting: on-device PDF generation, printing, and CSV export for medical appointments (100% local and private)
 
 ### Phase 3: Health Journal & Medication Management

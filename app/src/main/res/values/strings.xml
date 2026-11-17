@@ -62,6 +62,7 @@
     <!-- Buttons and actions used in several places -->
     <string name="action_back">Back</string>
     <string name="action_save">Save</string>
+    <string name="action_confirm">Confirm</string>
     <string name="action_cancel">Cancel</string>
     <string name="action_delete">Delete</string>
 
@@ -269,4 +270,33 @@
     <string name="protocol_height_tip1">Stand as tall as possible without lifting your heels off the ground.</string>
     <string name="protocol_height_tip2">In adults, height measurement only needs to be rechecked once every 1–2 years.</string>
     <string name="protocol_height_reference">CDC Growth &amp; Nutrition Guidelines</string>
+
+    <!-- History List Filtering -->
+    <string name="action_filter">Filter</string>
+    <string name="filter_title">Filter Entries</string>
+    <string name="filter_section_stage">Clinical Stage</string>
+    <string name="filter_all_stages">All Stages</string>
+    <string name="filter_reset">Reset</string>
+    <string name="filter_done">Done</string>
+    <string name="filter_badge_count">Filter (%d)</string>
+    <string name="filter_stage_chip_desc">Remove stage filter</string>
+    <string name="filter_section_conditions">Conditions</string>
+    <string name="filter_all_conditions">All Conditions</string>
+    <string name="filter_condition_chip_desc">Remove condition filter</string>
+    <string name="filter_section_date">Date Range</string>
+    <string name="date_filter_all_time">All Time</string>
+    <string name="date_filter_today">Today</string>
+    <string name="date_filter_7_days">Last 7 Days</string>
+    <string name="date_filter_30_days">Last 30 Days</string>
+    <string name="date_filter_custom">Pick Dates</string>
+    <string name="date_picker_start_date">Start date</string>
+    <string name="date_picker_end_date">End date</string>
+    <string name="filter_date_chip_desc">Remove date filter</string>
+    <string name="filter_no_results_for_filter">No readings match the selected filter</string>
+    <string name="filter_show_all">Show all (%d)</string>
+    <plurals name="filter_show_entries">
+        <item quantity="one">Show %d entry</item>
+        <item quantity="other">Show %d entries</item>
+    </plurals>
+    <string name="filter_no_matching_entries">No matching entries (0)</string>
 </resources>

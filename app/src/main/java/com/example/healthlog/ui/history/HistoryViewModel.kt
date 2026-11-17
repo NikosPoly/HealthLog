@@ -9,17 +9,24 @@ import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.repository.MeasurementRepository
+import com.example.healthlog.ui.history.filter.ClinicalStageFilter
+import com.example.healthlog.ui.history.filter.DateFilter
+import com.example.healthlog.ui.history.filter.HistoryFilterState
+import com.example.healthlog.ui.history.filter.MeasurementConditionFilter
+import com.example.healthlog.ui.history.filter.filterMeasurements
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-// State and actions of the history screen: the saved measurements per type and deleting them.
+// State and actions of the history screen: the saved measurements per type, filtering, and deleting them.
 class HistoryViewModel(
     private val repository: MeasurementRepository
 ) : ViewModel() {
@@ -35,9 +42,95 @@ class HistoryViewModel(
                 )
         }
 
-    // The live list of one measurement type.
+    // Latest recorded height for calculating BMI on weight measurements.
+    val latestHeight: StateFlow<Double?> =
+        repository.getLatestHeight()
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = null
+            )
+
+    // Filter criteria per measurement type.
+    private val filterStateByType: Map<MeasurementType, MutableStateFlow<HistoryFilterState>> =
+        MeasurementType.entries.associateWith {
+            MutableStateFlow(HistoryFilterState())
+        }
+
+    // Filtered measurements per measurement type, combining the raw measurements, the active filter, and latest height.
+    private val filteredMeasurementsByType: Map<MeasurementType, StateFlow<List<Measurement>>> =
+        MeasurementType.entries.associateWith { type ->
+            combine(
+                measurementsByType.getValue(type),
+                filterStateByType.getValue(type),
+                latestHeight
+            ) { measurements, filter, height ->
+                filterMeasurements(measurements, filter, height)
+            }.stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = emptyList()
+            )
+        }
+
+    // The raw (unfiltered) list of one measurement type.
     fun measurementsOf(type: MeasurementType): StateFlow<List<Measurement>> =
         measurementsByType.getValue(type)
+
+    // The filtered list of one measurement type.
+    fun filteredMeasurementsOf(type: MeasurementType): StateFlow<List<Measurement>> =
+        filteredMeasurementsByType.getValue(type)
+
+    // The active filter criteria of one measurement type.
+    fun filterStateOf(type: MeasurementType): StateFlow<HistoryFilterState> =
+        filterStateByType.getValue(type).asStateFlow()
+
+    // Sets the clinical stage filters for a specific measurement type.
+    fun setStageFilters(type: MeasurementType, stages: Set<ClinicalStageFilter>) {
+        filterStateByType.getValue(type).update { it.copy(stages = stages) }
+    }
+
+    // Removes an individual clinical stage filter for a specific measurement type.
+    fun removeStageFilter(type: MeasurementType, stage: ClinicalStageFilter) {
+        filterStateByType.getValue(type).update { it.copy(stages = it.stages - stage) }
+    }
+
+    // Sets the condition filters for a specific measurement type.
+    fun setConditionFilters(type: MeasurementType, conditions: Set<MeasurementConditionFilter>) {
+        filterStateByType.getValue(type).update { it.copy(conditions = conditions) }
+    }
+
+    // Removes an individual condition filter for a specific measurement type.
+    fun removeConditionFilter(type: MeasurementType, condition: MeasurementConditionFilter) {
+        filterStateByType.getValue(type).update { it.copy(conditions = it.conditions - condition) }
+    }
+
+    // Sets the date filter for a specific measurement type.
+    fun setDateFilter(type: MeasurementType, dateFilter: DateFilter?) {
+        filterStateByType.getValue(type).update { it.copy(dateFilter = dateFilter) }
+    }
+
+    // Clears the date filter for a specific measurement type.
+    fun clearDateFilter(type: MeasurementType) {
+        filterStateByType.getValue(type).update { it.copy(dateFilter = null) }
+    }
+
+    // Sets stage, condition, and date filters simultaneously.
+    fun setFilters(
+        type: MeasurementType,
+        stages: Set<ClinicalStageFilter> = filterStateByType.getValue(type).value.stages,
+        conditions: Set<MeasurementConditionFilter> = filterStateByType.getValue(type).value.conditions,
+        dateFilter: DateFilter? = filterStateByType.getValue(type).value.dateFilter,
+    ) {
+        filterStateByType.getValue(type).update {
+            it.copy(stages = stages, conditions = conditions, dateFilter = dateFilter)
+        }
+    }
+
+    // Resets all filters for a specific measurement type back to default (no filtering).
+    fun clearFilters(type: MeasurementType) {
+        filterStateByType.getValue(type).value = HistoryFilterState()
+    }
 
     // The measurement waiting for delete confirmation: null = no confirmation open.
     private val _measurementToDelete = MutableStateFlow<Measurement?>(null)
