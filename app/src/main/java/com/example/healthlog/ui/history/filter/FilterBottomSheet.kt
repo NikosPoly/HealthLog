@@ -13,8 +13,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DateRangePicker
@@ -32,7 +34,8 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,8 +46,16 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.healthlog.R
+import com.example.healthlog.guidelines.BloodGlucoseCategory
+import com.example.healthlog.guidelines.BloodPressureStage
+import com.example.healthlog.guidelines.BmiCategory
+import com.example.healthlog.guidelines.PulseZone
+import com.example.healthlog.model.BodyPosition
+import com.example.healthlog.model.MealContext
+import com.example.healthlog.model.MeasurementArm
 import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.ui.format.formatLocale
+import java.time.LocalDate
 import java.time.ZoneId
 
 // Bottom sheet allowing users to filter measurements by clinical stage, conditions, and date range.
@@ -64,16 +75,25 @@ fun FilterBottomSheet(
     val availableStages = availableStagesForType(type)
     val availableConditions = availableConditionsForType(type)
 
-    // Local drafts of selected filters; only committed when "Done" is clicked.
-    var draftStages by remember(filterState.stages) { mutableStateOf(filterState.stages) }
-    var draftConditions by remember(filterState.conditions) { mutableStateOf(filterState.conditions) }
-    var draftDateFilter by remember(filterState.dateFilter) { mutableStateOf(filterState.dateFilter) }
+    // Local drafts of selected filters; preserved across configuration changes (rotation).
+    // Only committed to the HistoryViewModel when "Done" is clicked.
+    var draftStages by rememberSaveable(type, stateSaver = StageSetSaver) {
+        mutableStateOf(filterState.stages)
+    }
+    var draftConditions by rememberSaveable(type, stateSaver = ConditionSetSaver) {
+        mutableStateOf(filterState.conditions)
+    }
+    var draftDateFilter by rememberSaveable(type, stateSaver = DateFilterSaver) {
+        mutableStateOf(filterState.dateFilter)
+    }
 
-    var showDateRangePicker by remember { mutableStateOf(false) }
+    var showDateRangePicker by rememberSaveable { mutableStateOf(false) }
 
     val isDraftActive = draftStages.isNotEmpty() ||
         draftConditions.isNotEmpty() ||
         (draftDateFilter != null)
+
+    val scrollState = rememberScrollState()
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -84,6 +104,7 @@ fun FilterBottomSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .verticalScroll(scrollState)
                 .padding(horizontal = 24.dp)
                 .navigationBarsPadding(),
         ) {
@@ -337,7 +358,7 @@ fun FilterBottomSheet(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 16.dp),
+                    .padding(bottom = 24.dp),
                 shape = RoundedCornerShape(12.dp),
             ) {
                 Text(stringResource(R.string.filter_done))
@@ -387,3 +408,78 @@ fun FilterBottomSheet(
         }
     }
 }
+
+// Savers for preserving draft selections across configuration changes (e.g. device rotation).
+internal fun encodeStageFilter(stage: ClinicalStageFilter): String = when (stage) {
+    is ClinicalStageFilter.BloodPressure -> "BP:${stage.stage.name}"
+    is ClinicalStageFilter.Glucose -> "GLUCOSE:${stage.category.name}"
+    is ClinicalStageFilter.Pulse -> "PULSE:${stage.zone.name}"
+    is ClinicalStageFilter.Weight -> "BMI:${stage.category.name}"
+}
+
+internal fun decodeStageFilter(encoded: String): ClinicalStageFilter? = runCatching {
+    val parts = encoded.split(':', limit = 2)
+    when (parts[0]) {
+        "BP" -> ClinicalStageFilter.BloodPressure(BloodPressureStage.valueOf(parts[1]))
+        "GLUCOSE" -> ClinicalStageFilter.Glucose(BloodGlucoseCategory.valueOf(parts[1]))
+        "PULSE" -> ClinicalStageFilter.Pulse(PulseZone.valueOf(parts[1]))
+        "BMI" -> ClinicalStageFilter.Weight(BmiCategory.valueOf(parts[1]))
+        else -> null
+    }
+}.getOrNull()
+
+internal val StageSetSaver: Saver<Set<ClinicalStageFilter>, ArrayList<String>> = Saver(
+    save = { set -> ArrayList(set.map(::encodeStageFilter)) },
+    restore = { list -> list.mapNotNull(::decodeStageFilter).toSet() },
+)
+
+internal fun encodeConditionFilter(condition: MeasurementConditionFilter): String = when (condition) {
+    is MeasurementConditionFilter.Arm -> "ARM:${condition.arm.name}"
+    is MeasurementConditionFilter.Position -> "POS:${condition.position.name}"
+    is MeasurementConditionFilter.Meal -> "MEAL:${condition.meal.name}"
+    is MeasurementConditionFilter.Arrhythmia -> "ARRHYTHMIA:${condition.detected}"
+}
+
+internal fun decodeConditionFilter(encoded: String): MeasurementConditionFilter? = runCatching {
+    val parts = encoded.split(':', limit = 2)
+    when (parts[0]) {
+        "ARM" -> MeasurementConditionFilter.Arm(MeasurementArm.valueOf(parts[1]))
+        "POS" -> MeasurementConditionFilter.Position(BodyPosition.valueOf(parts[1]))
+        "MEAL" -> MeasurementConditionFilter.Meal(MealContext.valueOf(parts[1]))
+        "ARRHYTHMIA" -> MeasurementConditionFilter.Arrhythmia(parts[1].toBooleanStrict())
+        else -> null
+    }
+}.getOrNull()
+
+internal val ConditionSetSaver: Saver<Set<MeasurementConditionFilter>, ArrayList<String>> = Saver(
+    save = { set -> ArrayList(set.map(::encodeConditionFilter)) },
+    restore = { list -> list.mapNotNull(::decodeConditionFilter).toSet() },
+)
+
+internal fun encodeDateFilter(filter: DateFilter?): String = when (filter) {
+    null -> ""
+    is DateFilter.Today -> "TODAY"
+    is DateFilter.Last7Days -> "LAST_7"
+    is DateFilter.Last30Days -> "LAST_30"
+    is DateFilter.CustomRange -> "CUSTOM:${filter.startDate.toEpochDay()}:${filter.endDate.toEpochDay()}"
+}
+
+internal fun decodeDateFilter(encoded: String): DateFilter? = when {
+    encoded.isEmpty() -> null
+    encoded == "TODAY" -> DateFilter.Today
+    encoded == "LAST_7" -> DateFilter.Last7Days
+    encoded == "LAST_30" -> DateFilter.Last30Days
+    encoded.startsWith("CUSTOM:") -> runCatching {
+        val parts = encoded.removePrefix("CUSTOM:").split(':')
+        DateFilter.CustomRange(
+            startDate = LocalDate.ofEpochDay(parts[0].toLong()),
+            endDate = LocalDate.ofEpochDay(parts[1].toLong()),
+        )
+    }.getOrNull()
+    else -> null
+}
+
+internal val DateFilterSaver: Saver<DateFilter?, String> = Saver(
+    save = { encodeDateFilter(it) },
+    restore = { decodeDateFilter(it) },
+)

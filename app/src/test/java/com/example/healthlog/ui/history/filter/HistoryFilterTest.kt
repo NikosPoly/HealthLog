@@ -10,6 +10,7 @@ import com.example.healthlog.model.BodyPosition
 import com.example.healthlog.model.MealContext
 import com.example.healthlog.model.MeasurementArm
 import com.example.healthlog.model.MeasurementType
+import androidx.compose.runtime.saveable.SaverScope
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -581,4 +582,59 @@ class HistoryFilterTest {
         )
         assertEquals(listOf(match), filtered)
     }
+
+    @Test
+    fun stageSetSaver_savesAndRestoresAllStageTypes() {
+        val saverScope = SaverScope { true }
+        val stages: Set<ClinicalStageFilter> = setOf(
+            ClinicalStageFilter.BloodPressure(BloodPressureStage.HYPERTENSIVE_CRISIS),
+            ClinicalStageFilter.Glucose(BloodGlucoseCategory.DIABETES),
+            ClinicalStageFilter.Pulse(PulseZone.TACHYCARDIA),
+            ClinicalStageFilter.Weight(BmiCategory.OBESE),
+        )
+
+        val saved = with(StageSetSaver) { saverScope.save(stages) }
+        val restored = StageSetSaver.restore(saved!!)
+
+        assertEquals(stages, restored)
+    }
+
+    @Test
+    fun conditionSetSaver_savesAndRestoresAllConditionTypes() {
+        val saverScope = SaverScope { true }
+        val conditions: Set<MeasurementConditionFilter> = setOf(
+            MeasurementConditionFilter.Arm(MeasurementArm.RIGHT),
+            MeasurementConditionFilter.Position(BodyPosition.STANDING),
+            MeasurementConditionFilter.Meal(MealContext.AFTER_MEAL_2H),
+            MeasurementConditionFilter.Arrhythmia(detected = true),
+            MeasurementConditionFilter.Arrhythmia(detected = false),
+        )
+
+        val saved = with(ConditionSetSaver) { saverScope.save(conditions) }
+        val restored = ConditionSetSaver.restore(saved!!)
+
+        assertEquals(conditions, restored)
+    }
+
+    @Test
+    fun dateFilterSaver_savesAndRestoresAllDateFilters() {
+        val saverScope = SaverScope { true }
+        val filters: List<DateFilter?> = listOf(
+            null,
+            DateFilter.Today,
+            DateFilter.Last7Days,
+            DateFilter.Last30Days,
+            DateFilter.CustomRange(
+                startDate = java.time.LocalDate.of(2026, 11, 1),
+                endDate = java.time.LocalDate.of(2026, 11, 15),
+            ),
+        )
+
+        filters.forEach { original ->
+            val saved = with(DateFilterSaver) { saverScope.save(original) }
+            val restored = DateFilterSaver.restore(saved!!)
+            assertEquals(original, restored)
+        }
+    }
 }
+
