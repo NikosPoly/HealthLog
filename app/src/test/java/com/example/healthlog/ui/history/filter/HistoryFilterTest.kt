@@ -6,7 +6,9 @@ import com.example.healthlog.guidelines.BloodGlucoseCategory
 import com.example.healthlog.guidelines.BloodPressureStage
 import com.example.healthlog.guidelines.BmiCategory
 import com.example.healthlog.guidelines.PulseZone
+import com.example.healthlog.model.BodyPosition
 import com.example.healthlog.model.MealContext
+import com.example.healthlog.model.MeasurementArm
 import com.example.healthlog.model.MeasurementType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -23,7 +25,7 @@ class HistoryFilterTest {
             Measurement(id = 3, type = MeasurementType.PULSE, value = 110.0),
         )
 
-        val result = filterMeasurements(list, HistoryFilterState(stages = emptySet()))
+        val result = filterMeasurements(list, HistoryFilterState())
         assertEquals(list, result)
         assertFalse(HistoryFilterState().isActive)
     }
@@ -175,6 +177,183 @@ class HistoryFilterTest {
     }
 
     @Test
+    fun filterMeasurements_arm_filtersByLeftOrRightArm() {
+        val leftArm = Measurement(
+            id = 1,
+            type = MeasurementType.BLOOD_PRESSURE,
+            value = 120.0,
+            secondaryValue = 80.0,
+            arm = MeasurementArm.LEFT.name,
+        )
+        val rightArm = Measurement(
+            id = 2,
+            type = MeasurementType.BLOOD_PRESSURE,
+            value = 125.0,
+            secondaryValue = 82.0,
+            arm = MeasurementArm.RIGHT.name,
+        )
+        val noArm = Measurement(
+            id = 3,
+            type = MeasurementType.BLOOD_PRESSURE,
+            value = 118.0,
+            secondaryValue = 78.0,
+            arm = null,
+        )
+        val measurements = listOf(leftArm, rightArm, noArm)
+
+        val leftFiltered = filterMeasurements(
+            measurements,
+            HistoryFilterState(conditions = setOf(MeasurementConditionFilter.Arm(MeasurementArm.LEFT))),
+        )
+        assertEquals(listOf(leftArm), leftFiltered)
+
+        val rightFiltered = filterMeasurements(
+            measurements,
+            HistoryFilterState(conditions = setOf(MeasurementConditionFilter.Arm(MeasurementArm.RIGHT))),
+        )
+        assertEquals(listOf(rightArm), rightFiltered)
+    }
+
+    @Test
+    fun filterMeasurements_bodyPosition_filtersBySittingStandingOrLying() {
+        val sitting = Measurement(
+            id = 1,
+            type = MeasurementType.BLOOD_PRESSURE,
+            value = 120.0,
+            secondaryValue = 80.0,
+            bodyPosition = BodyPosition.SITTING.name,
+        )
+        val standing = Measurement(
+            id = 2,
+            type = MeasurementType.BLOOD_PRESSURE,
+            value = 125.0,
+            secondaryValue = 82.0,
+            bodyPosition = BodyPosition.STANDING.name,
+        )
+        val lying = Measurement(
+            id = 3,
+            type = MeasurementType.BLOOD_PRESSURE,
+            value = 115.0,
+            secondaryValue = 75.0,
+            bodyPosition = BodyPosition.LYING_DOWN.name,
+        )
+        val measurements = listOf(sitting, standing, lying)
+
+        val sittingFiltered = filterMeasurements(
+            measurements,
+            HistoryFilterState(conditions = setOf(MeasurementConditionFilter.Position(BodyPosition.SITTING))),
+        )
+        assertEquals(listOf(sitting), sittingFiltered)
+
+        val multiPositionFiltered = filterMeasurements(
+            measurements,
+            HistoryFilterState(
+                conditions = setOf(
+                    MeasurementConditionFilter.Position(BodyPosition.SITTING),
+                    MeasurementConditionFilter.Position(BodyPosition.LYING_DOWN),
+                ),
+            ),
+        )
+        assertEquals(listOf(sitting, lying), multiPositionFiltered)
+    }
+
+    @Test
+    fun filterMeasurements_mealContext_filtersByBeforeOrAfterMeal() {
+        val fasting = Measurement(
+            id = 1,
+            type = MeasurementType.BLOOD_SUGAR,
+            value = 90.0,
+            mealContext = MealContext.BEFORE_MEAL.name,
+        )
+        val postMeal = Measurement(
+            id = 2,
+            type = MeasurementType.BLOOD_SUGAR,
+            value = 130.0,
+            mealContext = MealContext.AFTER_MEAL_2H.name,
+        )
+        val measurements = listOf(fasting, postMeal)
+
+        val fastingFiltered = filterMeasurements(
+            measurements,
+            HistoryFilterState(conditions = setOf(MeasurementConditionFilter.Meal(MealContext.BEFORE_MEAL))),
+        )
+        assertEquals(listOf(fasting), fastingFiltered)
+
+        val postMealFiltered = filterMeasurements(
+            measurements,
+            HistoryFilterState(conditions = setOf(MeasurementConditionFilter.Meal(MealContext.AFTER_MEAL_2H))),
+        )
+        assertEquals(listOf(postMeal), postMealFiltered)
+    }
+
+    @Test
+    fun filterMeasurements_arrhythmia_filtersByDetectedArrhythmia() {
+        val normalPulse = Measurement(id = 1, type = MeasurementType.PULSE, value = 72.0, hasArrhythmia = false)
+        val irregularPulse = Measurement(id = 2, type = MeasurementType.PULSE, value = 85.0, hasArrhythmia = true)
+        val measurements = listOf(normalPulse, irregularPulse)
+
+        val arrhythmiaFiltered = filterMeasurements(
+            measurements,
+            HistoryFilterState(conditions = setOf(MeasurementConditionFilter.Arrhythmia)),
+        )
+        assertEquals(listOf(irregularPulse), arrhythmiaFiltered)
+    }
+
+    @Test
+    fun filterMeasurements_combiningStageAndConditions_appliesAllConstraints() {
+        val match = Measurement(
+            id = 1,
+            type = MeasurementType.BLOOD_PRESSURE,
+            value = 145.0,
+            secondaryValue = 92.0,
+            arm = MeasurementArm.LEFT.name,
+            bodyPosition = BodyPosition.SITTING.name,
+            hasArrhythmia = true,
+        )
+        val wrongStage = Measurement(
+            id = 2,
+            type = MeasurementType.BLOOD_PRESSURE,
+            value = 120.0,
+            secondaryValue = 80.0,
+            arm = MeasurementArm.LEFT.name,
+            bodyPosition = BodyPosition.SITTING.name,
+            hasArrhythmia = true,
+        )
+        val wrongArm = Measurement(
+            id = 3,
+            type = MeasurementType.BLOOD_PRESSURE,
+            value = 145.0,
+            secondaryValue = 92.0,
+            arm = MeasurementArm.RIGHT.name,
+            bodyPosition = BodyPosition.SITTING.name,
+            hasArrhythmia = true,
+        )
+        val noArrhythmia = Measurement(
+            id = 4,
+            type = MeasurementType.BLOOD_PRESSURE,
+            value = 145.0,
+            secondaryValue = 92.0,
+            arm = MeasurementArm.LEFT.name,
+            bodyPosition = BodyPosition.SITTING.name,
+            hasArrhythmia = false,
+        )
+        val measurements = listOf(match, wrongStage, wrongArm, noArrhythmia)
+
+        val combinedFiltered = filterMeasurements(
+            measurements,
+            HistoryFilterState(
+                stages = setOf(ClinicalStageFilter.BloodPressure(BloodPressureStage.GRADE_1_HYPERTENSION)),
+                conditions = setOf(
+                    MeasurementConditionFilter.Arm(MeasurementArm.LEFT),
+                    MeasurementConditionFilter.Position(BodyPosition.SITTING),
+                    MeasurementConditionFilter.Arrhythmia,
+                ),
+            ),
+        )
+        assertEquals(listOf(match), combinedFiltered)
+    }
+
+    @Test
     fun availableStagesForType_returnsExpectedStagesForEachType() {
         assertEquals(6, availableStagesForType(MeasurementType.BLOOD_PRESSURE).size)
         assertEquals(4, availableStagesForType(MeasurementType.BLOOD_SUGAR).size)
@@ -184,10 +363,23 @@ class HistoryFilterTest {
     }
 
     @Test
+    fun availableConditionsForType_returnsExpectedConditionsForEachType() {
+        assertEquals(6, availableConditionsForType(MeasurementType.BLOOD_PRESSURE).size)
+        assertEquals(1, availableConditionsForType(MeasurementType.PULSE).size)
+        assertEquals(2, availableConditionsForType(MeasurementType.BLOOD_SUGAR).size)
+        assertTrue(availableConditionsForType(MeasurementType.WEIGHT).isEmpty())
+        assertTrue(availableConditionsForType(MeasurementType.HEIGHT).isEmpty())
+    }
+
+    @Test
     fun labelRes_mapsToExpectedStringResource() {
         assertEquals(R.string.bp_stage_grade_1, ClinicalStageFilter.BloodPressure(BloodPressureStage.GRADE_1_HYPERTENSION).labelRes)
         assertEquals(R.string.pulse_zone_bradycardia, ClinicalStageFilter.Pulse(PulseZone.BRADYCARDIA).labelRes)
         assertEquals(R.string.glucose_category_prediabetes, ClinicalStageFilter.Glucose(BloodGlucoseCategory.PREDIABETES).labelRes)
         assertEquals(R.string.bmi_category_overweight, ClinicalStageFilter.Weight(BmiCategory.OVERWEIGHT).labelRes)
+        assertEquals(R.string.arm_left, MeasurementConditionFilter.Arm(MeasurementArm.LEFT).labelRes)
+        assertEquals(R.string.position_sitting, MeasurementConditionFilter.Position(BodyPosition.SITTING).labelRes)
+        assertEquals(R.string.meal_before, MeasurementConditionFilter.Meal(MealContext.BEFORE_MEAL).labelRes)
+        assertEquals(R.string.arrhythmia_yes, MeasurementConditionFilter.Arrhythmia.labelRes)
     }
 }

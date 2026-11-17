@@ -11,6 +11,7 @@ import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.repository.MeasurementRepository
 import com.example.healthlog.ui.history.filter.ClinicalStageFilter
 import com.example.healthlog.ui.history.filter.HistoryFilterState
+import com.example.healthlog.ui.history.filter.MeasurementConditionFilter
 import com.example.healthlog.ui.history.filter.filterMeasurements
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -91,6 +92,25 @@ class HistoryViewModel(
     // Removes an individual clinical stage filter for a specific measurement type.
     fun removeStageFilter(type: MeasurementType, stage: ClinicalStageFilter) {
         filterStateByType.getValue(type).update { it.copy(stages = it.stages - stage) }
+    }
+
+    // Sets the condition filters for a specific measurement type.
+    fun setConditionFilters(type: MeasurementType, conditions: Set<MeasurementConditionFilter>) {
+        filterStateByType.getValue(type).update { it.copy(conditions = conditions) }
+    }
+
+    // Removes an individual condition filter for a specific measurement type.
+    fun removeConditionFilter(type: MeasurementType, condition: MeasurementConditionFilter) {
+        filterStateByType.getValue(type).update { it.copy(conditions = it.conditions - condition) }
+    }
+
+    // Sets both stage and condition filters simultaneously.
+    fun setFilters(
+        type: MeasurementType,
+        stages: Set<ClinicalStageFilter> = filterStateByType.getValue(type).value.stages,
+        conditions: Set<MeasurementConditionFilter> = filterStateByType.getValue(type).value.conditions,
+    ) {
+        filterStateByType.getValue(type).update { it.copy(stages = stages, conditions = conditions) }
     }
 
     // Resets all filters for a specific measurement type back to default (no filtering).
