@@ -23,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -30,6 +31,8 @@ import androidx.compose.ui.unit.dp
 import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.model.MeasurementType
+import com.example.healthlog.ui.export.ExportConfig
+import com.example.healthlog.ui.export.ExportDialog
 import com.example.healthlog.ui.format.decimalSeparator
 import com.example.healthlog.ui.format.formatMeasurementValue
 import com.example.healthlog.ui.history.chart.ChartPage
@@ -83,6 +86,7 @@ fun HistoryContent(
     onRemoveDateFilter: (MeasurementType) -> Unit = {},
     onClearFilters: (MeasurementType) -> Unit = {},
     onOpenDetails: (Long) -> Unit = {},
+    onExport: (ExportConfig) -> Unit = {},
     onRequestDelete: (Measurement) -> Unit,
     onConfirmDelete: () -> Unit,
     onCancelDelete: () -> Unit,
@@ -98,6 +102,9 @@ fun HistoryContent(
 
     // Visibility state of the filter modal bottom sheet.
     var showFilterSheet by rememberSaveable { mutableStateOf(value = false) }
+
+    // Visibility state of the export modal bottom sheet.
+    var showExportDialog by rememberSaveable { mutableStateOf(value = false) }
 
     // Reports the shown page once it has settled, whether it changed by swiping or by
     // tapping a tab. Not halfway through a swipe: the ViewModel only hears about it at
@@ -130,6 +137,18 @@ fun HistoryContent(
                                 painter = painterResource(R.drawable.ic_arrow_back),
                                 contentDescription = stringResource(R.string.action_back),
                                 // Multicolored icon: keep its own colors.
+                                tint = Color.Unspecified,
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(
+                            onClick = { showExportDialog = true },
+                            modifier = Modifier.testTag("history_export_button"),
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_download),
+                                contentDescription = stringResource(R.string.action_export),
                                 tint = Color.Unspecified,
                             )
                         }
@@ -221,6 +240,19 @@ fun HistoryContent(
                     onSetFilters(shownType, stages, conditions, dateFilter)
                 },
                 onDismiss = { showFilterSheet = false },
+            )
+        }
+
+        // Export modal bottom sheet for configuring doctor reports or CSV exports.
+        if (showExportDialog) {
+            ExportDialog(
+                selectedType = shownType,
+                measurementsByType = measurementsByType,
+                onExport = { config ->
+                    onExport(config)
+                    showExportDialog = false
+                },
+                onDismiss = { showExportDialog = false },
             )
         }
 

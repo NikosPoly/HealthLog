@@ -293,4 +293,22 @@
         <item quantity="other">Εμφάνιση %d εγγραφών</item>
     </plurals>
     <string name="filter_no_matching_entries">Χωρίς αποτελέσματα (0)</string>
+
+    <!-- Doctor Report Export -->
+    <string name="action_export">Εξαγωγή</string>
+    <string name="export_title">Εξαγωγή Αναφοράς</string>
+    <string name="export_section_format">Μορφή</string>
+    <string name="export_format_pdf">Αναφορά Γιατρού (PDF)</string>
+    <string name="export_format_pdf_desc">Μορφοποιημένη κλινική σύνοψη με γραφήματα και πίνακες</string>
+    <string name="export_format_csv">Δεδομένα Υπολογιστικού Φύλλου (CSV)</string>
+    <string name="export_format_csv_desc">Ανεπεξέργαστες τιμές και συνθήκες για το Excel</string>
+    <string name="export_section_scope">Μετρήσεις</string>
+    <string name="export_scope_current">Μόνο τρέχουσα</string>
+    <string name="export_scope_all">Όλες οι μετρήσεις</string>
+    <string name="export_section_date_range">Χρονικό διάστημα</string>
+    <string name="export_action_export">Λήψη</string>
+    <string name="export_action_cancel">Ακύρωση</string>
+    <string name="export_entries_count">Θα εξαχθούν %d εγγραφές</string>
+    <string name="export_no_entries">Δεν υπάρχουν μετρήσεις σε αυτό το διάστημα</string>
+    <string name="export_completed">Η εξαγωγή ολοκληρώθηκε</string>
 </resources>

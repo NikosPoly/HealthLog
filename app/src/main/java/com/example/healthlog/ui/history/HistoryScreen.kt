@@ -7,11 +7,15 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalResources
+import com.example.healthlog.R
 import com.example.healthlog.model.MeasurementType
+import com.example.healthlog.ui.export.ExportConfig
 import com.example.healthlog.ui.history.chart.ChartPeriod
+import kotlinx.coroutines.launch
 
 // Connector: reads the HistoryViewModel's state, shows its messages,
 // and hands everything to the layout as plain values and callbacks.
@@ -23,6 +27,7 @@ fun HistoryScreen(
     selectedType: MeasurementType,
     onSelectType: (MeasurementType) -> Unit,
     onOpenDetails: (Long) -> Unit = {},
+    onExport: (ExportConfig) -> Unit = {},
     onBack: () -> Unit,
 ) {
     // The raw list of every type, for charts.
@@ -51,6 +56,7 @@ fun HistoryScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
     val resources = LocalResources.current
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         viewModel.messages.collect { messageId ->
@@ -77,6 +83,14 @@ fun HistoryScreen(
         onRemoveDateFilter = viewModel::clearDateFilter,
         onClearFilters = viewModel::clearFilters,
         onOpenDetails = onOpenDetails,
+        onExport = { config ->
+            scope.launch {
+                snackbarHostState.showSnackbar(
+                    resources.getString(R.string.export_completed),
+                )
+            }
+            onExport(config)
+        },
         onRequestDelete = viewModel::requestDelete,
         onConfirmDelete = viewModel::confirmDelete,
         onCancelDelete = viewModel::cancelDelete,
