@@ -56,6 +56,7 @@
     <!-- Buttons and actions used in several places -->
     <string name="action_back">Πίσω</string>
     <string name="action_save">Αποθήκευση</string>
+    <string name="action_confirm">Επιβεβαίωση</string>
     <string name="action_cancel">Ακύρωση</string>
     <string name="action_delete">Διαγραφή</string>
 

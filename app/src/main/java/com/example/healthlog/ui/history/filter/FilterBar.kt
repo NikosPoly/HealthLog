@@ -30,6 +30,7 @@ import com.example.healthlog.ui.details.references.bloodGlucoseCategoryColors
 import com.example.healthlog.ui.details.references.bloodPressureStageColors
 import com.example.healthlog.ui.details.references.bmiCategoryColors
 import com.example.healthlog.ui.details.references.pulseZoneColors
+import com.example.healthlog.ui.format.formatLocale
 
 // Resolves theme-aware container, content, and indicator colors for a clinical stage filter.
 fun stageFilterColors(stage: ClinicalStageFilter, dark: Boolean) = when (stage) {
@@ -47,11 +48,13 @@ fun FilterBar(
     onOpenFilterSheet: () -> Unit,
     onRemoveStage: (ClinicalStageFilter) -> Unit,
     onRemoveCondition: (MeasurementConditionFilter) -> Unit,
+    onRemoveDate: () -> Unit,
     onClearAll: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scrollState = rememberScrollState()
     val isDark = isSystemInDarkTheme()
+    val locale = formatLocale()
 
     Row(
         modifier = modifier
@@ -66,7 +69,9 @@ fun FilterBar(
             selected = filterState.isActive,
             onClick = onOpenFilterSheet,
             label = {
-                val activeCount = filterState.stages.size + filterState.conditions.size
+                val activeCount = filterState.stages.size +
+                    filterState.conditions.size +
+                    (if (filterState.dateFilter != null) 1 else 0)
                 val labelText = if (activeCount > 0) {
                     stringResource(R.string.filter_badge_count, activeCount)
                 } else {
@@ -95,6 +100,49 @@ fun FilterBar(
                 selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
             ),
         )
+
+        // Active date range filter chip.
+        filterState.dateFilter?.let { dateFilter ->
+            val label = if (dateFilter.labelRes != null) {
+                stringResource(dateFilter.labelRes!!)
+            } else {
+                dateFilter.displayLabel(locale)
+            }
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            ) {
+                Row(
+                    modifier = Modifier.padding(start = 8.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_calendar),
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = Color.Unspecified,
+                    )
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Medium,
+                    )
+                    IconButton(
+                        onClick = onRemoveDate,
+                        modifier = Modifier.size(20.dp),
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_close),
+                            contentDescription = stringResource(R.string.filter_date_chip_desc),
+                            modifier = Modifier.size(12.dp),
+                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                        )
+                    }
+                }
+            }
+        }
 
         // Active clinical stage chips with dynamic clinical color badges.
         filterState.stages.forEach { stage ->

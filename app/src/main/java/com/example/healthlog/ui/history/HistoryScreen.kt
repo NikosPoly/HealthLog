@@ -74,6 +74,7 @@ fun HistoryScreen(
         onSetFilters = viewModel::setFilters,
         onRemoveStageFilter = viewModel::removeStageFilter,
         onRemoveConditionFilter = viewModel::removeConditionFilter,
+        onRemoveDateFilter = viewModel::clearDateFilter,
         onClearFilters = viewModel::clearFilters,
         onOpenDetails = onOpenDetails,
         onRequestDelete = viewModel::requestDelete,

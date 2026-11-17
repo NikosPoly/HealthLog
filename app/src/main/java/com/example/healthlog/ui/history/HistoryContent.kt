@@ -38,6 +38,7 @@ import com.example.healthlog.ui.history.chart.PeriodChips
 import com.example.healthlog.ui.history.chart.ScreenTap
 import com.example.healthlog.ui.history.chart.watchTaps
 import com.example.healthlog.ui.history.filter.ClinicalStageFilter
+import com.example.healthlog.ui.history.filter.DateFilter
 import com.example.healthlog.ui.history.filter.FilterBar
 import com.example.healthlog.ui.history.filter.FilterBottomSheet
 import com.example.healthlog.ui.history.filter.HistoryFilterState
@@ -52,7 +53,7 @@ import kotlinx.coroutines.launch
 // One page per measurement type, chosen with the tabs or by swiping left and right.
 // The button above the pages switches every page between the list and the chart.
 // In chart mode, the chips below it choose the period of the chart.
-// In list mode, a space-saving filter bar allows filtering by clinical stage and physical conditions.
+// In list mode, a space-saving filter bar allows filtering by clinical stage, conditions, and date range.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryContent(
@@ -76,9 +77,10 @@ fun HistoryContent(
     // Called by the button that switches between the list and the chart.
     onToggleChart: () -> Unit,
     onSelectPeriod: (ChartPeriod) -> Unit,
-    onSetFilters: (MeasurementType, Set<ClinicalStageFilter>, Set<MeasurementConditionFilter>) -> Unit = { _, _, _ -> },
+    onSetFilters: (MeasurementType, Set<ClinicalStageFilter>, Set<MeasurementConditionFilter>, DateFilter?) -> Unit = { _, _, _, _ -> },
     onRemoveStageFilter: (MeasurementType, ClinicalStageFilter) -> Unit = { _, _ -> },
     onRemoveConditionFilter: (MeasurementType, MeasurementConditionFilter) -> Unit = { _, _ -> },
+    onRemoveDateFilter: (MeasurementType) -> Unit = {},
     onClearFilters: (MeasurementType) -> Unit = {},
     onOpenDetails: (Long) -> Unit = {},
     onRequestDelete: (Measurement) -> Unit,
@@ -166,6 +168,7 @@ fun HistoryContent(
                         onOpenFilterSheet = { showFilterSheet = true },
                         onRemoveStage = { onRemoveStageFilter(shownType, it) },
                         onRemoveCondition = { onRemoveConditionFilter(shownType, it) },
+                        onRemoveDate = { onRemoveDateFilter(shownType) },
                         onClearAll = { onClearFilters(shownType) },
                         modifier = Modifier.padding(top = 4.dp),
                     )
@@ -206,13 +209,13 @@ fun HistoryContent(
             }
         }
 
-        // Filter modal bottom sheet for selecting clinical stages and physical conditions.
+        // Filter modal bottom sheet for selecting clinical stages, physical conditions, and date range.
         if (showFilterSheet) {
             FilterBottomSheet(
                 type = shownType,
                 filterState = filterStateByType[shownType] ?: HistoryFilterState(),
-                onApply = { stages, conditions ->
-                    onSetFilters(shownType, stages, conditions)
+                onApply = { stages, conditions, dateFilter ->
+                    onSetFilters(shownType, stages, conditions, dateFilter)
                 },
                 onDismiss = { showFilterSheet = false },
             )

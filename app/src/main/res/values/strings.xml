@@ -62,6 +62,7 @@
     <!-- Buttons and actions used in several places -->
     <string name="action_back">Back</string>
     <string name="action_save">Save</string>
+    <string name="action_confirm">Confirm</string>
     <string name="action_cancel">Cancel</string>
     <string name="action_delete">Delete</string>
 
