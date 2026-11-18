@@ -17,6 +17,22 @@
     <!-- %1$s = measurement type, %2$s = value with unit -->
     <string name="delete_dialog_details">%1$s: %2$s</string>
 
+    <!-- Bottom Navigation -->
+    <string name="nav_vitals">Vitals</string>
+    <string name="nav_medications">Medications</string>
+    <string name="nav_calendar">Calendar</string>
+
+    <!-- Placeholder Screens for Medications and Calendar -->
+    <string name="medications_title">Medications</string>
+    <string name="medications_placeholder_title">Medications &amp; Reminders</string>
+    <string name="medications_placeholder_desc">Track your daily prescriptions, dosages, and configure local notification alarms.</string>
+    <string name="medications_placeholder_badge">Coming in Step 2</string>
+
+    <string name="calendar_title">Health Calendar</string>
+    <string name="calendar_placeholder_title">Symptoms &amp; Clinical Calendar</string>
+    <string name="calendar_placeholder_desc">Log daily symptoms with severity ratings and view correlations with your vital signs.</string>
+    <string name="calendar_placeholder_badge">Coming in Milestone 3.2</string>
+
     <!-- Home screen -->
     <string name="home_title" translatable="false">HealthLog</string>
     <string name="home_new_entry">New Entry</string>

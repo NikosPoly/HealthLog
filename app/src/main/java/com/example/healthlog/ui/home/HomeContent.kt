@@ -60,7 +60,8 @@ fun HomeContent(
     onSave: (Measurement) -> Unit,
     onOpenHistory: () -> Unit,
     onOpenGuide: (MeasurementType) -> Unit = {},
-    isDialogVisible: Boolean = true
+    isDialogVisible: Boolean = true,
+    bottomBar: @Composable () -> Unit = {}
 ) {
     Scaffold(
         topBar = {
@@ -120,6 +121,7 @@ fun HomeContent(
                 }
             )
         },
+        bottomBar = bottomBar,
         snackbarHost = {
             SnackbarHost(snackbarHostState)
         }

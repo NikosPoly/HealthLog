@@ -1,5 +1,6 @@
 package com.example.healthlog.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -15,12 +16,16 @@ import androidx.navigation.navArgument
 import com.example.healthlog.guidelines.protocols.MeasurementGuideScreen
 import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.repository.MeasurementRepository
+import com.example.healthlog.ui.calendar.CalendarPlaceholderScreen
 import com.example.healthlog.ui.details.MeasurementDetailsScreen
 import com.example.healthlog.ui.details.MeasurementDetailsViewModel
 import com.example.healthlog.ui.history.HistoryScreen
 import com.example.healthlog.ui.history.HistoryViewModel
 import com.example.healthlog.ui.home.HomeScreen
 import com.example.healthlog.ui.home.HomeViewModel
+import com.example.healthlog.ui.medications.MedicationsPlaceholderScreen
+import com.example.healthlog.ui.navigation.HealthLogBottomBar
+import com.example.healthlog.ui.navigation.NavigationTab
 
 // The names of the app's screens.
 private object Routes {
@@ -36,9 +41,12 @@ private object Routes {
 // Decides which screen is shown and how to move between them.
 @Composable
 fun HealthLogNavHost(
-    repository: MeasurementRepository
+    repository: MeasurementRepository,
 ) {
     val navController = rememberNavController()
+
+    // The active bottom navigation tab on the home destination.
+    var selectedTab by rememberSaveable { mutableStateOf(NavigationTab.VITALS) }
 
     // The history page last shown. Kept here, above the history screen, so it is
     // remembered when the history is closed and opened again while the app is running.
@@ -57,17 +65,46 @@ fun HealthLogNavHost(
             val currentBackStackEntry by navController.currentBackStackEntryAsState()
             val isHomeCurrent = currentBackStackEntry?.destination?.route == Routes.HOME
 
-            HomeScreen(
-                viewModel = viewModel,
-                onOpenHistory = {
-                    // launchSingleTop: a double tap doesn't open the history twice.
-                    navController.navigate(Routes.HISTORY) { launchSingleTop = true }
-                },
-                onOpenGuide = { type ->
-                    navController.navigate(Routes.guide(type)) { launchSingleTop = true }
-                },
-                isDialogVisible = isHomeCurrent
-            )
+            // When user is on Medications or Calendar tab, pressing Android back returns to Vitals tab.
+            BackHandler(enabled = isHomeCurrent && (selectedTab != NavigationTab.VITALS)) {
+                selectedTab = NavigationTab.VITALS
+            }
+
+            val bottomBarComposable: @Composable () -> Unit = {
+                HealthLogBottomBar(
+                    currentTab = selectedTab,
+                    onTabSelected = { selectedTab = it }
+                )
+            }
+
+            when (selectedTab) {
+                NavigationTab.VITALS -> {
+                    HomeScreen(
+                        viewModel = viewModel,
+                        onOpenHistory = {
+                            // launchSingleTop: a double tap doesn't open the history twice.
+                            navController.navigate(Routes.HISTORY) { launchSingleTop = true }
+                        },
+                        onOpenGuide = { type ->
+                            navController.navigate(Routes.guide(type)) { launchSingleTop = true }
+                        },
+                        isDialogVisible = isHomeCurrent,
+                        bottomBar = bottomBarComposable
+                    )
+                }
+
+                NavigationTab.MEDICATIONS -> {
+                    MedicationsPlaceholderScreen(
+                        bottomBar = bottomBarComposable
+                    )
+                }
+
+                NavigationTab.CALENDAR -> {
+                    CalendarPlaceholderScreen(
+                        bottomBar = bottomBarComposable
+                    )
+                }
+            }
         }
 
         composable(Routes.HISTORY) {

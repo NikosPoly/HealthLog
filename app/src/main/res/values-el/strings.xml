@@ -12,6 +12,22 @@
     <!-- %1$s = measurement type, %2$s = value with unit -->
     <string name="delete_dialog_details">%1$s: %2$s</string>
 
+    <!-- Bottom Navigation -->
+    <string name="nav_vitals">Μετρήσεις</string>
+    <string name="nav_medications">Φάρμακα</string>
+    <string name="nav_calendar">Ημερολόγιο</string>
+
+    <!-- Placeholder Screens for Medications and Calendar -->
+    <string name="medications_title">Φάρμακα</string>
+    <string name="medications_placeholder_title">Φάρμακα &amp; Υπενθυμίσεις</string>
+    <string name="medications_placeholder_desc">Παρακολουθήστε τα καθημερινά σας φάρμακα, τις δοσολογίες και ρυθμίστε τοπικές υπενθυμίσεις.</string>
+    <string name="medications_placeholder_badge">Σύντομα στο Βήμα 2</string>
+
+    <string name="calendar_title">Ημερολόγιο Υγείας</string>
+    <string name="calendar_placeholder_title">Συμπτώματα &amp; Κλινικό Ημερολόγιο</string>
+    <string name="calendar_placeholder_desc">Καταγράψτε καθημερινά συμπτώματα με βαθμολογία σοβαρότητας και δείτε συσχετίσεις με τις μετρήσεις σας.</string>
+    <string name="calendar_placeholder_badge">Σύντομα στο Ορόσημο 3.2</string>
+
     <!-- Home screen -->
     <string name="home_new_entry">Νέα Καταχώριση</string>
 
