@@ -117,6 +117,18 @@ The app is available in Greek and English.
     or when a period has no entries.
 - **Last entry card:** below the period card, whatever the period: the last entry's value and when
   it was recorded (e.g. "3 hours ago", "yesterday", "2 months ago") with its date and time
+- **Global 3-tab Bottom Navigation:** Material 3 `NavigationBar` seamlessly switching between:
+  - **Vitals:** health measurements logging, history per type, and Vico charts.
+  - **Medications:** daily intake schedule, active prescriptions, and alarm management.
+  - **Calendar:** monthly tracker and symptom correlation.
+  - State preservation across tabs: scrolling position, sub-tabs, and form drafts are cleanly preserved.
+- **Medication tracking & offline local reminders:**
+  - **Today's Schedule:** dynamic daily checklist grouping scheduled doses by time period (Morning, Afternoon, Evening) with one-tap *Take*, *Skip*, and *Undo* actions.
+  - **My Prescriptions:** active medication cards displaying dosage, unit, schedule, and active alarm bell indicators with quick delete confirmation.
+  - **As-needed (PRN) & one-time dose logging:** dedicated flow for symptomatic or ad-hoc medication intake directly from prescriptions or the form sheet.
+  - **Offline AlarmManager notifications:** scheduled via Android `AlarmManager` (`SCHEDULE_EXACT_ALARM`) with high-priority heads-up notifications and instant *Mark as Taken* actions, requiring zero cloud services or battery-draining polling.
+  - **Reboot resilience:** `BootReceiver` automatically reschedules all active medication alarms on device boot (`ACTION_BOOT_COMPLETED`).
+  - **Add/edit medication modal sheet:** customizable name, dosage, measurement units (mg, ml, tablet, drops, puff, g, mcg, patch, unit), daily reminder time pickers, frequency selection, doctor instructions, and seamless Android 13+ `POST_NOTIFICATIONS` permission request & resume handling.
 - **A color per type and fixed brand identity:** red for blood pressure, pink for pulse, orange for blood sugar, green for
   weight and blue for height. Each type's history page, home card and entry dialog are in its
   color, in light and dark mode. The app's overall theme is built around a dedicated brand pink
@@ -144,6 +156,7 @@ The app is available in Greek and English.
 - [Vico](https://github.com/patrykandpatrick/vico) for the charts
 - [MaterialKolor](https://github.com/jordond/materialkolor) for the type colors: a full Material
   color scheme from one color per type
+- Android `AlarmManager` and `BroadcastReceiver` for offline medication reminders and reboot rescheduling
 - MVVM: ViewModels with `StateFlow`, and a repository between the ViewModels and the database
 
 ## Project structure
@@ -152,12 +165,13 @@ All source code is in `app/src/main/java/com/example/healthlog/`:
 
 ```
 healthlog/
-├── database/                Room entity (Measurement), DAO, database and migrations
-├── repository/              MeasurementRepository, the single access point to the data
+├── database/                Room entities (Measurement, Medication, Reminder, DoseLog), DAO, migrations
+├── repository/              MeasurementRepository and MedicationRepository, data access points
 ├── model/                   measurement types (fields, units, ranges) and validation rules
 ├── guidelines/              clinical evaluation logic & medical standards (ISH, WHO, WHF, Oxford)
 │   └── protocols/           evidence-based clinical measurement protocols & doctor persona visual
-└── ui/                      navigation (HealthLogNavHost)
+├── notifications/           MedicationAlarmScheduler, MedicationAlarmReceiver, and BootReceiver
+└── ui/                      navigation (HealthLogNavHost, AppBottomBar, NavDestination)
     ├── home/                home screen: the type picker cards, with their icons
     │   └── newentry/        adding an entry: the new-entry dialog, its state and inputs
     ├── history/             history screen: the type tabs, the list/chart switch, deleting
@@ -169,6 +183,8 @@ healthlog/
     │       └── vico/        the chart itself, its tooltip and axes (the only place Vico is used)
     ├── details/             measurement details screen: single-entry breakdown, clinical context tags
     │   └── references/      clinical reference cards, visual gauge meters, and stage badges
+    ├── medications/         medications screen: Today's Schedule, My Prescriptions, Add/Edit sheet,
+    │                        TodayDoseSchedule calculations, dose status badges
     ├── export/              doctor reports & data export: ExportDialog, PdfReportGenerator,
     │                        CsvReportGenerator, ExportFileManager, ExportConfig
     ├── format/              display text: values, dates, "time ago", messages, per-language formats
@@ -252,6 +268,9 @@ There are two kinds of tests:
 - `ExportConfigPdfTest`: PDF export configuration defaults and date range filtering
 - `CsvReportGeneratorTest`: RFC 4180 CSV escaping (commas, quotes, newlines) and multi-metric filtering
 - `TimeAgoTest`: the "time ago" of the last measurement (hours, yesterday, days, months, years)
+- `TodayDoseScheduleTest`: dose status enums, stable item keys, recurring/PRN prescription filtering, day-of-week bitmask arithmetic, schedule chronological ordering, and PRN tagging
+- `MedicationsViewModelTest`: tab switching, add/edit sheet open/close state, and delete confirmation modal state
+- `MedicationAlarmSchedulerTest`: exact alarm computation, intent extras, and cancellation logic
 
 **Instrumented tests** (`app/src/androidTest`, run on an emulator or device):
 - `MigrationTest`: the database migrations
@@ -264,6 +283,7 @@ There are two kinds of tests:
 - `ChartPageTest`: the chart page: the period card (chart or empty message, stats), contextual shape legends, condition breakdown statistics and clinical insights, and the last entry card
 - `MeasurementDetailsScreenTest`: the details screen layout, clinical condition tags, back navigation and deletion
 - `MeasurementGuideScreenTest`: the educational guide screen, tabs, doctor speech bubble cards, and back navigation
+- `MedicationsUiTest`: medication management UI: Today's schedule empty state, pending dose rendering and take action, completed dose undo action, prescriptions list with quick log, and add/edit medication sheet validation
 
 To run them:
 
@@ -275,7 +295,7 @@ Run them on a separate emulator, not on a device with data you want to keep.
 
 ## Database
 
-Measurements are stored locally with Room. The database is currently at **version 4**.
+Measurements are stored locally with Room. The database is currently at **version 5**.
 
 ### Schema versions & migrations
 
@@ -283,6 +303,10 @@ Measurements are stored locally with Room. The database is currently at **versio
 - **Version 1 → 2 (`MIGRATION_1_2`):** Added nullable `tertiaryValue` column to store pulse for blood pressure measurements.
 - **Version 2 → 3 (`MIGRATION_2_3`):** Converted stored Greek type names to enum constant strings (`BLOOD_PRESSURE`, `PULSE`, `BLOOD_SUGAR`, `WEIGHT`, `HEIGHT`).
 - **Version 3 → 4 (`MIGRATION_3_4`):** Added nullable clinical context columns (`hasArrhythmia` INTEGER, `mealContext` TEXT, `arm` TEXT, `bodyPosition` TEXT). Older rows keep their data and have `null` for these columns.
+- **Version 4 → 5 (`MIGRATION_4_5`):** Added medication management tables:
+  - `medications`: stores active and archived prescriptions (`id`, `name`, `dosage`, `unit`, `frequency`, `instructions`, `isActive`, `createdAt`).
+  - `medication_reminders`: stores recurring daily reminder alarms (`id`, `medicationId`, `hour`, `minute`, `daysOfWeekMask`, `isEnabled`) with cascading foreign key delete on `medicationId`.
+  - `medication_dose_logs`: stores intake history (`id`, `medicationId`, `scheduledTimestamp`, `actionTimestamp`, `status`) with index on `scheduledTimestamp` for fast daily queries.
 
 Any change to what is stored needs a database migration in `HealthDatabase.kt`, for example:
 - adding, removing or renaming a column in `Measurement`
@@ -323,15 +347,16 @@ For detailed specifications and architectural decisions, see the complete [Produ
 - [x] Educational "How to Measure" guide (contextual helpers on entry dialogs and reference sheets)
 - [x] Condition breakdown statistics (aggregate % of measurements taken under various conditions: arm, meal context, posture, arrhythmia rate)
 
-### Phase 2: Data Visualization, Filtering & Doctor Reporting
+### Phase 2: Data Visualization, Filtering & Doctor Reporting (Completed)
 - [x] Charts: normal target ranges, shaded clinical bands, contextual dot shapes, and stage coloring on Vico line charts (Completed)
-- [x] History list: filtering for out-of-range / flagged values and clinical conditions
-- [x] Doctor reporting: on-device PDF generation, printing, and CSV export for medical appointments (100% local and private)
+- [x] History list: filtering for out-of-range / flagged values and clinical conditions (Completed)
+- [x] Doctor reporting: on-device PDF generation, printing, and CSV export for medical appointments (100% local and private) (Completed)
 
-### Phase 3: Health Journal & Medication Management
-- [ ] Per-measurement contextual notes
-- [ ] Medication tracking and local reminders (AlarmManager)
-- [ ] Symptom logging and calendar tracker
+### Phase 3: Medications & Symptom Calendar (In Progress)
+- [x] Global 3-tab Bottom Navigation (Vitals, Medications, Calendar) (Completed)
+- [x] Medication tracking and offline local reminders (AlarmManager exact alarms & BootReceiver) (Completed)
+- [ ] Symptom logging and clinical correlation calendar (Next Focus)
+*(Note: Per-measurement free-text notes were dropped/superseded in favor of discrete symptoms and medication adherence records).*
 
 ### Phase 4: Local Profiles & Data Portability
 - [ ] Local multi-user profiles (device profile switcher with guest-first experience)
