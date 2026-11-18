@@ -67,19 +67,19 @@ This document outlines the architectural strategy, feature specifications, and i
   * Triggers Android's native share sheet (Email, WhatsApp, Print via Wi-Fi printer, or Save to Google Drive).
   * Optional CSV export for spreadsheet analysis.
 
-### G. Measurement Notes & Health Journal
-* **Purpose:** Allow users to record brief contextual observations directly on an entry (e.g. "felt dizzy after morning run", "forgot evening medication").
-* **Architecture:** Add nullable `notes TEXT` column to `Measurement` via database migration.
-
-### H. Medication Tracking & Local Reminders
-* **Purpose:** Track active medications (name, dosage, frequency) and configure local notifications so patients take them consistently.
+### G. Medication Tracking & Local Reminders
+* **Purpose:** Track active medications (name, dosage, frequency), maintain a daily intake checklist (taken/skipped), and configure local notifications so patients take them consistently.
 * **Architecture:**
-  * Room entity: `Medication(id, name, doseUnit, frequency, instructions, isActive)`.
-  * Scheduled notifications using Android `AlarmManager` + BroadcastReceiver with exact alarm permissions.
+  * Room entities: `Medication(id, name, dosage, unit, frequency, instructions, isActive)` and `MedicationReminder(id, medicationId, hour, minute, daysOfWeek)`.
+  * Scheduled notifications using Android `AlarmManager` (`SCHEDULE_EXACT_ALARM`) + `BroadcastReceiver` + `BootReceiver` (rescheduling on device reboot).
 
-### I. Symptom Logging & Calendar Tracker
-* **Purpose:** Log daily symptoms (headaches, chest pain, palpitations, fatigue) with severity ratings (1–5) on a calendar view.
-* **Value:** Enables doctors to correlate symptom spikes with blood pressure or blood sugar variations.
+### H. Symptom Logging & Clinical Calendar Tracker
+* **Purpose:** Log daily symptoms (headaches, dizziness, chest discomfort, palpitations, fatigue) with severity ratings (1–5) on an interactive calendar view.
+* **Value:** Correlate symptom spikes directly with blood pressure or blood sugar variations and medication adherence on any given day.
+
+### I. Measurement Notes (Dropped / Superseded)
+* **Status:** Deprecated / dropped from Phase 3 scope.
+* **Rationale:** In practice, free-form text inputs during rapid vital logging (< 5s) add unnecessary friction and form fatigue. Contextual observations are substantially better modeled as discrete **Symptoms** (with severity and timestamps) or **Medication adherence records**, avoiding an unused nullable column in the `measurements` table.
 
 ### J. User Profiles & Data Portability
 * **Local Multi-Profile Strategy:**
@@ -105,10 +105,9 @@ This document outlines the architectural strategy, feature specifications, and i
 │ 2.2 History List Filtering (Stages, Conditions, Dates) (Completed)    │
 │ 2.3 Doctor Report Export (On-device PDF & CSV to Downloads) (Completed)│
 ├────────────────────────────────────────────────────────────────────────┤
-│ PHASE 3: Health Journal & Medication Management (Next Focus)           │
-│ 3.1 Per-Measurement Contextual Notes (DB migration)                    │
-│ 3.2 Medication Management & Local Reminders (AlarmManager)             │
-│ 3.3 Symptom Logging & Calendar View                                    │
+│ PHASE 3: Medications & Symptom Calendar (Next Focus — 2 Branches)      │
+│ 3.1 Bottom Navigation & Medication Management (AlarmManager)           │
+│ 3.2 Symptom Logging & Clinical Correlation Calendar                    │
 ├────────────────────────────────────────────────────────────────────────┤
 │ PHASE 4: Local Profiles & Data Portability                             │
 │ 4.1 Local Multi-User Profiles (device profile switcher, guest-first)    │
@@ -149,13 +148,17 @@ This document outlines the architectural strategy, feature specifications, and i
    * RFC 4180 compliant CSV export with UTF-8 BOM encoding for seamless Microsoft Excel compatibility.
    * Instant feedback snackbar upon completion with zero external sharing/cloud dependencies.
 
-#### **Phase 3: Expanded Daily Tracking**
-7. **Per-Measurement Notes:**
-   * Add a nullable `notes` column to `Measurement` (Migration 4 → 5).
-8. **Medications & Reminders:**
-   * Medication list, dosages, schedules, and local push notifications.
-9. **Symptom Tracker & Calendar:**
-   * Dedicated calendar view to log daily symptoms and correlate with vital signs.
+#### **Phase 3: Medications & Symptom Calendar**
+7. **Bottom Navigation & Medication Management (3.1 — Branch 1: `feature/medications-and-reminders`):**
+   * Material 3 Bottom Navigation bar with 3 tabs: **Vitals** (measurements & charts), **Medications** (pill routine & alarms), and **Calendar** (symptoms & daily correlations).
+   * Room entities: `Medication`, `MedicationReminder`, `MedicationDoseLog`.
+   * Offline local notification scheduling using `AlarmManager` with exact alarm permissions, `BroadcastReceiver` ("Mark as Taken"), and `BootReceiver` (device reboot rescheduling).
+   * UI: "Today's Schedule" checklist, "My Prescriptions" list, and "Add/Edit Medication" modal sheet.
+8. **Symptom Logging & Clinical Correlation Calendar (3.2 — Branch 2: `feature/symptoms-and-calendar`):**
+   * Dedicated interactive calendar view with colored indicator dots for symptoms, vitals, and medication adherence.
+   * Standardized symptom catalog (Headache, Dizziness, Chest Discomfort, Palpitations, Shortness of Breath, Fatigue, Custom) with severity ratings (1–5).
+   * Day detail correlation view linking vital spikes with symptom timestamps and missed/taken medications.
+   * *Note on Measurement Notes:* Dropped/superseded in favor of discrete, structured symptoms and adherence records to preserve rapid vital entry.
 
 #### **Phase 4: User Accounts & Cloud Infrastructure**
 10. **Authentication & User Profiles (with Guest Mode):**
@@ -306,44 +309,59 @@ This document outlines the architectural strategy, feature specifications, and i
 
 ---
 
-### Phase 3: Expanded Daily Tracking
+### Phase 3: Medications & Symptom Calendar (2-Branch Strategy)
 
-#### Milestone 3.1: Per-Measurement Notes
-* **Goal:** Allow users to record brief contextual observations (e.g., "headache after gym", "forgot morning pill").
-* **Step 1 — Database Migration (v4 → v5):**
-  * Add nullable `notes TEXT NULL` column to `Measurement` entity.
-  * Create `MIGRATION_4_5` in `HealthDatabase.kt` (`ALTER TABLE measurements ADD COLUMN notes TEXT`).
-  * Increment database version to 5 and generate new schema in `app/schemas/`.
-* **Step 2 — Migration Test:**
-  * Add automated migration test in `MigrationTest.kt` verifying older rows retain existing data with null notes.
-* **Step 3 — New Entry Dialog Input:**
-  * Add an optional "Notes" field (single/multi-line text input) in `NewEntryDialog`.
-* **Step 4 — Display in UI:**
-  * Show note snippet on `EntryCard` and full note block in `MeasurementDetailsScreen`.
+#### Milestone 3.1: Bottom Navigation & Medication Management (Branch 1: `feature/medications-and-reminders`)
+* **Goal:** Introduce the global 3-tab Bottom Navigation bar (Vitals, Medications, Calendar), build complete local medication tracking with intake schedules, and configure reliable offline alarms.
+* **Step 1 — Global Navigation Scaffold (`ui/HealthLogNavHost.kt`):**
+  * Introduce Material 3 `NavigationBar` with 3 destinations:
+    * `Vitals`: Hosts the current measurement logging cards, history, and Vico charts.
+    * `Medications`: Daily pill schedule, adherence checklist, and prescription management.
+    * `Calendar`: Monthly/weekly calendar tracker and symptom correlation.
+  * Ensure smooth tab switching preserving backstack state.
+* **Step 2 — Database Entities & DAO (`database/`):**
+  * `Medication` entity (`id`, `name`, `dosage`, `unit`, `frequency`, `instructions`, `isActive`, `createdAt`).
+  * `MedicationReminder` entity (`id`, `medicationId`, `hour`, `minute`, `daysOfWeekMask`, `isEnabled`).
+  * `MedicationDoseLog` entity (`id`, `medicationId`, `scheduledTimestamp`, `actionTimestamp`, `status` [TAKEN, SKIPPED]).
+  * Create `MedicationDao` with reactive `Flow` queries and intake adherence tracking.
+* **Step 3 — Offline Local Notifications & Alarm Architecture:**
+  * Implement `MedicationAlarmScheduler` using Android `AlarmManager` with exact alarm capabilities (`setExactAndAllowWhileIdle` / `SCHEDULE_EXACT_ALARM`).
+  * `MedicationAlarmReceiver`: BroadcastReceiver triggering high-priority notification with instant actions ("Mark Taken", "Snooze 15m").
+  * `BootReceiver`: Reschedules active medication alarms upon device reboot (`ACTION_BOOT_COMPLETED`).
+  * Android 13+ runtime permission flow for `POST_NOTIFICATIONS`.
+* **Step 4 — Medication Management UI (`ui/medications/`):**
+  * **Today's Schedule Section:** Grouped by time (Morning, Afternoon, Evening) with quick one-tap `[Mark as Taken]` buttons.
+  * **My Prescriptions Section:** Active medications list showing dosages, schedules, and active alarm bells.
+  * **Add/Edit Medication Bottom Sheet:** Name, dosage amount, unit picker (tablet, mg, ml, drops), daily reminder times, and frequency picker.
+* **Step 5 — Testing & Localization:**
+  * Unit tests for DAO, adherence logic, and alarm scheduling.
+  * Instrumented Compose UI tests for bottom nav tab switching and medication form validation.
+  * Full English and Greek localization.
 
-#### Milestone 3.2: Medication Tracking & Local Reminders
-* **Goal:** Track daily medications and configure local notifications to take them on time.
-* **Step 1 — Database Entities & DAO (`database/`):**
-  * Create `Medication` entity (`id`, `name`, `dosage`, `unit`, `frequency`, `instructions`, `isActive`).
-  * Create `MedicationReminder` entity (`id`, `medicationId`, `hour`, `minute`, `daysOfWeek`).
-  * Create `MedicationDao` and repository methods.
-* **Step 2 — Local Notification Scheduling:**
-  * Implement `AlarmManager` scheduler with exact alarm support (`SCHEDULE_EXACT_ALARM`) and a `BroadcastReceiver` that triggers a high-priority notification with an action button ("Mark Taken").
-* **Step 3 — Medication Management UI:**
-  * Dedicated "Medications" screen/bottom sheet to add, edit, or deactivate medications and set alarm times.
-* **Step 4 — Android Permissions:**
-  * Request runtime `POST_NOTIFICATIONS` permission on Android 13+ (API 33).
-
-#### Milestone 3.3: Symptom Logging & Calendar Tracker
-* **Goal:** Log daily symptoms (headaches, chest pain, palpitations, fatigue) with severity ratings (1–5) on a calendar view.
-* **Step 1 — Database Entity (`database/`):**
-  * Create `SymptomEntry` (`id`, `symptomType`, `severity`, `timestamp`, `notes`).
-* **Step 2 — Predefined Common Symptoms:**
-  * Standardized health symptoms list (Dizziness, Headache, Palpitations, Shortness of breath, Fatigue, Custom).
-* **Step 3 — Calendar UI View:**
-  * Monthly/weekly calendar composable displaying dots on days with logged symptoms.
-* **Step 4 — Clinical Correlation View:**
-  * Cross-reference symptom dates with blood pressure or blood sugar readings to help identify triggers.
+#### Milestone 3.2: Symptom Logging & Clinical Correlation Calendar (Branch 2: `feature/symptoms-and-calendar`)
+* **Goal:** Enable discrete symptom logging with severity ratings and an interactive calendar view that correlates symptom spikes with vital sign readings and medication intake.
+* **Step 1 — Database Entity & DAO (`database/`):**
+  * `SymptomEntry` entity (`id`, `symptomType` [enum or standardized key], `severity` [1–5 Int], `timestamp`, `notes`).
+  * `SymptomDao` with range queries for calendar days and month intervals.
+* **Step 2 — Symptom Catalog & Clinical Categories:**
+  * Predefined common symptoms: Dizziness, Headache, Palpitations / Heart Flutter, Shortness of Breath, Chest Discomfort, Fatigue, Nausea, and Custom.
+  * Severity scale: 1 (Very Mild) to 5 (Severe) with intuitive descriptive labels and color progression.
+* **Step 3 — Interactive Calendar Composable (`ui/calendar/`):**
+  * Monthly grid with previous/next month navigation and week day headers.
+  * Indicator dots beneath calendar dates:
+    * 🟡 Amber dot = Symptom logged on this date.
+    * 🔴 / 🟢 Red/Green dot = Vital signs recorded on this date (colored by ISH/WHO clinical stage).
+    * 🔵 Blue dot = Medication doses taken on this date.
+* **Step 4 — Day Detail & Clinical Correlation View:**
+  * Tapping any day opens a unified Day Detail summary:
+    * Logged symptoms with severity chips and exact timestamps.
+    * Vital signs recorded on that date (e.g. Blood Pressure 142/92 mmHg at 09:40 AM).
+    * Medication adherence status for that date.
+  * "Log Symptom" modal bottom sheet with symptom selector, severity slider, and time picker.
+* **Step 5 — Testing & Localization:**
+  * Unit tests for symptom models and date range aggregations.
+  * Instrumented UI tests for calendar navigation, date selection, and symptom creation.
+  * Full English and Greek localization.
 
 ---
 
