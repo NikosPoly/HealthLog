@@ -100,12 +100,12 @@ This document outlines the architectural strategy, feature specifications, and i
 │ 1.2 "How to Measure" Educational Guide (Completed)                     │
 │ 1.3 Condition Breakdown Statistics & Insights (Completed)              │
 ├────────────────────────────────────────────────────────────────────────┤
-│ PHASE 2: Data Visualization, Filtering & Doctor Reporting (Next Focus) │
+│ PHASE 2: Data Visualization, Filtering & Doctor Reporting (Completed)  │
 │ 2.1 Chart Normal Ranges / Target Bands (Vico charts) (Completed)       │
 │ 2.2 History List Filtering (Stages, Conditions, Dates) (Completed)    │
-│ 2.3 Doctor Report Export (On-device PDF generation, CSV, Print/Share)   │
+│ 2.3 Doctor Report Export (On-device PDF & CSV to Downloads) (Completed)│
 ├────────────────────────────────────────────────────────────────────────┤
-│ PHASE 3: Health Journal & Medication Management                        │
+│ PHASE 3: Health Journal & Medication Management (Next Focus)           │
 │ 3.1 Per-Measurement Contextual Notes (DB migration)                    │
 │ 3.2 Medication Management & Local Reminders (AlarmManager)             │
 │ 3.3 Symptom Logging & Calendar View                                    │
@@ -142,8 +142,12 @@ This document outlines the architectural strategy, feature specifications, and i
    * Multi-stage clinical filtering (BP, Glucose, Pulse, Weight), physical condition filtering (Arm, Posture, Meal Context, Arrhythmia Yes & No), and date filtering (Today, 7 days, 30 days, Custom date span picker).
    * Live matching results counter on confirmation button (`Show all (52)`, `Show 12 entries`, `No matching entries (0)`).
    * State preservation across screen rotation via custom bundle-safe Savers, smooth landscape scrollability, and full Greek/English localization.
-6. **Doctor Export Report (PDF/CSV):**
-   * The most effective answer to Item E: allows patients to export and share comprehensive reports with their doctor.
+6. **Doctor Export Report (PDF/CSV) (2.3) (Completed):**
+   * On-device clinical PDF reports and raw CSV spreadsheets saved directly to public `Downloads/HealthLog/`.
+   * Export modal bottom sheet with format toggle (PDF / CSV), metric scope (Current / All), and date ranges (7 days, 30 days, all time, custom date picker).
+   * Native A4 PDF report with branding, summary statistics box, trajectory graph, chronological table with clinical stage evaluations, and multi-page pagination.
+   * RFC 4180 compliant CSV export with UTF-8 BOM encoding for seamless Microsoft Excel compatibility.
+   * Instant feedback snackbar upon completion with zero external sharing/cloud dependencies.
 
 #### **Phase 3: Expanded Daily Tracking**
 7. **Per-Measurement Notes:**
@@ -275,21 +279,30 @@ This document outlines the architectural strategy, feature specifications, and i
   * 22 dedicated unit tests in `HistoryFilterTest.kt` verifying stage filtering, condition combinations, date spans, and rotation roundtrip serialization (all 222 app unit tests passing).
   * 6 dedicated instrumented Compose tests in `HistoryFilterUiTest.kt` verifying FilterBar toggling, bottom sheet opening, deferred apply, chip removal, quick reset, and dynamic button counter (all 16 connected history tests passing on emulator).
 
-#### Milestone 2.3: Doctor Report Export (PDF & CSV)
-* **Goal:** Enable users to export, print, or share a clean medical report directly with their physician (100% on-device, private, zero cost).
-* **Step 1 — Options Dialog:**
-  * Date range selector (Last 7 days, Last 30 days, Custom range) and format selector (PDF or CSV).
-* **Step 2 — Native Android PDF Generation (`ui/export/`):**
-  * Use `android.graphics.pdf.PdfDocument` to lay out a clean 1–2 page PDF report:
-    * Header: App brand, patient name placeholder, export date, date range.
-    * Summary box: Average, min, max readings, and % in elevated stages.
-    * Mini chart snapshot or trajectory graph.
-    * Chronological table: Date, Time, Values, Arm, Posture, Meal Context, Arrhythmia, and Notes.
-* **Step 3 — CSV Exporter:**
-  * Stream formatted comma-separated values for spreadsheet analysis.
-* **Step 4 — Direct Print & Share Sheet:**
-  * Integrate `PrintManager` via `PrintDocumentAdapter` for direct Wi-Fi printing.
-  * Use `FileProvider` with `Intent(Intent.ACTION_SEND)` to share directly via Email, WhatsApp, or Drive.
+#### Milestone 2.3: Doctor Report Export (PDF & CSV) (Completed)
+* **Goal:** Enable users to export clean medical reports (PDF & CSV) directly to the device's Downloads folder without third-party share popups or cloud dependencies (100% on-device, private, zero cost).
+* **Step 1 — Options Dialog (`ui/export/ExportDialog.kt`):**
+  * Modal bottom sheet for configuring export format (PDF vs. CSV), measurement scope (Current metric vs. All metrics), and date range (Last 7 days, Last 30 days, All time, Custom date range picker).
+  * Live matching entries validation that disables the download action when 0 records match.
+  * Added download vector button (`ic_download.xml`) in History top app bar and full English/Greek localization.
+* **Step 2 — Native Android PDF Generation (`ui/export/PdfReportGenerator.kt` & `ExportFileManager.kt`):**
+  * Native `android.graphics.pdf.PdfDocument` implementation formatted for standard A4 printing.
+  * Clinical layout:
+    * Header: App brand, report title, generation date, metric scope, and date range.
+    * Summary box: Total readings, average, lowest, and highest values.
+    * Trajectory graph: Continuous vital signs trend line with background fill and min/max markers.
+    * Chronological table: Date, Time, formatted values (e.g. `120/80 (72 bpm)`), evaluated clinical stages with stage coloring, and condition flags (Arm, Posture, Meal Context, Arrhythmia).
+    * Multi-page pagination: Automatic page overflow detection, repeating headers, and bottom page numbering (`Page X`).
+  * Direct persistence to device's public `Downloads/HealthLog/` folder via `MediaStore.Downloads` on API 29+ with legacy storage fallback.
+  * Clean finish snackbar (`"PDF report saved to Downloads"` / `"Η αναφορά PDF αποθηκεύτηκε στις Λήψεις"`).
+* **Step 3 — CSV Exporter (`ui/export/CsvReportGenerator.kt`):**
+  * RFC 4180 compliant CSV stream containing all reading values, secondary values, pulse, units, clinical stages, and condition flags.
+  * UTF-8 Byte Order Mark (BOM: `EF BB BF`) for out-of-the-box Excel compatibility with international characters.
+  * Direct save to `Downloads/HealthLog/` with clean finish snackbar (`"CSV data saved to Downloads"` / `"Τα δεδομένα CSV αποθηκεύτηκαν στις Λήψεις"`).
+* **Testing & Verification:**
+  * 3 dedicated JVM unit tests in `ExportConfigTest.kt`, `ExportConfigPdfTest.kt`, and `CsvReportGeneratorTest.kt` (all 230 app unit tests passing).
+  * 7 dedicated instrumented Compose tests in `ExportDialogUiTest.kt` verifying format switching, scope selection, chip selection, live validation, cancel, and close actions.
+  * 3 dedicated on-device generator tests in `ExportGeneratorsDeviceTest.kt` verifying real A4 PDF creation (`%PDF` magic header), CSV creation with UTF-8 BOM, and MediaStore Downloads insertion.
 
 ---
 

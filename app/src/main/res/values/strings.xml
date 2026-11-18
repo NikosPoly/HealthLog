@@ -299,4 +299,25 @@
         <item quantity="other">Show %d entries</item>
     </plurals>
     <string name="filter_no_matching_entries">No matching entries (0)</string>
+
+    <!-- Doctor Report Export -->
+    <string name="action_export">Export</string>
+    <string name="export_title">Export Report</string>
+    <string name="export_section_format">Format</string>
+    <string name="export_format_pdf">Doctor Report (PDF)</string>
+    <string name="export_format_pdf_desc">Formatted clinical summary with charts and tables</string>
+    <string name="export_format_csv">Spreadsheet Data (CSV)</string>
+    <string name="export_format_csv_desc">Raw values and condition tags for Excel</string>
+    <string name="export_section_scope">Measurements</string>
+    <string name="export_scope_current">Current only</string>
+    <string name="export_scope_all">All metrics</string>
+    <string name="export_section_date_range">Date Range</string>
+    <string name="export_action_export">Download</string>
+    <string name="export_action_cancel">Cancel</string>
+    <string name="export_entries_count">%d entries will be exported</string>
+    <string name="export_no_entries">No measurements match this date range</string>
+    <string name="export_completed">Export completed</string>
+    <string name="export_pdf_saved_to_downloads">PDF report saved to Downloads</string>
+    <string name="export_csv_saved_to_downloads">CSV data saved to Downloads</string>
+    <string name="export_save_failed">Failed to save export file</string>
 </resources>

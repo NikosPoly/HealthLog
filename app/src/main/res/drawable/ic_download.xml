@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+
+    <group
+        android:pivotX="256"
+        android:pivotY="256"
+        android:scaleX="0.8"
+        android:scaleY="0.8">
+
+    <!-- File outline -->
+    <path
+        android:strokeColor="#2196F3"
+        android:strokeWidth="28"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M128,14 H325 L445,143 V437 Q445,497 385,497 H128 Q68,497 68,437 V74 Q68,14 128,14 Z" />
+
+    <!-- Folded corner -->
+    <path
+        android:strokeColor="#2196F3"
+        android:strokeWidth="28"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M325,20 V95 Q325,143 373,143 H440" />
+
+    <!-- Download arrow -->
+    <path
+        android:strokeColor="#2196F3"
+        android:strokeWidth="28"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M258,182 V342 M186,270 L258,345 L330,270" />
+
+    <!-- Base line -->
+    <path
+        android:strokeColor="#2196F3"
+        android:strokeWidth="28"
+        android:strokeLineCap="round"
+        android:pathData="M158,412 H358" />
+
+    </group>
+</vector>
