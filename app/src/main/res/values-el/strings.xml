@@ -23,6 +23,16 @@
     <string name="medications_placeholder_desc">Παρακολουθήστε τα καθημερινά σας φάρμακα, τις δοσολογίες και ρυθμίστε τοπικές υπενθυμίσεις.</string>
     <string name="medications_placeholder_badge">Σύντομα στο Βήμα 2</string>
 
+    <!-- Medication Notifications -->
+    <string name="notification_channel_medications_name">Υπενθυμίσεις Φαρμάκων</string>
+    <string name="notification_channel_medications_desc">Ειδοποιήσεις και υπενθυμίσεις για τη λήψη των προγραμματισμένων φαρμάκων.</string>
+    <string name="notification_medication_title">Ώρα για %1$s</string>
+    <string name="notification_medication_text">%1$s %2$s • %3$s</string>
+    <string name="notification_medication_text_no_instructions">%1$s %2$s</string>
+    <string name="notification_action_mark_taken">Ελήφθη</string>
+    <string name="notification_action_snooze">Αναβολή 15λ</string>
+    <string name="notification_dose_taken_toast">Καταγράφηκε η λήψη: %1$s</string>
+
     <string name="calendar_title">Ημερολόγιο Υγείας</string>
     <string name="calendar_placeholder_title">Συμπτώματα &amp; Κλινικό Ημερολόγιο</string>
     <string name="calendar_placeholder_desc">Καταγράψτε καθημερινά συμπτώματα με βαθμολογία σοβαρότητας και δείτε συσχετίσεις με τις μετρήσεις σας.</string>

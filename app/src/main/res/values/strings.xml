@@ -28,6 +28,16 @@
     <string name="medications_placeholder_desc">Track your daily prescriptions, dosages, and configure local notification alarms.</string>
     <string name="medications_placeholder_badge">Coming in Step 2</string>
 
+    <!-- Medication Notifications -->
+    <string name="notification_channel_medications_name">Medication Reminders</string>
+    <string name="notification_channel_medications_desc">Alerts and reminders to take scheduled medications.</string>
+    <string name="notification_medication_title">Time for %1$s</string>
+    <string name="notification_medication_text">%1$s %2$s • %3$s</string>
+    <string name="notification_medication_text_no_instructions">%1$s %2$s</string>
+    <string name="notification_action_mark_taken">Mark Taken</string>
+    <string name="notification_action_snooze">Snooze 15m</string>
+    <string name="notification_dose_taken_toast">Marked %1$s as taken</string>
+
     <string name="calendar_title">Health Calendar</string>
     <string name="calendar_placeholder_title">Symptoms &amp; Clinical Calendar</string>
     <string name="calendar_placeholder_desc">Log daily symptoms with severity ratings and view correlations with your vital signs.</string>

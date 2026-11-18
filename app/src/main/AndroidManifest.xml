@@ -2,6 +2,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Offline local alarm and notification permissions -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -22,6 +28,26 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- BroadcastReceiver for triggering local medication alarm notifications -->
+        <receiver
+            android:name=".notifications.MedicationAlarmReceiver"
+            android:exported="false" />
+
+        <!-- BroadcastReceiver for handling notification action buttons (Mark Taken, Snooze) -->
+        <receiver
+            android:name=".notifications.MedicationActionReceiver"
+            android:exported="false" />
+
+        <!-- BroadcastReceiver for rescheduling active alarms after phone restarts -->
+        <receiver
+            android:name=".notifications.BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>
