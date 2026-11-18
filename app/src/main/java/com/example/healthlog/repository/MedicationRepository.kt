@@ -25,6 +25,9 @@ class MedicationRepository(
     suspend fun getAllActiveReminders(): List<MedicationReminder> =
         dao.getAllActiveReminders()
 
+    suspend fun getRemindersForMedication(medicationId: Long): List<MedicationReminder> =
+        dao.getRemindersForMedication(medicationId)
+
     suspend fun saveMedication(
         medication: Medication,
         reminders: List<MedicationReminder> = emptyList()
@@ -81,7 +84,30 @@ class MedicationRepository(
         )
     }
 
+    suspend fun recordAsNeededDose(
+        medicationId: Long,
+        scheduledDate: String,
+        scheduledTime: String,
+        status: String = "TAKEN",
+        notes: String? = null
+    ): Long {
+        return dao.insertDoseLog(
+            MedicationDoseLog(
+                medicationId = medicationId,
+                scheduledDate = scheduledDate,
+                scheduledTime = scheduledTime,
+                actionTimestamp = System.currentTimeMillis(),
+                status = status,
+                notes = notes
+            )
+        )
+    }
+
     suspend fun deleteDose(medicationId: Long, scheduledDate: String, scheduledTime: String) {
         dao.deleteDoseLog(medicationId, scheduledDate, scheduledTime)
+    }
+
+    suspend fun deleteDoseById(id: Long) {
+        dao.deleteDoseLog(id)
     }
 }

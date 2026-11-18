@@ -79,6 +79,8 @@ fun HealthLogNavHost(
                 )
             }
 
+            val context = androidx.compose.ui.platform.LocalContext.current
+
             when (selectedTab) {
                 NavigationTab.VITALS -> {
                     HomeScreen(
@@ -96,9 +98,22 @@ fun HealthLogNavHost(
                 }
 
                 NavigationTab.MEDICATIONS -> {
-                    MedicationsPlaceholderScreen(
-                        bottomBar = bottomBarComposable
-                    )
+                    if (medicationRepository != null) {
+                        val medicationsViewModel: com.example.healthlog.ui.medications.MedicationsViewModel = viewModel(
+                            factory = com.example.healthlog.ui.medications.MedicationsViewModel.factory(
+                                medicationRepository,
+                                context
+                            )
+                        )
+                        com.example.healthlog.ui.medications.MedicationsScreen(
+                            viewModel = medicationsViewModel,
+                            bottomBar = bottomBarComposable
+                        )
+                    } else {
+                        MedicationsPlaceholderScreen(
+                            bottomBar = bottomBarComposable
+                        )
+                    }
                 }
 
                 NavigationTab.CALENDAR -> {
