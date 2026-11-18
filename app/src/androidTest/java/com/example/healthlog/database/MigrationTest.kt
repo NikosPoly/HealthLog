@@ -107,7 +107,7 @@ class MigrationTest {
         }
 
         helper.runMigrationsAndValidate(
-            testDatabase, 4, true, HealthDatabase.MIGRATION_1_2, HealthDatabase.MIGRATION_2_3, HealthDatabase.MIGRATION_3_4
+            testDatabase, 5, true, HealthDatabase.MIGRATION_1_2, HealthDatabase.MIGRATION_2_3, HealthDatabase.MIGRATION_3_4, HealthDatabase.MIGRATION_4_5
         ).close()
 
         val database = Room.databaseBuilder(
@@ -115,7 +115,7 @@ class MigrationTest {
             HealthDatabase::class.java,
             testDatabase
         )
-            .addMigrations(HealthDatabase.MIGRATION_1_2, HealthDatabase.MIGRATION_2_3, HealthDatabase.MIGRATION_3_4)
+            .addMigrations(HealthDatabase.MIGRATION_1_2, HealthDatabase.MIGRATION_2_3, HealthDatabase.MIGRATION_3_4, HealthDatabase.MIGRATION_4_5)
             .build()
 
         try {
@@ -190,6 +190,76 @@ class MigrationTest {
             assertTrue(cursor.isNull(7))
             assertTrue(cursor.isNull(8))
             assertTrue(cursor.isNull(9))
+        }
+    }
+
+    // Version 4 → 5: creates medications, reminders, and dose log tables.
+    // Existing measurements are completely preserved.
+    @Test
+    fun migrate4To5_createsMedicationTablesAndKeepsMeasurements() {
+        helper.createDatabase(testDatabase, 4).apply {
+            execSQL(
+                "INSERT INTO measurements (id, type, value, secondaryValue, tertiaryValue, timestamp, " +
+                        "hasArrhythmia, mealContext, arm, bodyPosition) " +
+                        "VALUES (1, 'BLOOD_PRESSURE', 125, 82, 68, 1000, 0, null, 'LEFT', 'SITTING')"
+            )
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(
+            testDatabase, 5, true, HealthDatabase.MIGRATION_4_5
+        )
+
+        // Verify existing measurement is intact
+        db.query("SELECT id, type, value, secondaryValue, tertiaryValue, arm, bodyPosition FROM measurements").use { cursor ->
+            assertEquals(1, cursor.count)
+            cursor.moveToFirst()
+            assertEquals(1L, cursor.getLong(0))
+            assertEquals("BLOOD_PRESSURE", cursor.getString(1))
+            assertEquals(125.0, cursor.getDouble(2), 0.0)
+            assertEquals(82.0, cursor.getDouble(3), 0.0)
+            assertEquals(68.0, cursor.getDouble(4), 0.0)
+            assertEquals("LEFT", cursor.getString(5))
+            assertEquals("SITTING", cursor.getString(6))
+        }
+
+        // Verify new tables exist and can accept records
+        db.execSQL(
+            "INSERT INTO medications (id, name, dosage, unit, frequency, instructions, isActive, createdAt) " +
+                    "VALUES (1, 'Amlodipine', '5', 'mg', 'DAILY', 'After breakfast', 1, 2000)"
+        )
+        db.execSQL(
+            "INSERT INTO medication_reminders (id, medicationId, hour, minute, daysOfWeekMask, isEnabled) " +
+                    "VALUES (1, 1, 8, 30, 127, 1)"
+        )
+        db.execSQL(
+            "INSERT INTO medication_dose_logs (id, medicationId, scheduledDate, scheduledTime, actionTimestamp, status, notes) " +
+                    "VALUES (1, 1, '2026-11-18', '08:30', 2100, 'TAKEN', null)"
+        )
+
+        db.query("SELECT name, dosage, unit, isActive FROM medications WHERE id = 1").use { cursor ->
+            assertEquals(1, cursor.count)
+            cursor.moveToFirst()
+            assertEquals("Amlodipine", cursor.getString(0))
+            assertEquals("5", cursor.getString(1))
+            assertEquals("mg", cursor.getString(2))
+            assertEquals(1, cursor.getInt(3))
+        }
+
+        db.query("SELECT medicationId, hour, minute FROM medication_reminders WHERE id = 1").use { cursor ->
+            assertEquals(1, cursor.count)
+            cursor.moveToFirst()
+            assertEquals(1L, cursor.getLong(0))
+            assertEquals(8, cursor.getInt(1))
+            assertEquals(30, cursor.getInt(2))
+        }
+
+        db.query("SELECT medicationId, scheduledDate, status FROM medication_dose_logs WHERE id = 1").use { cursor ->
+            assertEquals(1, cursor.count)
+            cursor.moveToFirst()
+            assertEquals(1L, cursor.getLong(0))
+            assertEquals("2026-11-18", cursor.getString(1))
+            assertEquals("TAKEN", cursor.getString(2))
         }
     }
 }

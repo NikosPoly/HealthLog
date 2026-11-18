@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.example.healthlog.database.HealthDatabase
 import com.example.healthlog.repository.MeasurementRepository
+import com.example.healthlog.repository.MedicationRepository
 import com.example.healthlog.ui.HealthLogNavHost
 import com.example.healthlog.ui.theme.HealthLogTheme
 
@@ -14,15 +15,16 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        val dao = HealthDatabase
-            .getDatabase(applicationContext)
-            .measurementDao()
-
-        val repository = MeasurementRepository(dao)
+        val database = HealthDatabase.getDatabase(applicationContext)
+        val measurementRepository = MeasurementRepository(database.measurementDao())
+        val medicationRepository = MedicationRepository(database.medicationDao())
 
         setContent {
             HealthLogTheme {
-                HealthLogNavHost(repository)
+                HealthLogNavHost(
+                    repository = measurementRepository,
+                    medicationRepository = medicationRepository
+                )
             }
         }
     }

@@ -8,13 +8,19 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [Measurement::class],
-    version = 4,
+    entities = [
+        Measurement::class,
+        Medication::class,
+        MedicationReminder::class,
+        MedicationDoseLog::class,
+    ],
+    version = 5,
     exportSchema = true
 )
 abstract class HealthDatabase : RoomDatabase() {
 
     abstract fun measurementDao(): MeasurementDao
+    abstract fun medicationDao(): MedicationDao
 
     companion object {
         @Volatile
@@ -55,6 +61,65 @@ abstract class HealthDatabase : RoomDatabase() {
             }
         }
 
+        // Version 4 → 5: add tables for medications, reminders, and dose tracking:
+        // - medications
+        // - medication_reminders
+        // - medication_dose_logs
+        internal val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `medications` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `name` TEXT NOT NULL,
+                        `dosage` TEXT NOT NULL,
+                        `unit` TEXT NOT NULL,
+                        `frequency` TEXT NOT NULL,
+                        `instructions` TEXT,
+                        `isActive` INTEGER NOT NULL,
+                        `createdAt` INTEGER NOT NULL
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `medication_reminders` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `medicationId` INTEGER NOT NULL,
+                        `hour` INTEGER NOT NULL,
+                        `minute` INTEGER NOT NULL,
+                        `daysOfWeekMask` INTEGER NOT NULL,
+                        `isEnabled` INTEGER NOT NULL,
+                        FOREIGN KEY(`medicationId`) REFERENCES `medications`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_medication_reminders_medicationId` ON `medication_reminders` (`medicationId`)"
+                )
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `medication_dose_logs` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `medicationId` INTEGER NOT NULL,
+                        `scheduledDate` TEXT NOT NULL,
+                        `scheduledTime` TEXT NOT NULL,
+                        `actionTimestamp` INTEGER NOT NULL,
+                        `status` TEXT NOT NULL,
+                        `notes` TEXT,
+                        FOREIGN KEY(`medicationId`) REFERENCES `medications`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_medication_dose_logs_medicationId` ON `medication_dose_logs` (`medicationId`)"
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_medication_dose_logs_scheduledDate` ON `medication_dose_logs` (`scheduledDate`)"
+                )
+            }
+        }
+
         fun getDatabase(context: Context): HealthDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -62,7 +127,7 @@ abstract class HealthDatabase : RoomDatabase() {
                     HealthDatabase::class.java,
                     "health_database"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                     .build()
 
                 INSTANCE = instance

@@ -16,6 +16,7 @@ import androidx.navigation.navArgument
 import com.example.healthlog.guidelines.protocols.MeasurementGuideScreen
 import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.repository.MeasurementRepository
+import com.example.healthlog.repository.MedicationRepository
 import com.example.healthlog.ui.calendar.CalendarPlaceholderScreen
 import com.example.healthlog.ui.details.MeasurementDetailsScreen
 import com.example.healthlog.ui.details.MeasurementDetailsViewModel
@@ -42,6 +43,7 @@ private object Routes {
 @Composable
 fun HealthLogNavHost(
     repository: MeasurementRepository,
+    medicationRepository: MedicationRepository? = null,
 ) {
     val navController = rememberNavController()
 
