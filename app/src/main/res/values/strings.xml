@@ -108,6 +108,34 @@
     <string name="calendar_placeholder_desc">Log daily symptoms with severity ratings and view correlations with your vital signs.</string>
     <string name="calendar_placeholder_badge">Coming in Milestone 3.2</string>
 
+    <!-- Symptoms catalog -->
+    <string name="symptom_headache">Headache</string>
+    <string name="symptom_dizziness">Dizziness</string>
+    <string name="symptom_palpitations">Palpitations</string>
+    <string name="symptom_chest_discomfort">Chest Discomfort</string>
+    <string name="symptom_shortness_of_breath">Shortness of Breath</string>
+    <string name="symptom_fatigue">Fatigue</string>
+    <string name="symptom_nausea">Nausea</string>
+    <string name="symptom_custom">Other / Custom</string>
+
+    <!-- Symptom severity -->
+    <string name="severity_very_mild">Very Mild</string>
+    <string name="severity_mild">Mild</string>
+    <string name="severity_moderate">Moderate</string>
+    <string name="severity_severe">Severe</string>
+    <string name="severity_very_severe">Very Severe</string>
+
+    <!-- Calendar view & day detail -->
+    <string name="calendar_action_log_symptom">Log Symptom</string>
+    <string name="calendar_day_empty">No health events recorded for this date.</string>
+    <string name="calendar_section_symptoms">Symptoms</string>
+    <string name="calendar_section_vitals">Vital Signs</string>
+    <string name="calendar_section_medications">Medications Taken</string>
+    <string name="calendar_jump_today">Today</string>
+    <string name="calendar_legend_vitals">Vitals</string>
+    <string name="calendar_legend_symptoms">Symptoms</string>
+    <string name="calendar_legend_meds">Meds</string>
+
     <!-- Home screen -->
     <string name="home_title" translatable="false">HealthLog</string>
     <string name="home_new_entry">New Entry</string>

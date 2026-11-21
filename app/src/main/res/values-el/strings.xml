@@ -103,6 +103,34 @@
     <string name="calendar_placeholder_desc">Καταγράψτε καθημερινά συμπτώματα με βαθμολογία σοβαρότητας και δείτε συσχετίσεις με τις μετρήσεις σας.</string>
     <string name="calendar_placeholder_badge">Σύντομα στο Ορόσημο 3.2</string>
 
+    <!-- Symptoms catalog -->
+    <string name="symptom_headache">Πονοκέφαλος</string>
+    <string name="symptom_dizziness">Ζαλάδα</string>
+    <string name="symptom_palpitations">Ταχυπαλμία / Αρρυθμία</string>
+    <string name="symptom_chest_discomfort">Ενόχληση στο Στήθος</string>
+    <string name="symptom_shortness_of_breath">Δύσπνοια</string>
+    <string name="symptom_fatigue">Κόπωση</string>
+    <string name="symptom_nausea">Ναυτία</string>
+    <string name="symptom_custom">Άλλο / Προσαρμοσμένο</string>
+
+    <!-- Symptom severity -->
+    <string name="severity_very_mild">Πολύ Ήπιο</string>
+    <string name="severity_mild">Ήπιο</string>
+    <string name="severity_moderate">Μέτριο</string>
+    <string name="severity_severe">Έντονο</string>
+    <string name="severity_very_severe">Πολύ Έντονο</string>
+
+    <!-- Calendar view & day detail -->
+    <string name="calendar_action_log_symptom">Καταγραφή Συμπτώματος</string>
+    <string name="calendar_day_empty">Δεν καταγράφηκαν συμβάντα υγείας αυτή την ημέρα.</string>
+    <string name="calendar_section_symptoms">Συμπτώματα</string>
+    <string name="calendar_section_vitals">Ζωτικές Μετρήσεις</string>
+    <string name="calendar_section_medications">Ληφθέντα Φάρμακα</string>
+    <string name="calendar_jump_today">Σήμερα</string>
+    <string name="calendar_legend_vitals">Μετρήσεις</string>
+    <string name="calendar_legend_symptoms">Συμπτώματα</string>
+    <string name="calendar_legend_meds">Φάρμακα</string>
+
     <!-- Home screen -->
     <string name="home_new_entry">Νέα Καταχώριση</string>
 
