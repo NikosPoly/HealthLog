@@ -191,4 +191,49 @@ class CalendarViewModelTest {
         assertTrue(symptomDao.symptoms.isEmpty())
         assertNull(viewModel.symptomToDelete.value)
     }
+
+    @Test
+    fun editSymptom_updatesExistingRecordWithoutDuplicating() = runBlocking {
+        viewModel.onOpenAddSymptom()
+        viewModel.onSaveSymptom(
+            symptomType = "HEADACHE",
+            customName = null,
+            severity = 2,
+            timestamp = 1763737200000L,
+            notes = "Initial note"
+        )
+
+        val original = symptomDao.symptoms.single()
+
+        // Open edit sheet and update severity & custom type
+        viewModel.onOpenEditSymptom(original)
+        assertTrue(viewModel.showAddEditSheet.value)
+        assertEquals(original, viewModel.editingSymptom.value)
+
+        viewModel.onSaveSymptom(
+            symptomType = "CUSTOM",
+            customName = "Neck tension",
+            severity = 4,
+            timestamp = original.timestamp,
+            notes = "Updated note"
+        )
+
+        assertEquals(1, symptomDao.symptoms.size)
+        val updated = symptomDao.symptoms.single()
+        assertEquals(original.id, updated.id)
+        assertEquals("CUSTOM", updated.symptomType)
+        assertEquals("Neck tension", updated.customName)
+        assertEquals(4, updated.severity)
+        assertEquals("Updated note", updated.notes)
+        assertNull(viewModel.editingSymptom.value)
+    }
+
+    @Test
+    fun selectMonthYear_clampsDayToShorterMonthLength() {
+        viewModel.onSelectDate(LocalDate.of(2026, 1, 31))
+        viewModel.onSelectMonthYear(YearMonth.of(2026, 2))
+
+        assertEquals(YearMonth.of(2026, 2), viewModel.displayedMonth.value)
+        assertEquals(LocalDate.of(2026, 2, 28), viewModel.selectedDate.value)
+    }
 }

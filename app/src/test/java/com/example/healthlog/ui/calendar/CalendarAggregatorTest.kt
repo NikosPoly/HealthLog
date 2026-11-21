@@ -188,4 +188,59 @@ class CalendarAggregatorTest {
         // Vital dot color always uses the calendar legend green color
         assertTrue(day18.vitalDotColor == CalendarVitalDotColor)
     }
+
+    @Test
+    fun parseIsoDateOrNull_handlesValidAndInvalidInputs() {
+        assertEquals(LocalDate.of(2026, 11, 21), CalendarAggregator.parseIsoDateOrNull("2026-11-21"))
+        assertNull(CalendarAggregator.parseIsoDateOrNull("21/11/2026"))
+        assertNull(CalendarAggregator.parseIsoDateOrNull(""))
+        assertNull(CalendarAggregator.parseIsoDateOrNull("invalid"))
+    }
+
+    @Test
+    fun filterCompanionPulses_keepsPulseWhenBloodPressureHasNoPulseOrDifferentValue() {
+        val ts = LocalDate.of(2026, 11, 18).atTime(9, 0).atZone(fixedZone).toInstant().toEpochMilli()
+        val measurements = listOf(
+            // BP without pulse recorded
+            Measurement(
+                id = 1L,
+                type = MeasurementType.BLOOD_PRESSURE,
+                value = 120.0,
+                secondaryValue = 80.0,
+                tertiaryValue = null,
+                timestamp = ts
+            ),
+            // Separate pulse logged at same time
+            Measurement(
+                id = 2L,
+                type = MeasurementType.PULSE,
+                value = 72.0,
+                timestamp = ts
+            )
+        )
+
+        val filtered = CalendarAggregator.filterCompanionPulses(measurements)
+        assertEquals(listOf(1L, 2L), filtered.map { it.id })
+    }
+
+    @Test
+    fun calculateHighestVitalRank_evaluatesAcrossAllMeasurementTypes() {
+        assertNull(calculateHighestVitalRank(emptyList()))
+
+        // Normal pulse + Overweight BMI -> ALERT_ORANGE
+        val mixed = listOf(
+            Measurement(id = 1L, type = MeasurementType.PULSE, value = 72.0),
+            Measurement(id = 2L, type = MeasurementType.WEIGHT, value = 85.0) // BMI ~27.8 at 175cm
+        )
+        assertEquals(VitalClinicalRank.ALERT_ORANGE, calculateHighestVitalRank(mixed, latestHeightCm = 175.0))
+
+        // Hypertensive crisis beats everything
+        val withCrisis = mixed + Measurement(
+            id = 3L,
+            type = MeasurementType.BLOOD_PRESSURE,
+            value = 190.0,
+            secondaryValue = 125.0
+        )
+        assertEquals(VitalClinicalRank.CRISIS, calculateHighestVitalRank(withCrisis, latestHeightCm = 175.0))
+    }
 }

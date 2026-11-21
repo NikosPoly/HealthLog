@@ -136,6 +136,10 @@
     <string name="calendar_legend_symptoms">Symptoms</string>
     <string name="calendar_legend_meds">Meds</string>
     <string name="calendar_select_month_year">Select Month &amp; Year</string>
+    <string name="calendar_prev_month">Previous month</string>
+    <string name="calendar_next_month">Next month</string>
+    <string name="calendar_prev_year">Previous year</string>
+    <string name="calendar_next_year">Next year</string>
 
     <!-- Symptom Form Sheet -->
     <string name="symptom_form_title_add">Log Symptom</string>
@@ -148,6 +152,10 @@
     <string name="symptom_form_notes_label">Notes (Optional)</string>
     <string name="symptom_form_notes_hint">e.g. After exercise, triggered by light</string>
     <string name="symptom_form_save">Save Symptom</string>
+    <string name="symptom_action_edit">Edit symptom</string>
+    <string name="symptom_action_delete">Delete symptom</string>
+    <string name="symptom_delete_confirm_title">Delete Symptom?</string>
+    <string name="symptom_delete_confirm_desc">Are you sure you want to delete %1$s?</string>
 
     <!-- Home screen -->
     <string name="home_title" translatable="false">HealthLog</string>

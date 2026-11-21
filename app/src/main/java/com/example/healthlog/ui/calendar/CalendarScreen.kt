@@ -37,9 +37,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -162,6 +162,7 @@ fun CalendarContent(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(horizontal = 16.dp)
+                .testTag("calendar_list")
         ) {
             // Month Header with Prev/Next navigation and clickable Month/Year picker
             item(key = "month_header") {
@@ -311,8 +312,8 @@ fun CalendarContent(
 
         AlertDialog(
             onDismissRequest = onDismissDeleteDialog,
-            title = { Text(text = stringResource(R.string.medications_delete_confirm_title)) },
-            text = { Text(text = stringResource(R.string.medications_delete_confirm_desc, title)) },
+            title = { Text(text = stringResource(R.string.symptom_delete_confirm_title)) },
+            text = { Text(text = stringResource(R.string.symptom_delete_confirm_desc, title)) },
             confirmButton = {
                 TextButton(onClick = onConfirmDeleteSymptom) {
                     Text(
@@ -345,7 +346,7 @@ private fun MonthHeader(
         IconButton(onClick = onPrevious) {
             Icon(
                 painter = painterResource(R.drawable.ic_chevron_left),
-                contentDescription = null,
+                contentDescription = stringResource(R.string.calendar_prev_month),
                 tint = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.size(24.dp)
             )
@@ -379,7 +380,7 @@ private fun MonthHeader(
         IconButton(onClick = onNext) {
             Icon(
                 painter = painterResource(R.drawable.ic_chevron_right),
-                contentDescription = null,
+                contentDescription = stringResource(R.string.calendar_next_month),
                 tint = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.size(24.dp)
             )
@@ -419,7 +420,7 @@ private fun MonthYearPickerDialog(
                     IconButton(onClick = { selectedYear-- }) {
                         Icon(
                             painter = painterResource(R.drawable.ic_chevron_left),
-                            contentDescription = null,
+                            contentDescription = stringResource(R.string.calendar_prev_year),
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -434,7 +435,7 @@ private fun MonthYearPickerDialog(
                     IconButton(onClick = { selectedYear++ }) {
                         Icon(
                             painter = painterResource(R.drawable.ic_chevron_right),
-                            contentDescription = null,
+                            contentDescription = stringResource(R.string.calendar_next_year),
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -796,7 +797,7 @@ private fun SymptomItemCard(
             IconButton(onClick = onEdit) {
                 Icon(
                     painter = painterResource(R.drawable.ic_format_pdf),
-                    contentDescription = null,
+                    contentDescription = stringResource(R.string.symptom_action_edit),
                     modifier = Modifier.size(20.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -805,7 +806,7 @@ private fun SymptomItemCard(
             IconButton(onClick = onDelete) {
                 Icon(
                     painter = painterResource(R.drawable.ic_delete),
-                    contentDescription = null,
+                    contentDescription = stringResource(R.string.symptom_action_delete),
                     modifier = Modifier.size(20.dp),
                     tint = MaterialTheme.colorScheme.error
                 )

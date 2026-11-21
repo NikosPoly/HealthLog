@@ -131,6 +131,10 @@
     <string name="calendar_legend_symptoms">Συμπτώματα</string>
     <string name="calendar_legend_meds">Φάρμακα</string>
     <string name="calendar_select_month_year">Επιλογή Μήνα &amp; Έτους</string>
+    <string name="calendar_prev_month">Προηγούμενος μήνας</string>
+    <string name="calendar_next_month">Επόμενος μήνας</string>
+    <string name="calendar_prev_year">Προηγούμενο έτος</string>
+    <string name="calendar_next_year">Επόμενο έτος</string>
 
     <!-- Symptom Form Sheet -->
     <string name="symptom_form_title_add">Καταγραφή Συμπτώματος</string>
@@ -143,6 +147,10 @@
     <string name="symptom_form_notes_label">Σημειώσεις (Προαιρετικό)</string>
     <string name="symptom_form_notes_hint">π.χ. Μετά από άσκηση, πυροδοτήθηκε από φως</string>
     <string name="symptom_form_save">Αποθήκευση Συμπτώματος</string>
+    <string name="symptom_action_edit">Επεξεργασία συμπτώματος</string>
+    <string name="symptom_action_delete">Διαγραφή συμπτώματος</string>
+    <string name="symptom_delete_confirm_title">Διαγραφή Συμπτώματος;</string>
+    <string name="symptom_delete_confirm_desc">Είστε βέβαιοι ότι θέλετε να διαγράψετε το σύμπτωμα «%1$s»;</string>
 
     <!-- Home screen -->
     <string name="home_new_entry">Νέα Καταχώριση</string>
