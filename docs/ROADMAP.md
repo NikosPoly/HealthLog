@@ -338,30 +338,34 @@ This document outlines the architectural strategy, feature specifications, and i
   * Instrumented Compose UI tests for bottom nav tab switching and medication form validation.
   * Full English and Greek localization.
 
-#### Milestone 3.2: Symptom Logging & Clinical Correlation Calendar (Branch 2: `feature/symptoms-and-calendar`)
+#### Milestone 3.2: Symptom Logging & Clinical Correlation Calendar (Branch 2: `feature/symptoms-and-calendar`) (Completed)
 * **Goal:** Enable discrete symptom logging with severity ratings and an interactive calendar view that correlates symptom spikes with vital sign readings and medication intake.
-* **Step 1 — Database Entity & DAO (`database/`):**
-  * `SymptomEntry` entity (`id`, `symptomType` [enum or standardized key], `severity` [1–5 Int], `timestamp`, `notes`).
-  * `SymptomDao` with range queries for calendar days and month intervals.
-* **Step 2 — Symptom Catalog & Clinical Categories:**
-  * Predefined common symptoms: Dizziness, Headache, Palpitations / Heart Flutter, Shortness of Breath, Chest Discomfort, Fatigue, Nausea, and Custom.
-  * Severity scale: 1 (Very Mild) to 5 (Severe) with intuitive descriptive labels and color progression.
-* **Step 3 — Interactive Calendar Composable (`ui/calendar/`):**
-  * Monthly grid with previous/next month navigation and week day headers.
-  * Indicator dots beneath calendar dates:
-    * 🟡 Amber dot = Symptom logged on this date.
-    * 🔴 / 🟢 Red/Green dot = Vital signs recorded on this date (colored by ISH/WHO clinical stage).
+* **Step 1 — Database Entity & Migration (`database/`):**
+  * `SymptomEntry` entity (`id`, `symptomType` [enum name or custom], `customName`, `severity` [1–5 Int], `timestamp`, `notes`).
+  * `SymptomDao` with range queries for calendar days and month intervals (`getSymptomsInRange`, `getAllSymptoms`, `getSymptomById`).
+  * `SymptomRepository` integrated into Room `HealthDatabase` with automated migration `MIGRATION_4_5` preserving all measurement and medication data.
+* **Step 2 — Symptom Catalog & Clinical Categories (`model/` & `ui/calendar/`):**
+  * Predefined common symptoms: Headache, Dizziness, Palpitations, Chest Discomfort, Shortness of Breath, Fatigue, Nausea, and Other / Custom.
+  * Severity scale: 1 (Very Mild) to 5 (Very Severe) with soft tinted badges and level numbers.
+  * `CalendarDaySummary` & pure `CalendarAggregator`: aggregates measurements, medication dose logs, and symptoms per calendar day with date-range parsing and timezone resilience.
+* **Step 3 — Interactive Calendar Grid (`ui/calendar/`):**
+  * Monthly grid with weekday headers, previous/next month navigation arrows, and a clickable month/year title opening a 4×3 `MonthYearPickerDialog`.
+  * "Today" quick-jump action in the top app bar.
+  * Three category indicator dots beneath calendar dates matching the legend:
+    * 🟢 Green dot = Vitals recorded on this date.
+    * 🟠 Amber dot = Symptom logged on this date.
     * 🔵 Blue dot = Medication doses taken on this date.
+  * Selected day pill retains crisp category indicator dot colors.
 * **Step 4 — Day Detail & Clinical Correlation View:**
-  * Tapping any day opens a unified Day Detail summary:
-    * Logged symptoms with severity chips and exact timestamps.
-    * Vital signs recorded on that date (e.g. Blood Pressure 142/92 mmHg at 09:40 AM).
-    * Medication adherence status for that date.
-  * "Log Symptom" modal bottom sheet with symptom selector, severity slider, and time picker.
+  * Selecting any date renders a unified chronological timeline:
+    * **Symptoms:** severity badge, symptom title, timestamp, optional notes, with Edit and Delete actions.
+    * **Vital Signs:** formatted values, time, and multi-colored measurement type icon (`MeasurementType.icon`) matching the home screen; companion pulse readings automatically filtered out on the calendar page when part of a blood pressure reading to prevent duplicate cards; tapping opens full measurement details.
+    * **Medications Taken:** scheduled time, dose status (taken/skipped), and medication icon.
+  * `AddEditSymptomSheet`: modal bottom sheet with filter chips for predefined symptoms, custom symptom name input, live 1–5 severity slider with color-coded badge, date & time picker, and optional notes.
 * **Step 5 — Testing & Localization:**
-  * Unit tests for symptom models and date range aggregations.
-  * Instrumented UI tests for calendar navigation, date selection, and symptom creation.
-  * Full English and Greek localization.
+  * 264 passing unit tests covering database operations, migrations, aggregation calculations, ISO date parsing, companion pulse deduplication, and ViewModel state transitions.
+  * 7 instrumented Compose UI tests in `CalendarUiTest.kt` verifying calendar grid navigation, month/year dialog selection, day detail cards, symptom creation, custom symptom validation, and deletion dialog.
+  * 100% bilingual parity in English (`values/strings.xml`) and Greek (`values-el/strings.xml`).
 
 ---
 
