@@ -51,12 +51,14 @@ class MainActivity : ComponentActivity() {
         val database = HealthDatabase.getDatabase(applicationContext)
         val measurementRepository = MeasurementRepository(database.measurementDao())
         val medicationRepository = MedicationRepository(database.medicationDao())
+        val symptomRepository = com.example.healthlog.repository.SymptomRepository(database.symptomDao())
 
         setContent {
             HealthLogTheme {
                 HealthLogNavHost(
                     repository = measurementRepository,
-                    medicationRepository = medicationRepository
+                    medicationRepository = medicationRepository,
+                    symptomRepository = symptomRepository
                 )
             }
         }

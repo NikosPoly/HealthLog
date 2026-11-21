@@ -130,6 +130,7 @@
     <string name="calendar_legend_vitals">Μετρήσεις</string>
     <string name="calendar_legend_symptoms">Συμπτώματα</string>
     <string name="calendar_legend_meds">Φάρμακα</string>
+    <string name="calendar_select_month_year">Επιλογή Μήνα &amp; Έτους</string>
 
     <!-- Home screen -->
     <string name="home_new_entry">Νέα Καταχώριση</string>

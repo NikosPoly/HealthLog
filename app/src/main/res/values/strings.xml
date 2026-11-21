@@ -135,6 +135,7 @@
     <string name="calendar_legend_vitals">Vitals</string>
     <string name="calendar_legend_symptoms">Symptoms</string>
     <string name="calendar_legend_meds">Meds</string>
+    <string name="calendar_select_month_year">Select Month &amp; Year</string>
 
     <!-- Home screen -->
     <string name="home_title" translatable="false">HealthLog</string>

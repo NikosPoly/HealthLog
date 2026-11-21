@@ -44,6 +44,7 @@ private object Routes {
 fun HealthLogNavHost(
     repository: MeasurementRepository,
     medicationRepository: MedicationRepository? = null,
+    symptomRepository: com.example.healthlog.repository.SymptomRepository? = null,
 ) {
     val navController = rememberNavController()
 
@@ -117,9 +118,26 @@ fun HealthLogNavHost(
                 }
 
                 NavigationTab.CALENDAR -> {
-                    CalendarPlaceholderScreen(
-                        bottomBar = bottomBarComposable
-                    )
+                    if (medicationRepository != null && symptomRepository != null) {
+                        val calendarViewModel: com.example.healthlog.ui.calendar.CalendarViewModel = viewModel(
+                            factory = com.example.healthlog.ui.calendar.CalendarViewModel.factory(
+                                measurementRepository = repository,
+                                medicationRepository = medicationRepository,
+                                symptomRepository = symptomRepository
+                            )
+                        )
+                        com.example.healthlog.ui.calendar.CalendarScreen(
+                            viewModel = calendarViewModel,
+                            onOpenMeasurementDetails = { measurementId ->
+                                navController.navigate(Routes.details(measurementId)) { launchSingleTop = true }
+                            },
+                            bottomBar = bottomBarComposable
+                        )
+                    } else {
+                        CalendarPlaceholderScreen(
+                            bottomBar = bottomBarComposable
+                        )
+                    }
                 }
             }
         }
