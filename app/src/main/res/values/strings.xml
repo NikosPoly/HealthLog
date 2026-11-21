@@ -137,6 +137,18 @@
     <string name="calendar_legend_meds">Meds</string>
     <string name="calendar_select_month_year">Select Month &amp; Year</string>
 
+    <!-- Symptom Form Sheet -->
+    <string name="symptom_form_title_add">Log Symptom</string>
+    <string name="symptom_form_title_edit">Edit Symptom</string>
+    <string name="symptom_form_type_label">Symptom</string>
+    <string name="symptom_form_custom_label">Custom Symptom Name</string>
+    <string name="symptom_form_custom_hint">e.g. Back pain, Joint ache</string>
+    <string name="symptom_form_severity_label">Severity Level</string>
+    <string name="symptom_form_date_time_label">Date &amp; Time</string>
+    <string name="symptom_form_notes_label">Notes (Optional)</string>
+    <string name="symptom_form_notes_hint">e.g. After exercise, triggered by light</string>
+    <string name="symptom_form_save">Save Symptom</string>
+
     <!-- Home screen -->
     <string name="home_title" translatable="false">HealthLog</string>
     <string name="home_new_entry">New Entry</string>

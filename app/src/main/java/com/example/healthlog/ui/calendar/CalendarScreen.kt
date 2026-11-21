@@ -52,12 +52,12 @@ import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.database.MedicationDoseLog
 import com.example.healthlog.database.SymptomEntry
-import com.example.healthlog.guidelines.evaluateMeasurement
 import com.example.healthlog.model.SymptomSeverity
 import com.example.healthlog.model.SymptomType
 import com.example.healthlog.ui.format.decimalSeparator
 import com.example.healthlog.ui.format.formatLocale
 import com.example.healthlog.ui.format.formatMeasurementValue
+import com.example.healthlog.ui.theme.icon
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
@@ -84,6 +84,8 @@ fun CalendarScreen(
         onSelectDate = viewModel::onSelectDate,
         onOpenAddSymptom = viewModel::onOpenAddSymptom,
         onOpenEditSymptom = viewModel::onOpenEditSymptom,
+        onDismissAddEditSheet = viewModel::onDismissAddEditSheet,
+        onSaveSymptom = viewModel::onSaveSymptom,
         onRequestDeleteSymptom = viewModel::onRequestDeleteSymptom,
         onConfirmDeleteSymptom = viewModel::onConfirmDeleteSymptom,
         onDismissDeleteDialog = viewModel::onDismissDeleteDialog,
@@ -103,6 +105,8 @@ fun CalendarContent(
     onSelectDate: (LocalDate) -> Unit,
     onOpenAddSymptom: () -> Unit,
     onOpenEditSymptom: (SymptomEntry) -> Unit,
+    onDismissAddEditSheet: () -> Unit,
+    onSaveSymptom: (symptomType: String, customName: String?, severity: Int, timestamp: Long, notes: String?) -> Unit,
     onRequestDeleteSymptom: (SymptomEntry) -> Unit,
     onConfirmDeleteSymptom: () -> Unit,
     onDismissDeleteDialog: () -> Unit,
@@ -250,7 +254,6 @@ fun CalendarContent(
                 items(selectedSummary.measurements, key = { "meas_${it.id}" }) { measurement ->
                     MeasurementDayItemCard(
                         measurement = measurement,
-                        latestHeightCm = uiState.latestHeightCm,
                         onClick = { onOpenMeasurementDetails(measurement.id) }
                     )
                     Spacer(modifier = Modifier.height(6.dp))
@@ -273,6 +276,16 @@ fun CalendarContent(
                 Spacer(modifier = Modifier.height(80.dp))
             }
         }
+    }
+
+    // Add / Edit symptom modal bottom sheet
+    if (uiState.showAddEditSheet) {
+        AddEditSymptomSheet(
+            editingItem = uiState.editingSymptom,
+            defaultDate = uiState.selectedDate,
+            onDismiss = onDismissAddEditSheet,
+            onSave = onSaveSymptom
+        )
     }
 
     if (showMonthYearPicker) {
@@ -604,17 +617,26 @@ private fun CalendarDayCell(
             color = textColor
         )
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(3.dp))
 
-        // Indicator dots row (Vitals, Symptoms, Meds)
+        // Indicator dots row (Vitals = Green, Symptoms = Orange, Meds = Blue).
+        // Keep category colors even when selected by showing a subtle surface pill behind the dots.
+        val dotsContainerColor = if (isSelected && summary.hasAnyData) {
+            MaterialTheme.colorScheme.surface.copy(alpha = 0.92f)
+        } else {
+            Color.Transparent
+        }
+
         Row(
             horizontalArrangement = Arrangement.spacedBy(3.dp),
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.height(6.dp)
+            modifier = Modifier
+                .height(10.dp)
+                .background(dotsContainerColor, RoundedCornerShape(50))
+                .padding(horizontal = 4.dp)
         ) {
             // Vital sign dot
-            if (summary.hasMeasurements) {
-                val dotColor = if (isSelected) Color.White else (summary.vitalDotColor ?: Color.Gray)
+            summary.vitalDotColor?.let { dotColor ->
                 Box(
                     modifier = Modifier
                         .size(5.dp)
@@ -623,8 +645,7 @@ private fun CalendarDayCell(
             }
 
             // Symptom dot
-            if (summary.hasSymptoms) {
-                val dotColor = if (isSelected) Color.White.copy(alpha = 0.9f) else (summary.symptomDotColor ?: Color(0xFFFFB300))
+            summary.symptomDotColor?.let { dotColor ->
                 Box(
                     modifier = Modifier
                         .size(5.dp)
@@ -633,8 +654,7 @@ private fun CalendarDayCell(
             }
 
             // Medication dot
-            if (summary.hasMedications) {
-                val dotColor = if (isSelected) Color.White.copy(alpha = 0.7f) else (summary.medicationDotColor ?: Color(0xFF1E88E5))
+            summary.medicationDotColor?.let { dotColor ->
                 Box(
                     modifier = Modifier
                         .size(5.dp)
@@ -652,11 +672,11 @@ private fun CalendarLegendRow() {
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        LegendItem(color = Color(0xFF387A40), label = stringResource(R.string.calendar_legend_vitals))
+        LegendItem(color = CalendarVitalDotColor, label = stringResource(R.string.calendar_legend_vitals))
         Spacer(modifier = Modifier.width(16.dp))
-        LegendItem(color = Color(0xFFFFB300), label = stringResource(R.string.calendar_legend_symptoms))
+        LegendItem(color = CalendarSymptomDotColor, label = stringResource(R.string.calendar_legend_symptoms))
         Spacer(modifier = Modifier.width(16.dp))
-        LegendItem(color = Color(0xFF1E88E5), label = stringResource(R.string.calendar_legend_meds))
+        LegendItem(color = CalendarMedicationDotColor, label = stringResource(R.string.calendar_legend_meds))
     }
 }
 
@@ -797,7 +817,6 @@ private fun SymptomItemCard(
 @Composable
 private fun MeasurementDayItemCard(
     measurement: Measurement,
-    latestHeightCm: Double?,
     onClick: () -> Unit
 ) {
     val decimalSep = decimalSeparator()
@@ -806,9 +825,6 @@ private fun MeasurementDayItemCard(
     val timeText = Instant.ofEpochMilli(measurement.timestamp)
         .atZone(ZoneId.systemDefault())
         .format(timeFormatter)
-
-    val evaluation = evaluateMeasurement(measurement, latestHeightCm)
-    val rank = evaluation?.toClinicalRank() ?: VitalClinicalRank.NORMAL
 
     Card(
         modifier = Modifier
@@ -826,10 +842,16 @@ private fun MeasurementDayItemCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
-                modifier = Modifier
-                    .size(10.dp)
-                    .background(rank.dotColor, CircleShape)
-            )
+                modifier = Modifier.size(38.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(measurement.type.icon),
+                    contentDescription = null,
+                    modifier = Modifier.size(28.dp),
+                    tint = Color.Unspecified
+                )
+            }
 
             Spacer(modifier = Modifier.width(12.dp))
 
@@ -873,10 +895,16 @@ private fun MedicationDoseDayItemCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
-                modifier = Modifier
-                    .size(10.dp)
-                    .background(Color(0xFF1E88E5), CircleShape)
-            )
+                modifier = Modifier.size(38.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_nav_medications),
+                    contentDescription = null,
+                    modifier = Modifier.size(26.dp),
+                    tint = Color.Unspecified
+                )
+            }
 
             Spacer(modifier = Modifier.width(12.dp))
 

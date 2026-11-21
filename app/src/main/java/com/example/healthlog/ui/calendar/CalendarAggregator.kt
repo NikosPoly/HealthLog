@@ -3,6 +3,7 @@ package com.example.healthlog.ui.calendar
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.database.MedicationDoseLog
 import com.example.healthlog.database.SymptomEntry
+import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.model.SymptomSeverity
 import java.time.Instant
 import java.time.LocalDate
@@ -46,6 +47,23 @@ object CalendarAggregator {
         return Pair(startDate, endDate)
     }
 
+    // Filters out independent Pulse entries that were automatically saved alongside a Blood Pressure
+    // reading (same timestamp and pulse value), so the calendar page displays only the Blood Pressure
+    // entry (which already includes the pulse) without duplicating it as a separate Pulse item.
+    internal fun filterCompanionPulses(measurements: List<Measurement>): List<Measurement> {
+        val bpPulseKeys = measurements
+            .filter { it.type == MeasurementType.BLOOD_PRESSURE && it.tertiaryValue != null }
+            .map { it.timestamp to it.tertiaryValue }
+            .toSet()
+
+        if (bpPulseKeys.isEmpty()) return measurements
+
+        return measurements.filterNot { measurement ->
+            measurement.type == MeasurementType.PULSE &&
+                (measurement.timestamp to measurement.value) in bpPulseKeys
+        }
+    }
+
     // Aggregates raw lists of measurements, dose logs, and symptoms for a month into
     // a Map of LocalDate -> CalendarDaySummary.
     fun aggregateMonth(
@@ -76,7 +94,7 @@ object CalendarAggregator {
 
         for (day in 1..daysInMonth) {
             val date = yearMonth.atDay(day)
-            val dayMeasurements = measurementsByDate[date].orEmpty()
+            val dayMeasurements = filterCompanionPulses(measurementsByDate[date].orEmpty())
             val dayDoseLogs = doseLogsByDate[date].orEmpty()
             val daySymptoms = symptomsByDate[date].orEmpty()
 

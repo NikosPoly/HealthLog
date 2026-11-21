@@ -132,6 +132,18 @@
     <string name="calendar_legend_meds">Φάρμακα</string>
     <string name="calendar_select_month_year">Επιλογή Μήνα &amp; Έτους</string>
 
+    <!-- Symptom Form Sheet -->
+    <string name="symptom_form_title_add">Καταγραφή Συμπτώματος</string>
+    <string name="symptom_form_title_edit">Επεξεργασία Συμπτώματος</string>
+    <string name="symptom_form_type_label">Σύμπτωμα</string>
+    <string name="symptom_form_custom_label">Όνομα Προσαρμοσμένου Συμπτώματος</string>
+    <string name="symptom_form_custom_hint">π.χ. Πόνος στην πλάτη, Αρθραλγία</string>
+    <string name="symptom_form_severity_label">Επίπεδο Σοβαρότητας</string>
+    <string name="symptom_form_date_time_label">Ημερομηνία &amp; Ώρα</string>
+    <string name="symptom_form_notes_label">Σημειώσεις (Προαιρετικό)</string>
+    <string name="symptom_form_notes_hint">π.χ. Μετά από άσκηση, πυροδοτήθηκε από φως</string>
+    <string name="symptom_form_save">Αποθήκευση Συμπτώματος</string>
+
     <!-- Home screen -->
     <string name="home_new_entry">Νέα Καταχώριση</string>
 

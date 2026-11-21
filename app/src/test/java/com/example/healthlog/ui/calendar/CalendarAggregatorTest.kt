@@ -113,12 +113,12 @@ class CalendarAggregatorTest {
         assertEquals(1, day5.doseLogs.size)
         assertEquals(2, day5.symptoms.size)
 
-        // Grade 2 should be the worst vital rank (ALERT_RED)
+        // Grade 2 should be the worst vital rank (ALERT_RED), while grid dots use fixed category colors
         assertEquals(VitalClinicalRank.ALERT_RED, day5.highestVitalRank)
         assertEquals(SymptomSeverity.SEVERE, day5.maxSymptomSeverity)
-        assertNotNull(day5.vitalDotColor)
-        assertNotNull(day5.symptomDotColor)
-        assertNotNull(day5.medicationDotColor)
+        assertTrue(day5.vitalDotColor == CalendarVitalDotColor)
+        assertTrue(day5.symptomDotColor == CalendarSymptomDotColor)
+        assertTrue(day5.medicationDotColor == CalendarMedicationDotColor)
 
         // Verify Nov 10 summary
         val day10 = summaries[nov10]
@@ -129,7 +129,7 @@ class CalendarAggregatorTest {
         assertNull(day10.highestVitalRank)
         assertEquals(SymptomSeverity.VERY_MILD, day10.maxSymptomSeverity)
         assertNull(day10.vitalDotColor)
-        assertNotNull(day10.symptomDotColor)
+        assertTrue(day10.symptomDotColor == CalendarSymptomDotColor)
         assertNull(day10.medicationDotColor)
 
         // Verify empty day (Nov 1)
@@ -139,5 +139,53 @@ class CalendarAggregatorTest {
         assertNull(day1.vitalDotColor)
         assertNull(day1.symptomDotColor)
         assertNull(day1.medicationDotColor)
+    }
+
+    @Test
+    fun aggregateMonth_filtersCompanionPulseFromBloodPressureButKeepsStandalonePulse() {
+        val nov18 = LocalDate.of(2026, 11, 18)
+        val bpTimestamp = nov18.atTime(10, 0).atZone(fixedZone).toInstant().toEpochMilli()
+        val standalonePulseTimestamp = nov18.atTime(15, 30).atZone(fixedZone).toInstant().toEpochMilli()
+
+        val measurements = listOf(
+            // Blood pressure with pulse 74 bpm
+            Measurement(
+                id = 1L,
+                type = MeasurementType.BLOOD_PRESSURE,
+                value = 132.0,
+                secondaryValue = 84.0,
+                tertiaryValue = 74.0,
+                timestamp = bpTimestamp
+            ),
+            // Companion pulse automatically saved at the exact same timestamp and value
+            Measurement(
+                id = 2L,
+                type = MeasurementType.PULSE,
+                value = 74.0,
+                timestamp = bpTimestamp
+            ),
+            // Independent standalone pulse logged later that day
+            Measurement(
+                id = 3L,
+                type = MeasurementType.PULSE,
+                value = 68.0,
+                timestamp = standalonePulseTimestamp
+            )
+        )
+
+        val summaries = CalendarAggregator.aggregateMonth(
+            yearMonth = testMonth,
+            measurements = measurements,
+            doseLogs = emptyList(),
+            symptoms = emptyList(),
+            zoneId = fixedZone
+        )
+
+        val day18 = summaries[nov18]
+        assertNotNull(day18)
+        // Companion pulse (id=2) must be excluded; BP (id=1) and standalone pulse (id=3) remain
+        assertEquals(listOf(1L, 3L), day18!!.measurements.map { it.id })
+        // Vital dot color always uses the calendar legend green color
+        assertTrue(day18.vitalDotColor == CalendarVitalDotColor)
     }
 }

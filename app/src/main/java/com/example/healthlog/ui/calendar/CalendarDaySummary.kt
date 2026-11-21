@@ -13,6 +13,11 @@ import com.example.healthlog.guidelines.evaluateMeasurement
 import com.example.healthlog.model.SymptomSeverity
 import java.time.LocalDate
 
+// Fixed calendar category dot colors matching the calendar legend.
+val CalendarVitalDotColor = Color(0xFF387A40)      // Green (Vitals)
+val CalendarSymptomDotColor = Color(0xFFFFB300)    // Orange/Amber (Symptoms)
+val CalendarMedicationDotColor = Color(0xFF1E88E5) // Blue (Medications)
+
 // Clinical severity rank for vital sign measurements (higher = more severe).
 enum class VitalClinicalRank(val priority: Int, val dotColor: Color) {
     CRISIS(priority = 5, dotColor = Color(0xFFC2185B)),       // Deep Pink/Crimson
@@ -36,20 +41,10 @@ data class CalendarDaySummary(
     val hasSymptoms: Boolean get() = symptoms.isNotEmpty()
     val hasAnyData: Boolean get() = hasMeasurements || hasMedications || hasSymptoms
 
-    // Indicator dot colors to display under this date in the calendar grid.
-    val vitalDotColor: Color? get() = highestVitalRank?.dotColor
-    val symptomDotColor: Color? get() = maxSymptomSeverity?.let {
-        // Standard vibrant amber/coral dot for symptoms
-        when (it) {
-            SymptomSeverity.VERY_MILD -> Color(0xFF64B5F6)
-            SymptomSeverity.MILD -> Color(0xFF81C784)
-            SymptomSeverity.MODERATE -> Color(0xFFFFB300)
-            SymptomSeverity.SEVERE -> Color(0xFFFF7043)
-            SymptomSeverity.VERY_SEVERE -> Color(0xFFE53935)
-        }
-    }
-    // Blue dot indicating medications were taken/logged on this day
-    val medicationDotColor: Color? get() = if (hasMedications) Color(0xFF1E88E5) else null
+    // Category indicator dot colors matching the calendar legend (Green = Vitals, Orange = Symptoms, Blue = Meds).
+    val vitalDotColor: Color? get() = if (hasMeasurements) CalendarVitalDotColor else null
+    val symptomDotColor: Color? get() = if (hasSymptoms) CalendarSymptomDotColor else null
+    val medicationDotColor: Color? get() = if (hasMedications) CalendarMedicationDotColor else null
 }
 
 // Maps an evaluation to a clinical rank.
