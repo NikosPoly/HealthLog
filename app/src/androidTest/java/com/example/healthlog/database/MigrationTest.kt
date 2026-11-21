@@ -236,6 +236,10 @@ class MigrationTest {
             "INSERT INTO medication_dose_logs (id, medicationId, scheduledDate, scheduledTime, actionTimestamp, status, notes) " +
                     "VALUES (1, 1, '2026-11-18', '08:30', 2100, 'TAKEN', null)"
         )
+        db.execSQL(
+            "INSERT INTO symptoms (id, symptomType, customName, severity, timestamp, notes) " +
+                    "VALUES (1, 'HEADACHE', null, 3, 2200, 'Mild afternoon tension')"
+        )
 
         db.query("SELECT name, dosage, unit, isActive FROM medications WHERE id = 1").use { cursor ->
             assertEquals(1, cursor.count)
@@ -260,6 +264,16 @@ class MigrationTest {
             assertEquals(1L, cursor.getLong(0))
             assertEquals("2026-11-18", cursor.getString(1))
             assertEquals("TAKEN", cursor.getString(2))
+        }
+
+        db.query("SELECT symptomType, customName, severity, timestamp, notes FROM symptoms WHERE id = 1").use { cursor ->
+            assertEquals(1, cursor.count)
+            cursor.moveToFirst()
+            assertEquals("HEADACHE", cursor.getString(0))
+            assertTrue(cursor.isNull(1))
+            assertEquals(3, cursor.getInt(2))
+            assertEquals(2200L, cursor.getLong(3))
+            assertEquals("Mild afternoon tension", cursor.getString(4))
         }
     }
 }

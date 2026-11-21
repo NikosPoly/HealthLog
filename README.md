@@ -122,6 +122,16 @@ The app is available in Greek and English.
   - **Medications:** daily intake schedule, active prescriptions, and alarm management.
   - **Calendar:** monthly tracker and symptom correlation.
   - State preservation across tabs: scrolling position, sub-tabs, and form drafts are cleanly preserved.
+- **Health Calendar & Clinical Correlation:**
+  - **Interactive monthly grid:** month overview with weekday headers, previous/next chevron navigation, and a clickable month/year header with a 4×3 grid dialog to jump to any month and year.
+  - **Today quick-jump:** one-tap top bar action returning instantly to the current month and today's date.
+  - **Category indicator dots:** distinct dots under each calendar day matching the legend (🟢 Vitals, 🟠 Symptoms, 🔵 Medications taken), preserved with high contrast on selected days.
+  - **Unified day detail timeline:** selecting a day displays its complete chronological record:
+    - **Symptoms:** symptom name, severity badge (1–5), timestamp, notes, with Edit and Delete options.
+    - **Vital signs:** formatted values, timestamp, and multi-colored metric icons (`MeasurementType.icon`); automatically filters out companion pulse records from blood pressure measurements so entries are not duplicated. Tapping navigates to full measurement details.
+    - **Medications taken:** scheduled time, intake status (taken/skipped), and medication icon.
+    - **Empty state:** clear feedback when no events occurred on the selected date.
+  - **Symptom logging modal sheet:** quick-access FAB to log symptoms with predefined chips (Headache, Dizziness, Palpitations, Chest Discomfort, Shortness of Breath, Fatigue, Nausea) or custom symptom input, live 1–5 severity slider with descriptive badges, Material date/time picker, and optional notes.
 - **Medication tracking & offline local reminders:**
   - **Today's Schedule:** dynamic daily checklist grouping scheduled doses by time period (Morning, Afternoon, Evening) with one-tap *Take*, *Skip*, and *Undo* actions.
   - **My Prescriptions:** active medication cards displaying dosage, unit, schedule, and active alarm bell indicators with quick delete confirmation.
@@ -185,6 +195,8 @@ healthlog/
     │   └── references/      clinical reference cards, visual gauge meters, and stage badges
     ├── medications/         medications screen: Today's Schedule, My Prescriptions, Add/Edit sheet,
     │                        TodayDoseSchedule calculations, dose status badges
+    ├── calendar/            health calendar screen: CalendarScreen, MonthHeader, MonthYearPickerDialog,
+    │                        CalendarDayCell, Day Detail cards, AddEditSymptomSheet, CalendarAggregator
     ├── export/              doctor reports & data export: ExportDialog, PdfReportGenerator,
     │                        CsvReportGenerator, ExportFileManager, ExportConfig
     ├── format/              display text: values, dates, "time ago", messages, per-language formats
@@ -271,9 +283,14 @@ There are two kinds of tests:
 - `TodayDoseScheduleTest`: dose status enums, stable item keys, recurring/PRN prescription filtering, day-of-week bitmask arithmetic, schedule chronological ordering, and PRN tagging
 - `MedicationsViewModelTest`: tab switching, add/edit sheet open/close state, and delete confirmation modal state
 - `MedicationAlarmSchedulerTest`: exact alarm computation, intent extras, and cancellation logic
+- `MedicationRepositoryTest`: database queries for medications, active prescriptions, and dose logs
+- `SymptomDomainTest`: symptom type enum matching and 1–5 severity level mapping with graceful fallbacks
+- `SymptomRepositoryTest`: symptom insertion, updates, range queries, and ID deletion
+- `CalendarAggregatorTest`: monthly event aggregation, ISO date string parsing, companion pulse deduplication from blood pressure, and multi-metric clinical rank evaluation
+- `CalendarViewModelTest`: month navigation, Month/Year dialog selection with day-clamping, jump to today, and symptom CRUD workflows
 
 **Instrumented tests** (`app/src/androidTest`, run on an emulator or device):
-- `MigrationTest`: the database migrations
+- `MigrationTest`: the database migrations (including version 4 → 5 with medications and symptoms tables)
 - `NewEntryDialogTest`: the new-entry dialog's UI
 - `HistoryContentTest`: the history's tabs, swiping, empty pages, entry details navigation, deleting, the See Chart
   button and the period chips
@@ -284,6 +301,8 @@ There are two kinds of tests:
 - `MeasurementDetailsScreenTest`: the details screen layout, clinical condition tags, back navigation and deletion
 - `MeasurementGuideScreenTest`: the educational guide screen, tabs, doctor speech bubble cards, and back navigation
 - `MedicationsUiTest`: medication management UI: Today's schedule empty state, pending dose rendering and take action, completed dose undo action, prescriptions list with quick log, and add/edit medication sheet validation
+- `CalendarUiTest`: health calendar UI: month navigation, Month/Year picker grid dialog, Today quick-jump, unified day detail cards (symptoms, vitals with type icons, medications), symptom creation sheet, custom name validation, and deletion dialog
+- `BottomNavigationUiTest`: bottom navigation bar tab switching (Vitals, Medications, Calendar) and placeholder screen verification
 
 To run them:
 
@@ -303,10 +322,11 @@ Measurements are stored locally with Room. The database is currently at **versio
 - **Version 1 → 2 (`MIGRATION_1_2`):** Added nullable `tertiaryValue` column to store pulse for blood pressure measurements.
 - **Version 2 → 3 (`MIGRATION_2_3`):** Converted stored Greek type names to enum constant strings (`BLOOD_PRESSURE`, `PULSE`, `BLOOD_SUGAR`, `WEIGHT`, `HEIGHT`).
 - **Version 3 → 4 (`MIGRATION_3_4`):** Added nullable clinical context columns (`hasArrhythmia` INTEGER, `mealContext` TEXT, `arm` TEXT, `bodyPosition` TEXT). Older rows keep their data and have `null` for these columns.
-- **Version 4 → 5 (`MIGRATION_4_5`):** Added medication management tables:
+- **Version 4 → 5 (`MIGRATION_4_5`):** Added medication management and symptom tracking tables:
   - `medications`: stores active and archived prescriptions (`id`, `name`, `dosage`, `unit`, `frequency`, `instructions`, `isActive`, `createdAt`).
   - `medication_reminders`: stores recurring daily reminder alarms (`id`, `medicationId`, `hour`, `minute`, `daysOfWeekMask`, `isEnabled`) with cascading foreign key delete on `medicationId`.
-  - `medication_dose_logs`: stores intake history (`id`, `medicationId`, `scheduledTimestamp`, `actionTimestamp`, `status`) with index on `scheduledTimestamp` for fast daily queries.
+  - `medication_dose_logs`: stores intake history (`id`, `medicationId`, `scheduledDate`, `scheduledTime`, `status`, `actionTimestamp`).
+  - `symptoms`: stores logged symptoms (`id`, `symptomType`, `customName`, `severity`, `timestamp`, `notes`) with an index on `timestamp` for fast date-range queries.
 
 Any change to what is stored needs a database migration in `HealthDatabase.kt`, for example:
 - adding, removing or renaming a column in `Measurement`
@@ -352,10 +372,10 @@ For detailed specifications and architectural decisions, see the complete [Produ
 - [x] History list: filtering for out-of-range / flagged values and clinical conditions (Completed)
 - [x] Doctor reporting: on-device PDF generation, printing, and CSV export for medical appointments (100% local and private) (Completed)
 
-### Phase 3: Medications & Symptom Calendar (In Progress)
+### Phase 3: Medications & Symptom Calendar (Completed)
 - [x] Global 3-tab Bottom Navigation (Vitals, Medications, Calendar) (Completed)
 - [x] Medication tracking and offline local reminders (AlarmManager exact alarms & BootReceiver) (Completed)
-- [ ] Symptom logging and clinical correlation calendar (Next Focus)
+- [x] Symptom logging and clinical correlation calendar (Completed)
 *(Note: Per-measurement free-text notes were dropped/superseded in favor of discrete symptoms and medication adherence records).*
 
 ### Phase 4: Local Profiles & Data Portability

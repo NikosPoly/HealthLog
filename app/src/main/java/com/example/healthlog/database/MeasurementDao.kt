@@ -32,4 +32,11 @@ interface MeasurementDao {
         "SELECT value FROM measurements WHERE type = 'HEIGHT' ORDER BY timestamp DESC, id DESC LIMIT 1"
     )
     fun getLatestHeight(): Flow<Double?>
+
+    // All measurements across all types within [startMillis, endMillis), newest first.
+    @Query(
+        "SELECT * FROM measurements WHERE timestamp >= :startMillis AND timestamp < :endMillis " +
+            "ORDER BY timestamp DESC, id DESC"
+    )
+    fun getMeasurementsInRange(startMillis: Long, endMillis: Long): Flow<List<Measurement>>
 }

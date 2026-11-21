@@ -13,6 +13,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         Medication::class,
         MedicationReminder::class,
         MedicationDoseLog::class,
+        SymptomEntry::class,
     ],
     version = 5,
     exportSchema = true
@@ -21,6 +22,7 @@ abstract class HealthDatabase : RoomDatabase() {
 
     abstract fun measurementDao(): MeasurementDao
     abstract fun medicationDao(): MedicationDao
+    abstract fun symptomDao(): SymptomDao
 
     companion object {
         @Volatile
@@ -61,10 +63,11 @@ abstract class HealthDatabase : RoomDatabase() {
             }
         }
 
-        // Version 4 → 5: add tables for medications, reminders, and dose tracking:
+        // Version 4 → 5: add Phase 3 tables for medications, reminders, dose tracking, and symptoms:
         // - medications
         // - medication_reminders
         // - medication_dose_logs
+        // - symptoms
         internal val MIGRATION_4_5 = object : Migration(4, 5) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL(
@@ -116,6 +119,21 @@ abstract class HealthDatabase : RoomDatabase() {
                 )
                 db.execSQL(
                     "CREATE INDEX IF NOT EXISTS `index_medication_dose_logs_scheduledDate` ON `medication_dose_logs` (`scheduledDate`)"
+                )
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `symptoms` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `symptomType` TEXT NOT NULL,
+                        `customName` TEXT,
+                        `severity` INTEGER NOT NULL,
+                        `timestamp` INTEGER NOT NULL,
+                        `notes` TEXT
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_symptoms_timestamp` ON `symptoms` (`timestamp`)"
                 )
             }
         }

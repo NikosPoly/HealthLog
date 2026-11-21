@@ -59,4 +59,11 @@ interface MedicationDao {
 
     @Query("SELECT * FROM medication_dose_logs WHERE scheduledDate = :date")
     fun getDoseLogsForDate(date: String): Flow<List<MedicationDoseLog>>
+
+    // All dose logs within inclusive ISO-8601 calendar dates [startDate, endDate].
+    @Query(
+        "SELECT * FROM medication_dose_logs WHERE scheduledDate >= :startDate AND scheduledDate <= :endDate " +
+            "ORDER BY scheduledDate DESC, scheduledTime DESC, actionTimestamp DESC"
+    )
+    fun getDoseLogsInDateRange(startDate: String, endDate: String): Flow<List<MedicationDoseLog>>
 }

@@ -64,6 +64,9 @@ class MedicationRepository(
     fun getDoseLogsForDate(date: String): Flow<List<MedicationDoseLog>> =
         dao.getDoseLogsForDate(date)
 
+    fun getDoseLogsInDateRange(startDate: String, endDate: String): Flow<List<MedicationDoseLog>> =
+        dao.getDoseLogsInDateRange(startDate, endDate)
+
     suspend fun recordDose(
         medicationId: Long,
         scheduledDate: String,
