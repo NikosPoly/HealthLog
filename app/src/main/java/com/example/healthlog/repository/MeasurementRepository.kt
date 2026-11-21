@@ -21,6 +21,10 @@ class MeasurementRepository(
     fun getLatestHeight(): Flow<Double?> =
         dao.getLatestHeight()
 
+    // Live list of all measurements in [startMillis, endMillis), newest first.
+    fun getMeasurementsInRange(startMillis: Long, endMillis: Long): Flow<List<Measurement>> =
+        dao.getMeasurementsInRange(startMillis, endMillis)
+
     // Saves a new measurement (see measurementsToSave for what is stored).
     // Everything is saved in one database transaction: either all of it or nothing.
     suspend fun save(measurement: Measurement) {

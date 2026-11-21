@@ -134,6 +134,12 @@ class MedicationRepositoryTest {
         override fun getDoseLogsForDate(date: String): Flow<List<MedicationDoseLog>> {
             return doseLogsFlow.map { list -> list.filter { it.scheduledDate == date } }
         }
+
+        override fun getDoseLogsInDateRange(startDate: String, endDate: String): Flow<List<MedicationDoseLog>> {
+            return doseLogsFlow.map { list ->
+                list.filter { it.scheduledDate >= startDate && it.scheduledDate <= endDate }
+            }
+        }
     }
 
     private val fakeDao = FakeMedicationDao()

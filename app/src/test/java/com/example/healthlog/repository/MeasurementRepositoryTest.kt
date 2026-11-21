@@ -71,6 +71,8 @@ class MeasurementRepositoryTest {
             }
             override fun getLatestHeight(): kotlinx.coroutines.flow.Flow<Double?> =
                 kotlinx.coroutines.flow.flowOf(null)
+            override fun getMeasurementsInRange(startMillis: Long, endMillis: Long): kotlinx.coroutines.flow.Flow<List<Measurement>> =
+                kotlinx.coroutines.flow.flowOf(emptyList())
         }
         val repository = MeasurementRepository(fakeDao)
         var emitted: Measurement? = null
@@ -90,10 +92,42 @@ class MeasurementRepositoryTest {
                 kotlinx.coroutines.flow.flowOf(null)
             override fun getLatestHeight(): kotlinx.coroutines.flow.Flow<Double?> =
                 kotlinx.coroutines.flow.flowOf(178.5)
+            override fun getMeasurementsInRange(startMillis: Long, endMillis: Long): kotlinx.coroutines.flow.Flow<List<Measurement>> =
+                kotlinx.coroutines.flow.flowOf(emptyList())
         }
         val repository = MeasurementRepository(fakeDao)
         var emitted: Double? = null
         repository.getLatestHeight().collect { emitted = it }
         assertEquals(178.5, emitted)
+    }
+
+    @Test
+    fun getMeasurementsInRange_delegatesToDao() = kotlinx.coroutines.runBlocking {
+        val expected = listOf(
+            Measurement(id = 1L, type = MeasurementType.BLOOD_PRESSURE, value = 120.0, secondaryValue = 80.0, timestamp = 1500L)
+        )
+        var requestedStart: Long? = null
+        var requestedEnd: Long? = null
+        val fakeDao = object : com.example.healthlog.database.MeasurementDao {
+            override suspend fun insertAll(measurements: List<Measurement>) {}
+            override suspend fun delete(measurement: Measurement) {}
+            override fun getMeasurementsByType(type: MeasurementType): kotlinx.coroutines.flow.Flow<List<Measurement>> =
+                kotlinx.coroutines.flow.flowOf(emptyList())
+            override fun getMeasurementById(id: Long): kotlinx.coroutines.flow.Flow<Measurement?> =
+                kotlinx.coroutines.flow.flowOf(null)
+            override fun getLatestHeight(): kotlinx.coroutines.flow.Flow<Double?> =
+                kotlinx.coroutines.flow.flowOf(null)
+            override fun getMeasurementsInRange(startMillis: Long, endMillis: Long): kotlinx.coroutines.flow.Flow<List<Measurement>> {
+                requestedStart = startMillis
+                requestedEnd = endMillis
+                return kotlinx.coroutines.flow.flowOf(expected)
+            }
+        }
+        val repository = MeasurementRepository(fakeDao)
+        var emitted: List<Measurement> = emptyList()
+        repository.getMeasurementsInRange(1000L, 2000L).collect { emitted = it }
+        assertEquals(1000L, requestedStart)
+        assertEquals(2000L, requestedEnd)
+        assertEquals(expected, emitted)
     }
 }
