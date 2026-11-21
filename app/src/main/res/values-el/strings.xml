@@ -12,6 +12,97 @@
     <!-- %1$s = measurement type, %2$s = value with unit -->
     <string name="delete_dialog_details">%1$s: %2$s</string>
 
+    <!-- Bottom Navigation -->
+    <string name="nav_vitals">Μετρήσεις</string>
+    <string name="nav_medications">Φάρμακα</string>
+    <string name="nav_calendar">Ημερολόγιο</string>
+
+    <!-- Medication Screen & Management -->
+    <string name="medications_title">Φάρμακα</string>
+    <string name="medications_placeholder_title">Φάρμακα &amp; Υπενθυμίσεις</string>
+    <string name="medications_placeholder_desc">Παρακολουθήστε τα καθημερινά σας φάρμακα, τις δοσολογίες και ρυθμίστε τοπικές υπενθυμίσεις.</string>
+    <string name="medications_placeholder_badge">Σύντομα στο Βήμα 2</string>
+    <string name="medications_tab_today">Σημερινό Πρόγραμμα</string>
+    <string name="medications_tab_prescriptions">Τα Φάρμακά μου</string>
+    <string name="medications_empty_schedule">Δεν υπάρχουν προγραμματισμένες δόσεις για σήμερα.</string>
+    <string name="medications_empty_schedule_sub">Προσθέστε ένα επαναλαμβανόμενο φάρμακο για να βλέπετε υπενθυμίσεις δόσεων εδώ.</string>
+    <string name="medications_empty_prescriptions">Δεν υπάρχουν ενεργά φάρμακα ακόμη.</string>
+    <string name="medications_empty_prescriptions_sub">Πατήστε το παρακάτω κουμπί για να προσθέσετε τη συνταγή σας ή ένα φάρμακο έκτακτης ανάγκης.</string>
+    <string name="medications_action_add">Προσθήκη Φαρμάκου</string>
+    <string name="medications_action_edit">Επεξεργασία Φαρμάκου</string>
+    <string name="medications_action_delete">Διαγραφή</string>
+    <string name="medications_delete_confirm_title">Διαγραφή Φαρμάκου;</string>
+    <string name="medications_delete_confirm_desc">Είστε βέβαιοι ότι θέλετε να διαγράψετε το φάρμακο %1$s; Όλα τα προγράμματα υπενθυμίσεων και το ιστορικό λήψεων θα διαγραφούν οριστικά.</string>
+
+    <!-- Dose items -->
+    <string name="dose_status_taken">Ελήφθη</string>
+    <string name="dose_status_skipped">Παραλείφθηκε</string>
+    <string name="dose_status_pending">Εκκρεμεί</string>
+    <string name="dose_action_mark_taken">Λήψη</string>
+    <string name="dose_action_mark_skipped">Παράλειψη</string>
+    <string name="dose_action_undo">Αναίρεση</string>
+    <string name="dose_quick_log">Γρήγορη Καταγραφή</string>
+    <string name="dose_quick_log_desc">Καταγράψτε ένα φάρμακο που μόλις πήρατε εκτάκτως:</string>
+    <string name="dose_logged_toast">Καταγράφηκε η λήψη: %1$s</string>
+
+    <!-- Add/Edit Medication Form -->
+    <string name="med_form_title_add">Προσθήκη Φαρμάκου</string>
+    <string name="med_form_title_edit">Επεξεργασία Φαρμάκου</string>
+    <string name="med_form_name_label">Όνομα Φαρμάκου</string>
+    <string name="med_form_name_hint">π.χ. Αμλοδιπίνη, Μετφορμίνη</string>
+    <string name="med_form_dosage_label">Δοσολογία / Ισχύς</string>
+    <string name="med_form_dosage_hint">π.χ. 5, 500, 1</string>
+    <string name="med_form_unit_label">Μονάδα</string>
+    <string name="med_unit_mg">mg</string>
+    <string name="med_unit_tablet">χάπι</string>
+    <string name="med_unit_ml">ml</string>
+    <string name="med_unit_drops">σταγόνες</string>
+    <string name="med_unit_puff">εισπνοή</string>
+    <string name="med_unit_capsule">κάψουλα</string>
+    <string name="med_form_frequency_label">Πόσο συχνά το παίρνετε;</string>
+    <string name="med_freq_daily">Καθημερινά (επαναλαμβανόμενο)</string>
+    <string name="med_freq_as_needed">Κατά περίπτωση (έκτακτα / μία φορά)</string>
+    <string name="med_form_instructions_label">Οδηγίες / Σημειώσεις (Προαιρετικό)</string>
+    <string name="med_form_instructions_hint">π.χ. Με το φαγητό, μετά το πρωινό</string>
+    <string name="med_form_reminders_label">Καθημερινές Υπενθυμίσεις (Προαιρετικό)</string>
+    <string name="med_form_add_reminder">Προσθήκη Ώρας</string>
+    <string name="med_form_no_reminders">Δεν έχουν οριστεί ειδοποιήσεις. Μπορείτε να καταγράφετε δόσεις χειροκίνητα.</string>
+    <string name="med_form_save">Αποθήκευση Φαρμάκου</string>
+    <string name="med_form_error_name_empty">Παρακαλώ εισάγετε όνομα φαρμάκου.</string>
+    <string name="med_form_error_dosage_empty">Παρακαλώ εισάγετε δοσολογία.</string>
+
+    <!-- Next Dose indicators -->
+    <string name="med_next_dose_today">Επόμενη δόση: Σήμερα στις %1$s</string>
+    <string name="med_next_dose_tomorrow">Επόμενη δόση: Αύριο στις %1$s</string>
+    <string name="med_next_dose_as_needed">Κατά περίπτωση (έκτακτα)</string>
+    <string name="med_next_dose_none">Χωρίς υπενθυμίσεις</string>
+
+    <!-- One-time vs Saved As-Needed Options -->
+    <string name="med_form_save_to_prescriptions">Αποθήκευση στα Φάρμακά μου</string>
+    <string name="med_form_save_to_prescriptions_desc">Διατήρηση στα Φάρμακά μου για γρήγορη μελλοντική καταγραφή</string>
+    <string name="med_form_log_now">Καταγραφή λήψης τώρα</string>
+    <string name="med_form_log_now_desc">Καταγραφή ότι πήρατε αυτό το φάρμακο αυτή τη στιγμή</string>
+    <string name="med_form_action_log_dose">Καταγραφή Έκτακτης Λήψης</string>
+
+    <!-- Medication Notifications -->
+    <string name="notification_channel_medications_name">Υπενθυμίσεις Φαρμάκων</string>
+    <string name="notification_channel_medications_desc">Ειδοποιήσεις και υπενθυμίσεις για τη λήψη των προγραμματισμένων φαρμάκων.</string>
+    <string name="notification_medication_title">Ώρα για %1$s</string>
+    <string name="notification_medication_text">%1$s %2$s • %3$s</string>
+    <string name="notification_medication_text_no_instructions">%1$s %2$s</string>
+    <string name="notification_action_mark_taken">Ελήφθη</string>
+    <string name="notification_action_snooze">Αναβολή 15λ</string>
+    <string name="notification_dose_taken_toast">Καταγράφηκε η λήψη: %1$s</string>
+    <string name="notification_permission_required_title">Απαιτούνται Ειδοποιήσεις</string>
+    <string name="notification_permission_required_desc">Για να λαμβάνετε υπενθυμίσεις για το φάρμακό σας, πρέπει να ενεργοποιήσετε τις ειδοποιήσεις.</string>
+    <string name="notification_permission_enable">Ενεργοποίηση</string>
+    <string name="notification_permission_dont_allow">Να μην επιτρέπεται</string>
+
+    <string name="calendar_title">Ημερολόγιο Υγείας</string>
+    <string name="calendar_placeholder_title">Συμπτώματα &amp; Κλινικό Ημερολόγιο</string>
+    <string name="calendar_placeholder_desc">Καταγράψτε καθημερινά συμπτώματα με βαθμολογία σοβαρότητας και δείτε συσχετίσεις με τις μετρήσεις σας.</string>
+    <string name="calendar_placeholder_badge">Σύντομα στο Ορόσημο 3.2</string>
+
     <!-- Home screen -->
     <string name="home_new_entry">Νέα Καταχώριση</string>
 

@@ -17,7 +17,8 @@ fun HomeScreen(
     viewModel: HomeViewModel,
     onOpenHistory: () -> Unit,
     onOpenGuide: (MeasurementType) -> Unit = {},
-    isDialogVisible: Boolean = true
+    isDialogVisible: Boolean = true,
+    bottomBar: @Composable () -> Unit = {}
 ) {
     val selectedType by viewModel.selectedType.collectAsState()
 
@@ -38,6 +39,7 @@ fun HomeScreen(
         onSave = viewModel::save,
         onOpenHistory = onOpenHistory,
         onOpenGuide = onOpenGuide,
-        isDialogVisible = isDialogVisible
+        isDialogVisible = isDialogVisible,
+        bottomBar = bottomBar
     )
 }

@@ -105,9 +105,9 @@ This document outlines the architectural strategy, feature specifications, and i
 │ 2.2 History List Filtering (Stages, Conditions, Dates) (Completed)    │
 │ 2.3 Doctor Report Export (On-device PDF & CSV to Downloads) (Completed)│
 ├────────────────────────────────────────────────────────────────────────┤
-│ PHASE 3: Medications & Symptom Calendar (Next Focus — 2 Branches)      │
-│ 3.1 Bottom Navigation & Medication Management (AlarmManager)           │
-│ 3.2 Symptom Logging & Clinical Correlation Calendar                    │
+│ PHASE 3: Medications & Symptom Calendar (abandoned)                  │
+│ 3.1 Bottom Navigation & Medication Management (AlarmManager)(Completed)│
+│ 3.2 Symptom Logging & Clinical Correlation Calendar (Next Focus)       │
 ├────────────────────────────────────────────────────────────────────────┤
 │ PHASE 4: Local Profiles & Data Portability                             │
 │ 4.1 Local Multi-User Profiles (device profile switcher, guest-first)    │
@@ -311,7 +311,7 @@ This document outlines the architectural strategy, feature specifications, and i
 
 ### Phase 3: Medications & Symptom Calendar (2-Branch Strategy)
 
-#### Milestone 3.1: Bottom Navigation & Medication Management (Branch 1: `feature/medications-and-reminders`)
+#### Milestone 3.1: Bottom Navigation & Medication Management (Branch 1: `feature/medications-and-reminders`) (Completed)
 * **Goal:** Introduce the global 3-tab Bottom Navigation bar (Vitals, Medications, Calendar), build complete local medication tracking with intake schedules, and configure reliable offline alarms.
 * **Step 1 — Global Navigation Scaffold (`ui/HealthLogNavHost.kt`):**
   * Introduce Material 3 `NavigationBar` with 3 destinations:

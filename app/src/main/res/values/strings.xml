@@ -17,6 +17,97 @@
     <!-- %1$s = measurement type, %2$s = value with unit -->
     <string name="delete_dialog_details">%1$s: %2$s</string>
 
+    <!-- Bottom Navigation -->
+    <string name="nav_vitals">Vitals</string>
+    <string name="nav_medications">Medications</string>
+    <string name="nav_calendar">Calendar</string>
+
+    <!-- Medication Screen & Management -->
+    <string name="medications_title">Medications</string>
+    <string name="medications_placeholder_title">Medications &amp; Reminders</string>
+    <string name="medications_placeholder_desc">Track your daily prescriptions, dosages, and configure local notification alarms.</string>
+    <string name="medications_placeholder_badge">Coming in Step 2</string>
+    <string name="medications_tab_today">Today\'s Schedule</string>
+    <string name="medications_tab_prescriptions">My Medicines</string>
+    <string name="medications_empty_schedule">No scheduled doses for today.</string>
+    <string name="medications_empty_schedule_sub">Add a recurring medication to see daily dose reminders here.</string>
+    <string name="medications_empty_prescriptions">No active medications yet.</string>
+    <string name="medications_empty_prescriptions_sub">Tap the button below to add your first prescription or as-needed medication.</string>
+    <string name="medications_action_add">Add Medication</string>
+    <string name="medications_action_edit">Edit Medication</string>
+    <string name="medications_action_delete">Delete</string>
+    <string name="medications_delete_confirm_title">Delete Medication?</string>
+    <string name="medications_delete_confirm_desc">Are you sure you want to delete %1$s? All reminder schedules and dose history will be permanently deleted.</string>
+
+    <!-- Dose items -->
+    <string name="dose_status_taken">Taken</string>
+    <string name="dose_status_skipped">Skipped</string>
+    <string name="dose_status_pending">Pending</string>
+    <string name="dose_action_mark_taken">Take</string>
+    <string name="dose_action_mark_skipped">Skip</string>
+    <string name="dose_action_undo">Undo</string>
+    <string name="dose_quick_log">Quick Dose Log</string>
+    <string name="dose_quick_log_desc">Log a medication you just took as-needed or right now:</string>
+    <string name="dose_logged_toast">Recorded dose of %1$s</string>
+
+    <!-- Add/Edit Medication Form -->
+    <string name="med_form_title_add">Add Medication</string>
+    <string name="med_form_title_edit">Edit Medication</string>
+    <string name="med_form_name_label">Medication Name</string>
+    <string name="med_form_name_hint">e.g. Amlodipine, Metformin</string>
+    <string name="med_form_dosage_label">Dosage / Strength</string>
+    <string name="med_form_dosage_hint">e.g. 5, 500, 1</string>
+    <string name="med_form_unit_label">Unit</string>
+    <string name="med_unit_mg">mg</string>
+    <string name="med_unit_tablet">tablet</string>
+    <string name="med_unit_ml">ml</string>
+    <string name="med_unit_drops">drops</string>
+    <string name="med_unit_puff">puff</string>
+    <string name="med_unit_capsule">capsule</string>
+    <string name="med_form_frequency_label">How often do you take it?</string>
+    <string name="med_freq_daily">Daily (recurring)</string>
+    <string name="med_freq_as_needed">As needed (PRN / once)</string>
+    <string name="med_form_instructions_label">Instructions / Notes (Optional)</string>
+    <string name="med_form_instructions_hint">e.g. Take with dinner, after breakfast</string>
+    <string name="med_form_reminders_label">Daily Reminder Alarms (Optional)</string>
+    <string name="med_form_add_reminder">Add Time</string>
+    <string name="med_form_no_reminders">No alarm reminders set. You can log doses manually.</string>
+    <string name="med_form_save">Save Medication</string>
+    <string name="med_form_error_name_empty">Please enter a medication name.</string>
+    <string name="med_form_error_dosage_empty">Please enter a dosage.</string>
+
+    <!-- Next Dose indicators -->
+    <string name="med_next_dose_today">Next dose: Today at %1$s</string>
+    <string name="med_next_dose_tomorrow">Next dose: Tomorrow at %1$s</string>
+    <string name="med_next_dose_as_needed">As needed (PRN)</string>
+    <string name="med_next_dose_none">No reminders configured</string>
+
+    <!-- One-time vs Saved As-Needed Options -->
+    <string name="med_form_save_to_prescriptions">Save to My Medicines</string>
+    <string name="med_form_save_to_prescriptions_desc">Keep this in My Medicines for quick future logging</string>
+    <string name="med_form_log_now">Log dose for right now</string>
+    <string name="med_form_log_now_desc">Record that you took this medicine right now</string>
+    <string name="med_form_action_log_dose">Log Dose Now</string>
+
+    <!-- Medication Notifications -->
+    <string name="notification_channel_medications_name">Medication Reminders</string>
+    <string name="notification_channel_medications_desc">Alerts and reminders to take scheduled medications.</string>
+    <string name="notification_medication_title">Time for %1$s</string>
+    <string name="notification_medication_text">%1$s %2$s • %3$s</string>
+    <string name="notification_medication_text_no_instructions">%1$s %2$s</string>
+    <string name="notification_action_mark_taken">Mark Taken</string>
+    <string name="notification_action_snooze">Snooze 15m</string>
+    <string name="notification_dose_taken_toast">Marked %1$s as taken</string>
+    <string name="notification_permission_required_title">Notifications Required</string>
+    <string name="notification_permission_required_desc">To receive reminders for your medication, you need to enable notifications.</string>
+    <string name="notification_permission_enable">Enable</string>
+    <string name="notification_permission_dont_allow">Don\'t allow</string>
+
+    <string name="calendar_title">Health Calendar</string>
+    <string name="calendar_placeholder_title">Symptoms &amp; Clinical Calendar</string>
+    <string name="calendar_placeholder_desc">Log daily symptoms with severity ratings and view correlations with your vital signs.</string>
+    <string name="calendar_placeholder_badge">Coming in Milestone 3.2</string>
+
     <!-- Home screen -->
     <string name="home_title" translatable="false">HealthLog</string>
     <string name="home_new_entry">New Entry</string>
