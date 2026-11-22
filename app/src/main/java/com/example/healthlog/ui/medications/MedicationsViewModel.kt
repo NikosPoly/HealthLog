@@ -215,6 +215,16 @@ class MedicationsViewModel(
             val savedId = if (existing == null) {
                 repository.saveMedication(medToSave, remindersToSave)
             } else {
+                // Cancel existing scheduled alarms for this medication before overwriting reminders,
+                // preventing orphaned alarms from previous edits from ringing.
+                val oldReminders = repository.getRemindersForMedication(medToSave.id)
+                oldReminders.forEach { reminder ->
+                    MedicationAlarmScheduler.cancelReminder(appContext, reminder.id)
+                }
+                existing.reminders.forEach { reminder ->
+                    MedicationAlarmScheduler.cancelReminder(appContext, reminder.id)
+                }
+
                 repository.updateMedication(medToSave, remindersToSave)
                 medToSave.id
             }
@@ -344,6 +354,11 @@ class MedicationsViewModel(
 
     fun deleteMedication(medicationWithReminders: MedicationWithReminders) {
         viewModelScope.launch {
+            // Cancel alarms for both the in-memory reminders and any reminders currently in the DB
+            val persistedReminders = repository.getRemindersForMedication(medicationWithReminders.medication.id)
+            persistedReminders.forEach {
+                MedicationAlarmScheduler.cancelReminder(appContext, it.id)
+            }
             medicationWithReminders.reminders.forEach {
                 MedicationAlarmScheduler.cancelReminder(appContext, it.id)
             }

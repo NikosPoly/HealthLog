@@ -5,11 +5,14 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import com.example.healthlog.MainActivity
 import com.example.healthlog.database.Medication
 import com.example.healthlog.database.MedicationReminder
 import java.util.Calendar
 
 object MedicationAlarmScheduler {
+
+    const val SNOOZE_OFFSET = 100_000
 
     /**
      * Calculates the next epoch millis for a given reminder (hour:minute and days of week).
@@ -28,7 +31,7 @@ object MedicationAlarmScheduler {
             set(Calendar.MILLISECOND, 0)
         }
 
-        // If target time today is already in the past, advance to tomorrow
+        // If target time today is already at or before now, advance to tomorrow
         if (target.timeInMillis <= nowCalendar.timeInMillis) {
             target.add(Calendar.DAY_OF_YEAR, 1)
         }
@@ -85,6 +88,8 @@ object MedicationAlarmScheduler {
             putExtra(MedicationNotificationHelper.EXTRA_INSTRUCTIONS, medication.instructions)
             putExtra(MedicationNotificationHelper.EXTRA_SCHEDULED_TIME, scheduledTime)
             putExtra(MedicationNotificationHelper.EXTRA_NOTIFICATION_ID, reminder.id.toInt())
+            putExtra(MedicationNotificationHelper.EXTRA_REMINDER_ID, reminder.id)
+            putExtra(MedicationNotificationHelper.EXTRA_ALARM_TYPE, MedicationNotificationHelper.ALARM_TYPE_MAIN)
         }
 
         val pendingIntent = PendingIntent.getBroadcast(
@@ -94,22 +99,40 @@ object MedicationAlarmScheduler {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        scheduleExactAlarm(alarmManager, triggerAtMillis, pendingIntent)
+        scheduleReliableAlarm(context, alarmManager, triggerAtMillis, pendingIntent)
     }
 
     fun cancelReminder(context: Context, reminderId: Long) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val intent = Intent(context, MedicationAlarmReceiver::class.java)
-        val pendingIntent = PendingIntent.getBroadcast(
+
+        // 1. Cancel main reminder alarm
+        val mainPendingIntent = PendingIntent.getBroadcast(
             context,
             reminderId.toInt(),
             intent,
             PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
         )
-        if (pendingIntent != null) {
-            alarmManager.cancel(pendingIntent)
-            pendingIntent.cancel()
+        if (mainPendingIntent != null) {
+            alarmManager.cancel(mainPendingIntent)
+            mainPendingIntent.cancel()
         }
+
+        // 2. Cancel any pending snooze alarm for this reminder
+        val snoozeRequestCode = reminderId.toInt() + SNOOZE_OFFSET
+        val snoozePendingIntent = PendingIntent.getBroadcast(
+            context,
+            snoozeRequestCode,
+            intent,
+            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+        )
+        if (snoozePendingIntent != null) {
+            alarmManager.cancel(snoozePendingIntent)
+            snoozePendingIntent.cancel()
+        }
+
+        // 3. Clear active notification in status bar if still showing
+        MedicationNotificationHelper.cancelNotification(context, reminderId.toInt())
     }
 
     fun scheduleSnooze(
@@ -121,6 +144,7 @@ object MedicationAlarmScheduler {
         instructions: String?,
         scheduledTime: String,
         notificationId: Int,
+        reminderId: Long = notificationId.toLong(),
         snoozeMinutes: Int = 15
     ) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
@@ -134,10 +158,11 @@ object MedicationAlarmScheduler {
             putExtra(MedicationNotificationHelper.EXTRA_INSTRUCTIONS, instructions)
             putExtra(MedicationNotificationHelper.EXTRA_SCHEDULED_TIME, scheduledTime)
             putExtra(MedicationNotificationHelper.EXTRA_NOTIFICATION_ID, notificationId)
+            putExtra(MedicationNotificationHelper.EXTRA_REMINDER_ID, reminderId)
+            putExtra(MedicationNotificationHelper.EXTRA_ALARM_TYPE, MedicationNotificationHelper.ALARM_TYPE_SNOOZE)
         }
 
-        // Use a unique request code for snooze so it doesn't collide with the recurring reminder
-        val requestCode = notificationId + 100000
+        val requestCode = notificationId + SNOOZE_OFFSET
 
         val pendingIntent = PendingIntent.getBroadcast(
             context,
@@ -146,34 +171,52 @@ object MedicationAlarmScheduler {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        scheduleExactAlarm(alarmManager, triggerAtMillis, pendingIntent)
+        scheduleReliableAlarm(context, alarmManager, triggerAtMillis, pendingIntent)
     }
 
-    private fun scheduleExactAlarm(
+    private fun scheduleReliableAlarm(
+        context: Context,
         alarmManager: AlarmManager,
         triggerAtMillis: Long,
         pendingIntent: PendingIntent
     ) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (alarmManager.canScheduleExactAlarms()) {
+        val showIntent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val showPendingIntent = PendingIntent.getActivity(
+            context,
+            0,
+            showIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val clockInfo = AlarmManager.AlarmClockInfo(triggerAtMillis, showPendingIntent)
+
+        try {
+            alarmManager.setAlarmClock(clockInfo, pendingIntent)
+        } catch (_: SecurityException) {
+            // If setAlarmClock throws SecurityException on restricted devices, fall back safely
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if (alarmManager.canScheduleExactAlarms()) {
+                    alarmManager.setExactAndAllowWhileIdle(
+                        AlarmManager.RTC_WAKEUP,
+                        triggerAtMillis,
+                        pendingIntent
+                    )
+                } else {
+                    alarmManager.setAndAllowWhileIdle(
+                        AlarmManager.RTC_WAKEUP,
+                        triggerAtMillis,
+                        pendingIntent
+                    )
+                }
+            } else {
                 alarmManager.setExactAndAllowWhileIdle(
                     AlarmManager.RTC_WAKEUP,
                     triggerAtMillis,
                     pendingIntent
                 )
-            } else {
-                alarmManager.setAndAllowWhileIdle(
-                    AlarmManager.RTC_WAKEUP,
-                    triggerAtMillis,
-                    pendingIntent
-                )
             }
-        } else {
-            alarmManager.setExactAndAllowWhileIdle(
-                AlarmManager.RTC_WAKEUP,
-                triggerAtMillis,
-                pendingIntent
-            )
         }
     }
 }
