@@ -87,6 +87,9 @@ class MedicationRepository(
         )
     }
 
+    suspend fun getDoseLog(medicationId: Long, scheduledDate: String, scheduledTime: String): MedicationDoseLog? =
+        dao.getDoseLog(medicationId, scheduledDate, scheduledTime)
+
     suspend fun recordAsNeededDose(
         medicationId: Long,
         scheduledDate: String,

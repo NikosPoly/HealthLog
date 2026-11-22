@@ -20,6 +20,7 @@ object MedicationNotificationHelper {
     const val EXTRA_UNIT = "extra_unit"
     const val EXTRA_INSTRUCTIONS = "extra_instructions"
     const val EXTRA_SCHEDULED_TIME = "extra_scheduled_time"
+    const val EXTRA_SCHEDULED_DATE = "extra_scheduled_date"
     const val EXTRA_NOTIFICATION_ID = "extra_notification_id"
     const val EXTRA_REMINDER_ID = "extra_reminder_id"
     const val EXTRA_ALARM_TYPE = "extra_alarm_type"
@@ -52,7 +53,8 @@ object MedicationNotificationHelper {
         unit: String,
         instructions: String?,
         scheduledTime: String,
-        notificationId: Int
+        notificationId: Int,
+        scheduledDate: String? = null
     ) {
         createNotificationChannel(context)
 
@@ -73,7 +75,9 @@ object MedicationNotificationHelper {
             putExtra(EXTRA_MEDICATION_ID, medicationId)
             putExtra(EXTRA_MEDICATION_NAME, medicationName)
             putExtra(EXTRA_SCHEDULED_TIME, scheduledTime)
+            putExtra(EXTRA_SCHEDULED_DATE, scheduledDate)
             putExtra(EXTRA_NOTIFICATION_ID, notificationId)
+            putExtra(EXTRA_REMINDER_ID, notificationId.toLong())
         }
         val markTakenPendingIntent = PendingIntent.getBroadcast(
             context,
@@ -91,7 +95,9 @@ object MedicationNotificationHelper {
             putExtra(EXTRA_UNIT, unit)
             putExtra(EXTRA_INSTRUCTIONS, instructions)
             putExtra(EXTRA_SCHEDULED_TIME, scheduledTime)
+            putExtra(EXTRA_SCHEDULED_DATE, scheduledDate)
             putExtra(EXTRA_NOTIFICATION_ID, notificationId)
+            putExtra(EXTRA_REMINDER_ID, notificationId.toLong())
         }
         val snoozePendingIntent = PendingIntent.getBroadcast(
             context,

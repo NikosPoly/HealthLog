@@ -8,6 +8,7 @@ import com.example.healthlog.database.Medication
 import com.example.healthlog.database.MedicationReminder
 import com.example.healthlog.database.MedicationWithReminders
 import com.example.healthlog.notifications.MedicationAlarmScheduler
+import com.example.healthlog.notifications.MedicationNotificationHelper
 import com.example.healthlog.repository.MedicationRepository
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -262,6 +263,22 @@ class MedicationsViewModel(
                 scheduledTime = doseItem.scheduledTime,
                 status = "TAKEN"
             )
+            // Dismiss active tray notification and cancel any pending snooze for this dose
+            doseItem.reminder?.let { reminder ->
+                MedicationNotificationHelper.cancelNotification(appContext, reminder.id.toInt())
+                val alarmManager = appContext.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+                val snoozeIntent = android.content.Intent(appContext, com.example.healthlog.notifications.MedicationAlarmReceiver::class.java)
+                val snoozePendingIntent = android.app.PendingIntent.getBroadcast(
+                    appContext,
+                    reminder.id.toInt() + MedicationAlarmScheduler.SNOOZE_OFFSET,
+                    snoozeIntent,
+                    android.app.PendingIntent.FLAG_NO_CREATE or android.app.PendingIntent.FLAG_IMMUTABLE
+                )
+                if (snoozePendingIntent != null) {
+                    alarmManager.cancel(snoozePendingIntent)
+                    snoozePendingIntent.cancel()
+                }
+            }
         }
     }
 
@@ -273,6 +290,22 @@ class MedicationsViewModel(
                 scheduledTime = doseItem.scheduledTime,
                 status = "SKIPPED"
             )
+            // Dismiss active tray notification and cancel any pending snooze for this dose
+            doseItem.reminder?.let { reminder ->
+                MedicationNotificationHelper.cancelNotification(appContext, reminder.id.toInt())
+                val alarmManager = appContext.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+                val snoozeIntent = android.content.Intent(appContext, com.example.healthlog.notifications.MedicationAlarmReceiver::class.java)
+                val snoozePendingIntent = android.app.PendingIntent.getBroadcast(
+                    appContext,
+                    reminder.id.toInt() + MedicationAlarmScheduler.SNOOZE_OFFSET,
+                    snoozeIntent,
+                    android.app.PendingIntent.FLAG_NO_CREATE or android.app.PendingIntent.FLAG_IMMUTABLE
+                )
+                if (snoozePendingIntent != null) {
+                    alarmManager.cancel(snoozePendingIntent)
+                    snoozePendingIntent.cancel()
+                }
+            }
         }
     }
 

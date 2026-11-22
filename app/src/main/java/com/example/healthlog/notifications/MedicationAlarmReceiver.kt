@@ -8,7 +8,10 @@ import com.example.healthlog.database.HealthDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 class MedicationAlarmReceiver : BroadcastReceiver() {
 
@@ -71,17 +74,26 @@ class MedicationAlarmReceiver : BroadcastReceiver() {
                     return@launch
                 }
 
-                // 3. Medication and reminder are valid -> show the notification
-                MedicationNotificationHelper.showMedicationNotification(
-                    context = context,
-                    medicationId = medicationId,
-                    medicationName = medicationName,
-                    dosage = dosage,
-                    unit = unit,
-                    instructions = instructions,
-                    scheduledTime = scheduledTime,
-                    notificationId = notificationId
-                )
+                // 3. Dose log check: if today's dose was already marked TAKEN or SKIPPED in the app,
+                // do NOT ring for this scheduled dose!
+                val todayDate = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+                val existingLog = db.medicationDao().getDoseLog(medicationId, todayDate, scheduledTime)
+                val isAlreadyLogged = existingLog != null && (existingLog.status == "TAKEN" || existingLog.status == "SKIPPED")
+
+                if (!isAlreadyLogged) {
+                    // Show the notification only if pending
+                    MedicationNotificationHelper.showMedicationNotification(
+                        context = context,
+                        medicationId = medicationId,
+                        medicationName = medicationName,
+                        dosage = dosage,
+                        unit = unit,
+                        instructions = instructions,
+                        scheduledTime = scheduledTime,
+                        notificationId = notificationId,
+                        scheduledDate = todayDate
+                    )
+                }
 
                 // 4. Reschedule recurring alarm for next occurrence only for MAIN alarms (not snoozes)
                 if (alarmType == MedicationNotificationHelper.ALARM_TYPE_MAIN) {
@@ -97,7 +109,7 @@ class MedicationAlarmReceiver : BroadcastReceiver() {
                         nowCalendar = forwardCalendar
                     )
                     val nextScheduledTime = String.format(
-                        java.util.Locale.US,
+                        Locale.US,
                         "%02d:%02d",
                         matchingReminder.hour,
                         matchingReminder.minute

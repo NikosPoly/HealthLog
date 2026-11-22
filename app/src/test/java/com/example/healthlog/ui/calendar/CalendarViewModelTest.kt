@@ -62,6 +62,8 @@ class CalendarViewModelTest {
         override suspend fun deleteDoseLog(medicationId: Long, date: String, time: String) {}
         override fun getDoseLogsForDate(date: String): Flow<List<MedicationDoseLog>> =
             MutableStateFlow(doseLogs.filter { it.scheduledDate == date })
+        override suspend fun getDoseLog(medicationId: Long, date: String, time: String): MedicationDoseLog? =
+            doseLogs.find { it.medicationId == medicationId && it.scheduledDate == date && it.scheduledTime == time }
         override fun getDoseLogsInDateRange(startDate: String, endDate: String): Flow<List<MedicationDoseLog>> =
             MutableStateFlow(doseLogs.filter { it.scheduledDate >= startDate && it.scheduledDate <= endDate })
     }
