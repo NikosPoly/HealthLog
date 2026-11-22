@@ -53,6 +53,7 @@ import java.util.Locale
 fun PrescriptionsView(
     medications: List<MedicationWithReminders>,
     todayDoses: List<TodayDoseItem> = emptyList(),
+    notificationsEnabled: Boolean = true,
     onEdit: (MedicationWithReminders) -> Unit,
     onToggleActive: (MedicationWithReminders) -> Unit,
     onDelete: (MedicationWithReminders) -> Unit,
@@ -112,6 +113,7 @@ fun PrescriptionsView(
                 PrescriptionCard(
                     item = medWithReminders,
                     todayDoses = todayDoses,
+                    notificationsEnabled = notificationsEnabled,
                     onEdit = { onEdit(medWithReminders) },
                     onToggleActive = { onToggleActive(medWithReminders) },
                     onDelete = { onDelete(medWithReminders) },
@@ -126,6 +128,7 @@ fun PrescriptionsView(
 fun PrescriptionCard(
     item: MedicationWithReminders,
     todayDoses: List<TodayDoseItem> = emptyList(),
+    notificationsEnabled: Boolean = true,
     onEdit: () -> Unit,
     onToggleActive: () -> Unit,
     onDelete: () -> Unit,
@@ -134,20 +137,22 @@ fun PrescriptionCard(
 ) {
     val med = item.medication
     val isActive = med.isActive
+    val isShadedForPermission = !notificationsEnabled && med.frequency == "DAILY" && item.reminders.isNotEmpty()
+    val isVisuallyActive = isActive && !isShadedForPermission
 
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (isActive) MaterialTheme.colorScheme.surfaceContainer else MaterialTheme.colorScheme.surfaceContainerLowest
+            containerColor = if (isVisuallyActive) MaterialTheme.colorScheme.surfaceContainer else MaterialTheme.colorScheme.surfaceContainerLowest
         ),
         border = BorderStroke(
             1.dp,
-            if (isActive) MaterialTheme.colorScheme.outlineVariant else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+            if (isVisuallyActive) MaterialTheme.colorScheme.outlineVariant else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
         ),
         modifier = modifier
             .fillMaxWidth()
             .clickable { onEdit() }
-            .alpha(if (isActive) 1f else 0.6f)
+            .alpha(if (isVisuallyActive) 1f else 0.6f)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -162,7 +167,7 @@ fun PrescriptionCard(
                     Icon(
                         painter = painterResource(R.drawable.ic_nav_medications),
                         contentDescription = null,
-                        tint = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                        tint = if (isVisuallyActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
                         modifier = Modifier.size(28.dp)
                     )
                     Spacer(modifier = Modifier.width(12.dp))

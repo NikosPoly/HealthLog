@@ -1,6 +1,15 @@
 package com.example.healthlog.ui.medications
 
+import android.Manifest
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
 import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -8,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -17,13 +27,6 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
-import android.Manifest
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.net.Uri
-import android.os.Build
-import android.provider.Settings
-import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -33,19 +36,21 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.core.content.ContextCompat
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.healthlog.R
+import com.example.healthlog.notifications.MedicationNotificationHelper
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,26 +66,36 @@ fun MedicationsScreen(
     val isAddSheetOpen by viewModel.isAddSheetOpen.collectAsState()
     val editingMedication by viewModel.editingMedication.collectAsState()
     val deletingMedication by viewModel.deletingMedication.collectAsState()
+
+    var notificationsEnabled by remember {
+        mutableStateOf(MedicationNotificationHelper.areNotificationsEnabled(context))
+    }
     var showTogglePermissionDialog by rememberSaveable { mutableStateOf(false) }
     var pendingToggleMedicationId by rememberSaveable { mutableStateOf<Long?>(null) }
+
+    val togglePermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { _ ->
+        val isNowGranted = MedicationNotificationHelper.areNotificationsEnabled(context)
+        notificationsEnabled = isNowGranted
+        val pendingId = pendingToggleMedicationId
+        pendingToggleMedicationId = null
+        if (isNowGranted && pendingId != null) {
+            viewModel.enableMedicationAndSyncAlarms(pendingId)
+        }
+    }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
+                val isNowGranted = MedicationNotificationHelper.areNotificationsEnabled(context)
+                notificationsEnabled = isNowGranted
                 val pendingId = pendingToggleMedicationId
                 if (pendingId != null) {
                     pendingToggleMedicationId = null
-                    val isNowGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
-                    } else {
-                        true
-                    }
                     if (isNowGranted) {
-                        val med = allMedications.find { it.medication.id == pendingId }
-                        if (med != null && !med.medication.isActive) {
-                            viewModel.toggleMedicationActive(med)
-                        }
+                        viewModel.enableMedicationAndSyncAlarms(pendingId)
                     }
                 }
             }
@@ -180,11 +195,26 @@ fun MedicationsScreen(
                     PrescriptionsView(
                         medications = allMedications,
                         todayDoses = todayDoses,
+                        notificationsEnabled = notificationsEnabled,
                         onEdit = viewModel::openEditMedication,
                         onToggleActive = { medWithReminders ->
                             viewModel.toggleMedicationActive(medWithReminders) {
                                 pendingToggleMedicationId = medWithReminders.medication.id
-                                showTogglePermissionDialog = true
+                                val activity = context as? ComponentActivity
+                                val hasSystemPermissionPrompt = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                                val isPermanentlyDenied = activity != null && hasSystemPermissionPrompt &&
+                                    !ActivityCompat.shouldShowRequestPermissionRationale(
+                                        activity,
+                                        Manifest.permission.POST_NOTIFICATIONS
+                                    )
+                                val prefs = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
+                                val hasEverRequested = prefs.getBoolean("has_requested_notifications_startup", false)
+
+                                if (!hasSystemPermissionPrompt || (isPermanentlyDenied && hasEverRequested)) {
+                                    showTogglePermissionDialog = true
+                                } else {
+                                    togglePermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                }
                             }
                         },
                         onDelete = viewModel::openDeleteConfirmation,
@@ -233,6 +263,7 @@ fun MedicationsScreen(
             editingItem = editingMedication,
             onDismiss = viewModel::closeAddEditSheet,
             onSave = { name, dosage, unit, frequency, instructions, reminders, saveToPrescriptions, logDoseNow ->
+                notificationsEnabled = MedicationNotificationHelper.areNotificationsEnabled(context)
                 viewModel.saveMedication(
                     name = name,
                     dosage = dosage,
@@ -249,7 +280,10 @@ fun MedicationsScreen(
 
     if (showTogglePermissionDialog) {
         AlertDialog(
-            onDismissRequest = { showTogglePermissionDialog = false },
+            onDismissRequest = {
+                showTogglePermissionDialog = false
+                pendingToggleMedicationId = null
+            },
             title = {
                 Text(
                     text = stringResource(R.string.notification_permission_required_title),

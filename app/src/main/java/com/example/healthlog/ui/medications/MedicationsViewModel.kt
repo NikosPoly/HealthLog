@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -341,19 +342,15 @@ class MedicationsViewModel(
         onPermissionRequired: () -> Unit = {}
     ) {
         viewModelScope.launch {
-            val newStatus = !medicationWithReminders.medication.isActive
-            if (newStatus && medicationWithReminders.medication.frequency == "DAILY" && medicationWithReminders.reminders.isNotEmpty()) {
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                    if (androidx.core.content.ContextCompat.checkSelfPermission(
-                            appContext,
-                            android.Manifest.permission.POST_NOTIFICATIONS
-                        ) != android.content.pm.PackageManager.PERMISSION_GRANTED
-                    ) {
-                        onPermissionRequired()
-                        return@launch
-                    }
+            // If notifications are not allowed, intercept ANY toggle tap on a daily medication
+            // with reminders (whether currently enabled or disabled) to request permission.
+            if (medicationWithReminders.medication.frequency == "DAILY" && medicationWithReminders.reminders.isNotEmpty()) {
+                if (!MedicationNotificationHelper.areNotificationsEnabled(appContext)) {
+                    onPermissionRequired()
+                    return@launch
                 }
             }
+            val newStatus = !medicationWithReminders.medication.isActive
             repository.setMedicationActive(medicationWithReminders.medication, newStatus)
             val actualReminders = repository.getRemindersForMedication(medicationWithReminders.medication.id)
             if (!newStatus) {
@@ -365,6 +362,32 @@ class MedicationsViewModel(
                 if (updatedMed != null) {
                     actualReminders.filter { it.isEnabled }.forEach {
                         MedicationAlarmScheduler.scheduleReminder(appContext, updatedMed, it)
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Called after the user grants notification permission from tapping a medication toggle.
+     * Ensures the tapped medication is enabled (even if it was previously disabled) and
+     * reschedules alarms for all active daily medications.
+     */
+    fun enableMedicationAndSyncAlarms(medicationId: Long) {
+        viewModelScope.launch {
+            if (!MedicationNotificationHelper.areNotificationsEnabled(appContext)) return@launch
+
+            val tappedMed = repository.getMedicationById(medicationId)
+            if (tappedMed != null && !tappedMed.isActive) {
+                repository.setMedicationActive(tappedMed, true)
+            }
+
+            // Reschedule all active daily medications so every enabled one rings again
+            val activeMeds = repository.activeMedications.first()
+            activeMeds.forEach { medItem ->
+                if (medItem.medication.frequency == "DAILY") {
+                    medItem.reminders.filter { it.isEnabled }.forEach { reminder ->
+                        MedicationAlarmScheduler.scheduleReminder(appContext, medItem.medication, reminder)
                     }
                 }
             }

@@ -133,11 +133,7 @@ fun AddEditMedicationSheet(
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME && pendingSaveAfterPermission) {
                 pendingSaveAfterPermission = false
-                val isNowGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
-                } else {
-                    true
-                }
+                val isNowGranted = com.example.healthlog.notifications.MedicationNotificationHelper.areNotificationsEnabled(context)
                 if (isNowGranted) {
                     onSave(
                         name,
@@ -516,18 +512,18 @@ fun AddEditMedicationSheet(
                     if (isNameValid && isDosageValid) {
                         val needsNotificationPermission = frequency == "DAILY" &&
                             reminderTimesList.value.isNotEmpty() &&
-                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                            !com.example.healthlog.notifications.MedicationNotificationHelper.areNotificationsEnabled(context)
 
                         if (needsNotificationPermission) {
                             val activity = context as? ComponentActivity
-                            val isPermanentlyDenied = activity != null &&
+                            val hasSystemPermissionPrompt = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                            val isPermanentlyDenied = activity != null && hasSystemPermissionPrompt &&
                                 !ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.POST_NOTIFICATIONS)
 
                             val prefs = context.getSharedPreferences("app_settings", android.content.Context.MODE_PRIVATE)
                             val hasEverRequested = prefs.getBoolean("has_requested_notifications_startup", false)
 
-                            if (isPermanentlyDenied && hasEverRequested) {
+                            if (!hasSystemPermissionPrompt || (isPermanentlyDenied && hasEverRequested)) {
                                 showPermissionPromptDialog = true
                             } else {
                                 permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)

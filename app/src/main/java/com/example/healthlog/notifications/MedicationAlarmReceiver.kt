@@ -48,6 +48,14 @@ class MedicationAlarmReceiver : BroadcastReceiver() {
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
+                // 0. Permission check: if notification permission was revoked, cancel and do NOT ring!
+                if (!MedicationNotificationHelper.areNotificationsEnabled(context)) {
+                    if (reminderId != -1L) {
+                        MedicationAlarmScheduler.cancelReminder(context, reminderId)
+                    }
+                    return@launch
+                }
+
                 val db = HealthDatabase.getDatabase(context)
                 val medication = db.medicationDao().getMedicationById(medicationId)
 

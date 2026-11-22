@@ -31,6 +31,24 @@ object MedicationNotificationHelper {
     const val ACTION_MARK_TAKEN = "com.example.healthlog.ACTION_MEDICATION_MARK_TAKEN"
     const val ACTION_SNOOZE = "com.example.healthlog.ACTION_MEDICATION_SNOOZE"
 
+    fun areNotificationsEnabled(context: Context): Boolean {
+        // 1. App-level permission check across all Android versions (including POST_NOTIFICATIONS on Android 13+)
+        if (!androidx.core.app.NotificationManagerCompat.from(context).areNotificationsEnabled()) {
+            return false
+        }
+
+        // 2. Channel-level check: ensure the medication channel exists and is not blocked
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            val channel = notificationManager.getNotificationChannel(CHANNEL_ID)
+            if (channel != null && channel.importance == NotificationManager.IMPORTANCE_NONE) {
+                return false
+            }
+        }
+
+        return true
+    }
+
     fun createNotificationChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val name = context.getString(R.string.notification_channel_medications_name)
