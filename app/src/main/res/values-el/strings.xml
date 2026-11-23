@@ -32,7 +32,7 @@
     <string name="medications_action_edit">Επεξεργασία Φαρμάκου</string>
     <string name="medications_action_delete">Διαγραφή</string>
     <string name="medications_delete_confirm_title">Διαγραφή Φαρμάκου;</string>
-    <string name="medications_delete_confirm_desc">Είστε βέβαιοι ότι θέλετε να διαγράψετε το φάρμακο %1$s; Όλα τα προγράμματα υπενθυμίσεων και το ιστορικό λήψεων θα διαγραφούν οριστικά.</string>
+    <string name="medications_delete_confirm_desc">Είστε βέβαιοι ότι θέλετε να διαγράψετε το φάρμακο %1$s; Οι μελλοντικές υπενθυμίσεις θα καταργηθούν, ενώ το ιστορικό προηγούμενων λήψεων θα παραμείνει στο ημερολόγιο.</string>
 
     <!-- Dose items -->
     <string name="dose_status_taken">Ελήφθη</string>

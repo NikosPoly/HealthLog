@@ -7,6 +7,7 @@ import com.example.healthlog.database.MedicationReminder
 import com.example.healthlog.database.MedicationScheduleOverride
 import com.example.healthlog.database.MedicationWithReminders
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import java.time.LocalDate
 
 class MedicationRepository(
@@ -14,6 +15,11 @@ class MedicationRepository(
 ) {
     val allMedications: Flow<List<MedicationWithReminders>> =
         dao.getAllMedicationsWithReminders()
+
+    val visibleMedications: Flow<List<MedicationWithReminders>> =
+        dao.getAllMedicationsWithReminders().map { list ->
+            list.filter { !it.medication.isDeleted }
+        }
 
     val activeMedications: Flow<List<MedicationWithReminders>> =
         dao.getActiveMedicationsWithReminders()
@@ -62,8 +68,23 @@ class MedicationRepository(
         dao.updateMedication(medication.copy(isActive = isActive))
     }
 
+    /**
+     * Removes a medication from the Medications cabinet and clears all its reminder schedules
+     * (and any associated per-day overrides).
+     *
+     * - If the medication has any recorded dose logs (TAKEN or SKIPPED — whether from recurring
+     *   reminders or as-needed/one-time intakes), it is soft-deleted (`isActive = false`,
+     *   `isDeleted = true`) so past dose history remains intact on the Calendar and Day Timeline.
+     * - If it has no recorded dose logs, the row is hard-deleted from the database.
+     */
     suspend fun deleteMedication(medication: Medication) {
-        dao.deleteMedication(medication)
+        dao.deleteRemindersForMedication(medication.id)
+        val doseLogCount = dao.getDoseLogCountForMedication(medication.id)
+        if (doseLogCount > 0) {
+            dao.updateMedication(medication.copy(isActive = false, isDeleted = true))
+        } else {
+            dao.deleteMedication(medication)
+        }
     }
 
     fun getDoseLogsForDate(date: String): Flow<List<MedicationDoseLog>> =

@@ -81,6 +81,7 @@ abstract class HealthDatabase : RoomDatabase() {
                         `frequency` TEXT NOT NULL,
                         `instructions` TEXT,
                         `isActive` INTEGER NOT NULL,
+                        `isDeleted` INTEGER NOT NULL DEFAULT 0,
                         `createdAt` INTEGER NOT NULL
                     )
                     """.trimIndent()

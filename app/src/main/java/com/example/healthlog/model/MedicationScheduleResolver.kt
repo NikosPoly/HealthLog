@@ -119,7 +119,7 @@ object MedicationScheduleResolver {
 
         if (!date.isBefore(today)) {
             medicationsWithReminders
-                .filter { it.medication.isActive }
+                .filter { it.medication.isActive && !it.medication.isDeleted }
                 .forEach { medWithReminders ->
                     val med = medWithReminders.medication
                     medWithReminders.reminders.forEach { reminder ->

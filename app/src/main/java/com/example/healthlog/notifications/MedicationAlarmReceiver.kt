@@ -64,7 +64,7 @@ class MedicationAlarmReceiver : BroadcastReceiver() {
                 val medication = dao.getMedicationById(medicationId)
 
                 // 1. Guard check: if medication was deleted or paused, cancel and do NOT ring!
-                if (medication == null || !medication.isActive) {
+                if (medication == null || !medication.isActive || medication.isDeleted) {
                     if (alarmType == MedicationNotificationHelper.ALARM_TYPE_OVERRIDE && overrideId != -1L) {
                         MedicationAlarmScheduler.cancelOverrideAlarm(context, overrideId)
                     } else if (reminderId != -1L) {

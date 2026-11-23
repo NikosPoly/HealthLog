@@ -37,7 +37,7 @@
     <string name="medications_action_edit">Edit Medication</string>
     <string name="medications_action_delete">Delete</string>
     <string name="medications_delete_confirm_title">Delete Medication?</string>
-    <string name="medications_delete_confirm_desc">Are you sure you want to delete %1$s? All reminder schedules and dose history will be permanently deleted.</string>
+    <string name="medications_delete_confirm_desc">Are you sure you want to delete %1$s? Future reminders will be removed, while past dose history will remain in your calendar.</string>
 
     <!-- Dose items -->
     <string name="dose_status_taken">Taken</string>

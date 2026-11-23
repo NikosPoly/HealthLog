@@ -17,7 +17,7 @@ interface MedicationDao {
     fun getAllMedicationsWithReminders(): Flow<List<MedicationWithReminders>>
 
     @Transaction
-    @Query("SELECT * FROM medications WHERE isActive = 1 ORDER BY name ASC")
+    @Query("SELECT * FROM medications WHERE isActive = 1 AND isDeleted = 0 ORDER BY name ASC")
     fun getActiveMedicationsWithReminders(): Flow<List<MedicationWithReminders>>
 
     @Transaction
@@ -74,6 +74,9 @@ interface MedicationDao {
 
     @Query("SELECT * FROM medication_dose_logs WHERE medicationId = :medicationId AND scheduledDate = :date AND scheduledTime = :time LIMIT 1")
     suspend fun getDoseLog(medicationId: Long, date: String, time: String): MedicationDoseLog?
+
+    @Query("SELECT COUNT(*) FROM medication_dose_logs WHERE medicationId = :medicationId")
+    suspend fun getDoseLogCountForMedication(medicationId: Long): Int
 
     // All dose logs within inclusive ISO-8601 calendar dates [startDate, endDate].
     @Query(

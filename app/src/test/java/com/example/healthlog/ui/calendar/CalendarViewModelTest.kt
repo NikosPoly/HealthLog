@@ -57,7 +57,7 @@ class CalendarViewModelTest {
 
         override fun getAllMedicationsWithReminders(): Flow<List<MedicationWithReminders>> = medicationsFlow
         override fun getActiveMedicationsWithReminders(): Flow<List<MedicationWithReminders>> =
-            medicationsFlow.map { list -> list.filter { it.medication.isActive } }
+            medicationsFlow.map { list -> list.filter { it.medication.isActive && !it.medication.isDeleted } }
         override fun getMedicationWithReminders(id: Long): Flow<MedicationWithReminders?> =
             medicationsFlow.map { list -> list.find { it.medication.id == id } }
         override suspend fun getMedicationById(id: Long): Medication? =
@@ -98,6 +98,8 @@ class CalendarViewModelTest {
             doseLogsFlow.map { list -> list.filter { it.scheduledDate == date } }
         override suspend fun getDoseLog(medicationId: Long, date: String, time: String): MedicationDoseLog? =
             doseLogs.find { it.medicationId == medicationId && it.scheduledDate == date && it.scheduledTime == time }
+        override suspend fun getDoseLogCountForMedication(medicationId: Long): Int =
+            doseLogs.count { it.medicationId == medicationId }
         override fun getDoseLogsInDateRange(startDate: String, endDate: String): Flow<List<MedicationDoseLog>> =
             doseLogsFlow.map { list -> list.filter { it.scheduledDate >= startDate && it.scheduledDate <= endDate } }
         override suspend fun upsertOverride(override: MedicationScheduleOverride): Long = 1L

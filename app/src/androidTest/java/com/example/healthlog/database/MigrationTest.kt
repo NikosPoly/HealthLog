@@ -245,13 +245,14 @@ class MigrationTest {
                     "VALUES (1, 'HEADACHE', null, 3, 2200, 'Mild afternoon tension')"
         )
 
-        db.query("SELECT name, dosage, unit, isActive FROM medications WHERE id = 1").use { cursor ->
+        db.query("SELECT name, dosage, unit, isActive, isDeleted FROM medications WHERE id = 1").use { cursor ->
             assertEquals(1, cursor.count)
             cursor.moveToFirst()
             assertEquals("Amlodipine", cursor.getString(0))
             assertEquals("5", cursor.getString(1))
             assertEquals("mg", cursor.getString(2))
             assertEquals(1, cursor.getInt(3))
+            assertEquals(0, cursor.getInt(4))
         }
 
         db.query("SELECT medicationId, hour, minute, startDate, endDate FROM medication_reminders WHERE id = 1").use { cursor ->

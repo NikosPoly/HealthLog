@@ -62,7 +62,9 @@ fun PrescriptionsView(
     onQuickLog: (Medication) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val visibleMedications = medications.filter { it.medication.frequency != "ONE_TIME" }
+    val visibleMedications = medications.filter {
+        !it.medication.isDeleted && it.medication.frequency != "ONE_TIME"
+    }
 
     if (visibleMedications.isEmpty()) {
         Box(

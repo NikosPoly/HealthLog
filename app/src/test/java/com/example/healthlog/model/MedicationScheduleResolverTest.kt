@@ -278,4 +278,65 @@ class MedicationScheduleResolverTest {
         assertEquals(1, monthMap[LocalDate.of(2026, 11, 23)].orEmpty().size)
         assertEquals(1, monthMap[LocalDate.of(2026, 11, 30)].orEmpty().size)
     }
+
+    @Test
+    fun resolveForDate_softDeletedMedication_keepsHistoricalLogsAndNeverProjectsFutureReminders() {
+        val deletedMed = MedicationWithReminders(
+            medication = Medication(
+                id = 9L,
+                name = "Amoxicillin",
+                dosage = "500",
+                unit = "mg",
+                frequency = "DAILY",
+                isActive = false,
+                isDeleted = true
+            ),
+            // Even if a stale reminder somehow existed, isDeleted must never project it
+            reminders = listOf(
+                MedicationReminder(
+                    id = 90L,
+                    medicationId = 9L,
+                    hour = 8,
+                    minute = 0,
+                    daysOfWeekMask = 127,
+                    isEnabled = true,
+                    startDate = "2026-11-01"
+                )
+            )
+        )
+        val logs = listOf(
+            MedicationDoseLog(
+                id = 500L,
+                medicationId = 9L,
+                scheduledDate = "2026-11-23",
+                scheduledTime = "08:00",
+                status = "TAKEN"
+            )
+        )
+
+        // Today: preserves TAKEN log with real name/dosage
+        val todayItems = MedicationScheduleResolver.resolveForDate(
+            date = today,
+            medicationsWithReminders = listOf(deletedMed),
+            doseLogs = logs,
+            overrides = emptyList(),
+            today = today,
+            zoneId = zone
+        )
+        assertEquals(1, todayItems.size)
+        assertEquals("Amoxicillin", todayItems.single().medicationName)
+        assertEquals("500", todayItems.single().dosage)
+        assertEquals(ScheduledDoseStatus.TAKEN, todayItems.single().status)
+
+        // Tomorrow: zero projected pending reminders
+        val tomorrowItems = MedicationScheduleResolver.resolveForDate(
+            date = today.plusDays(1),
+            medicationsWithReminders = listOf(deletedMed),
+            doseLogs = emptyList(),
+            overrides = emptyList(),
+            today = today,
+            zoneId = zone
+        )
+        assertTrue(tomorrowItems.isEmpty())
+    }
 }

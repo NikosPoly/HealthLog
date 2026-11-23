@@ -47,7 +47,7 @@ class MedicationsViewModel(
     fun todayDateString(): String = LocalDate.now().toString()
 
     val allMedications: StateFlow<List<MedicationWithReminders>> =
-        repository.allMedications.stateIn(
+        repository.visibleMedications.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()

@@ -55,7 +55,7 @@ class MedicationRepositoryTest {
 
         override fun getActiveMedicationsWithReminders(): Flow<List<MedicationWithReminders>> {
             return medicationsFlow.map { list ->
-                list.filter { it.isActive }.map { med ->
+                list.filter { it.isActive && !it.isDeleted }.map { med ->
                     MedicationWithReminders(
                         medication = med,
                         reminders = reminders.filter { it.medicationId == med.id }
@@ -173,6 +173,10 @@ class MedicationRepositoryTest {
 
         override suspend fun getDoseLog(medicationId: Long, date: String, time: String): MedicationDoseLog? {
             return doseLogs.find { it.medicationId == medicationId && it.scheduledDate == date && it.scheduledTime == time }
+        }
+
+        override suspend fun getDoseLogCountForMedication(medicationId: Long): Int {
+            return doseLogs.count { it.medicationId == medicationId }
         }
 
         override fun getDoseLogsInDateRange(startDate: String, endDate: String): Flow<List<MedicationDoseLog>> {
@@ -462,5 +466,73 @@ class MedicationRepositoryTest {
         assertEquals(eveningId, remaining.first().id)
         // Parent medication is preserved so past dose logs are never lost
         assertNotNull(repository.getMedicationById(medId))
+    }
+
+    @Test
+    fun deleteMedication_withoutDoseLogs_hardDeletesMedicationAndReminders() = runBlocking {
+        val medId = repository.saveMedication(
+            Medication(name = "TypoMed", dosage = "10", unit = "mg", frequency = "DAILY"),
+            listOf(MedicationReminder(medicationId = 0, hour = 8, minute = 0))
+        )
+        val med = repository.getMedicationById(medId)!!
+
+        repository.deleteMedication(med)
+
+        assertNull(repository.getMedicationById(medId))
+        assertTrue(repository.getRemindersForMedication(medId).isEmpty())
+        assertTrue(repository.allMedications.first().isEmpty())
+        assertTrue(repository.visibleMedications.first().isEmpty())
+    }
+
+    @Test
+    fun deleteMedication_recurringWithTakenAndSkippedLogs_softDeletesAndPreservesHistory() = runBlocking {
+        val medId = repository.saveMedication(
+            Medication(name = "Amlodipine", dosage = "5", unit = "mg", frequency = "DAILY"),
+            listOf(MedicationReminder(medicationId = 0, hour = 8, minute = 0))
+        )
+        val reminderId = repository.getRemindersForMedication(medId).single().id
+        repository.rescheduleDoseForDate(reminderId, "2026-11-25", 9, 30)
+        repository.recordDose(medId, "2026-11-22", "08:00", status = "TAKEN")
+        repository.recordDose(medId, "2026-11-23", "08:00", status = "SKIPPED")
+
+        val med = repository.getMedicationById(medId)!!
+        repository.deleteMedication(med)
+
+        // Removed from Medications cabinet and active alarms
+        assertTrue(repository.visibleMedications.first().isEmpty())
+        assertTrue(repository.activeMedications.first().isEmpty())
+        assertTrue(repository.getRemindersForMedication(medId).isEmpty())
+        assertTrue(repository.getOverridesForReminder(reminderId).isEmpty())
+
+        // Soft-deleted row and both TAKEN & SKIPPED dose logs remain for Calendar history
+        val persisted = repository.getMedicationById(medId)
+        assertNotNull(persisted)
+        assertTrue(persisted!!.isDeleted)
+        assertFalse(persisted.isActive)
+        assertEquals(1, repository.allMedications.first().size)
+        val historyLogs = repository.getDoseLogsInDateRange("2026-11-01", "2026-11-30").first()
+        assertEquals(2, historyLogs.size)
+        assertTrue(historyLogs.any { it.status == "TAKEN" && it.scheduledDate == "2026-11-22" })
+        assertTrue(historyLogs.any { it.status == "SKIPPED" && it.scheduledDate == "2026-11-23" })
+    }
+
+    @Test
+    fun deleteMedication_asNeededWithLoggedDose_softDeletesAndPreservesHistory() = runBlocking {
+        val medId = repository.saveMedication(
+            Medication(name = "Ibuprofen", dosage = "400", unit = "mg", frequency = "AS_NEEDED")
+        )
+        repository.recordAsNeededDose(medId, "2026-11-23", "14:30", status = "TAKEN")
+
+        val med = repository.getMedicationById(medId)!!
+        repository.deleteMedication(med)
+
+        assertTrue(repository.visibleMedications.first().isEmpty())
+        val persisted = repository.getMedicationById(medId)
+        assertNotNull(persisted)
+        assertTrue(persisted!!.isDeleted)
+        assertFalse(persisted.isActive)
+        val logs = repository.getDoseLogsForDate("2026-11-23").first()
+        assertEquals(1, logs.size)
+        assertEquals("TAKEN", logs.single().status)
     }
 }

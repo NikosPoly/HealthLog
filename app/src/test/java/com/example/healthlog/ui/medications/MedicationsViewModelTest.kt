@@ -41,7 +41,7 @@ class MedicationsViewModelTest {
 
         override fun getActiveMedicationsWithReminders(): Flow<List<MedicationWithReminders>> {
             return medicationsFlow.map { list ->
-                list.filter { it.isActive }.map { med ->
+                list.filter { it.isActive && !it.isDeleted }.map { med ->
                     MedicationWithReminders(
                         medication = med,
                         reminders = reminders.filter { it.medicationId == med.id }
@@ -156,6 +156,10 @@ class MedicationsViewModelTest {
 
         override suspend fun getDoseLog(medicationId: Long, date: String, time: String): MedicationDoseLog? {
             return doseLogs.find { it.medicationId == medicationId && it.scheduledDate == date && it.scheduledTime == time }
+        }
+
+        override suspend fun getDoseLogCountForMedication(medicationId: Long): Int {
+            return doseLogs.count { it.medicationId == medicationId }
         }
 
         override fun getDoseLogsInDateRange(startDate: String, endDate: String): Flow<List<MedicationDoseLog>> {
