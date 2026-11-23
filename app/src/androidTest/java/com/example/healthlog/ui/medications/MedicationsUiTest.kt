@@ -18,6 +18,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.time.LocalDate
 
 @RunWith(AndroidJUnit4::class)
 class MedicationsUiTest {
@@ -28,108 +29,26 @@ class MedicationsUiTest {
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
 
     @Test
-    fun todayScheduleView_emptyState_rendersEmptyMessageAndAddButton() {
+    fun prescriptionsView_emptyState_rendersEmptyMessageAndAddButton() {
         var addClicked = false
 
         composeRule.setContent {
             HealthLogTheme {
-                TodayScheduleView(
-                    doses = emptyList(),
-                    onMarkTaken = {},
-                    onMarkSkipped = {},
-                    onUndo = {},
+                PrescriptionsView(
+                    medications = emptyList(),
+                    todayDoses = emptyList(),
+                    onEdit = {},
+                    onToggleActive = {},
+                    onDelete = {},
                     onAddMedication = { addClicked = true }
                 )
             }
         }
 
-        composeRule.onNodeWithText(context.getString(R.string.medications_empty_schedule)).assertIsDisplayed()
-        composeRule.onNodeWithText(context.getString(R.string.medications_empty_schedule_sub)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.medications_empty_prescriptions)).assertIsDisplayed()
         composeRule.onNodeWithText(context.getString(R.string.medications_action_add)).performClick()
 
         assertTrue(addClicked)
-    }
-
-    @Test
-    fun todayScheduleView_withPendingDose_rendersDoseAndHandlesTakeAction() {
-        val med = Medication(
-            id = 1,
-            name = "Amlodipine",
-            dosage = "5",
-            unit = "mg",
-            frequency = "DAILY"
-        )
-        val dose = TodayDoseItem(
-            logId = null,
-            medication = med,
-            reminder = null,
-            scheduledTime = "08:00",
-            scheduledDate = "2026-11-18",
-            status = DoseStatus.PENDING
-        )
-
-        var takenDose: TodayDoseItem? = null
-
-        composeRule.setContent {
-            HealthLogTheme {
-                TodayScheduleView(
-                    doses = listOf(dose),
-                    onMarkTaken = { takenDose = it },
-                    onMarkSkipped = {},
-                    onUndo = {},
-                    onAddMedication = {}
-                )
-            }
-        }
-
-        // Verify medication name, dosage, and time are displayed
-        composeRule.onNodeWithText("Amlodipine • 5 mg").assertIsDisplayed()
-        composeRule.onNodeWithText("08:00").assertIsDisplayed()
-
-        // Tap Take button
-        composeRule.onNodeWithText(context.getString(R.string.dose_action_mark_taken)).performClick()
-        assertEquals(dose, takenDose)
-    }
-
-    @Test
-    fun todayScheduleView_withCompletedDose_rendersUndoAction() {
-        val med = Medication(
-            id = 1,
-            name = "Aspirin",
-            dosage = "100",
-            unit = "mg",
-            frequency = "DAILY"
-        )
-        val completedDose = TodayDoseItem(
-            logId = 99L,
-            medication = med,
-            reminder = null,
-            scheduledTime = "09:00",
-            scheduledDate = "2026-11-18",
-            status = DoseStatus.TAKEN,
-            actionTimestamp = 1763475600000L
-        )
-
-        var undoneDose: TodayDoseItem? = null
-
-        composeRule.setContent {
-            HealthLogTheme {
-                TodayScheduleView(
-                    doses = listOf(completedDose),
-                    onMarkTaken = {},
-                    onMarkSkipped = {},
-                    onUndo = { undoneDose = it },
-                    onAddMedication = {}
-                )
-            }
-        }
-
-        composeRule.onNodeWithText("Aspirin • 100 mg").assertIsDisplayed()
-        composeRule.onNodeWithText(context.getString(R.string.dose_status_taken)).assertIsDisplayed()
-
-        // Tap Undo action
-        composeRule.onNodeWithText(context.getString(R.string.dose_action_undo)).performClick()
-        assertEquals(completedDose, undoneDose)
     }
 
     @Test
@@ -170,34 +89,39 @@ class MedicationsUiTest {
     @Test
     fun addEditMedicationSheet_rendersForm_andValidatesInput() {
         var savedName = ""
+        var savedDate: LocalDate? = null
+        var savedOneTimePair: Pair<Int, Int>? = null
+        val targetDate = LocalDate.of(2026, 11, 25)
 
         composeRule.setContent {
             HealthLogTheme {
                 AddEditMedicationSheet(
                     editingItem = null,
+                    initialDate = targetDate,
+                    initialTime = 14 to 30,
                     onDismiss = {},
-                    onSave = { name, _, _, _, _, _, _, _ ->
+                    onSave = { name, _, _, _, _, _, _, _, date, oneTimePair ->
                         savedName = name
+                        savedDate = date
+                        savedOneTimePair = oneTimePair
                     }
                 )
             }
         }
 
-        // Verify title
         composeRule.onNodeWithText(context.getString(R.string.med_form_title_add)).assertIsDisplayed()
 
-        // Switch to As-Needed so notification permission is not required to save
+        // Switch to As-Needed / One-Time so no alarm permission is needed
         composeRule.onNodeWithText(context.getString(R.string.med_freq_as_needed)).performClick()
+        composeRule.onNodeWithText("14:30").assertIsDisplayed()
 
-        // Input name
         composeRule.onNodeWithText(context.getString(R.string.med_form_name_label)).performTextInput("Cardura")
-
-        // Input dosage
         composeRule.onNodeWithText(context.getString(R.string.med_form_dosage_label)).performTextInput("2")
 
-        // When as-needed and not saving as permanent prescription, button is "Log Dose Now"
         composeRule.onNodeWithText(context.getString(R.string.med_form_action_log_dose)).performScrollTo().performClick()
 
         assertEquals("Cardura", savedName)
+        assertEquals(targetDate, savedDate)
+        assertEquals(14 to 30, savedOneTimePair)
     }
 }

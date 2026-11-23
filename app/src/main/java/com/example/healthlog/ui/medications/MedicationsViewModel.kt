@@ -5,8 +5,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.healthlog.database.Medication
-import com.example.healthlog.database.MedicationReminder
 import com.example.healthlog.database.MedicationWithReminders
+import com.example.healthlog.model.MedicationScheduleResolver
+import com.example.healthlog.model.ScheduledDoseItem
 import com.example.healthlog.notifications.MedicationAlarmScheduler
 import com.example.healthlog.notifications.MedicationNotificationHelper
 import com.example.healthlog.repository.MedicationRepository
@@ -22,7 +23,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
-import java.util.Calendar
+import java.time.LocalDate
 import java.util.Date
 import java.util.Locale
 
@@ -30,9 +31,6 @@ class MedicationsViewModel(
     private val repository: MedicationRepository,
     private val appContext: Context
 ) : ViewModel() {
-
-    private val _selectedTab = MutableStateFlow(0) // 0: Today's Schedule, 1: Prescriptions
-    val selectedTab: StateFlow<Int> = _selectedTab.asStateFlow()
 
     private val _editingMedication = MutableStateFlow<MedicationWithReminders?>(null)
     val editingMedication: StateFlow<MedicationWithReminders?> = _editingMedication.asStateFlow()
@@ -46,7 +44,7 @@ class MedicationsViewModel(
     private val _userMessage = MutableSharedFlow<String>()
     val userMessage: SharedFlow<String> = _userMessage.asSharedFlow()
 
-    fun todayDateString(): String = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+    fun todayDateString(): String = LocalDate.now().toString()
 
     val allMedications: StateFlow<List<MedicationWithReminders>> =
         repository.allMedications.stateIn(
@@ -55,100 +53,25 @@ class MedicationsViewModel(
             initialValue = emptyList()
         )
 
-    val todayDoses: StateFlow<List<TodayDoseItem>> =
+    val todayDoses: StateFlow<List<ScheduledDoseItem>> =
         combine(
-            repository.activeMedications,
-            repository.getDoseLogsForDate(todayDateString())
-        ) { meds, logs ->
-            val todayCalendar = Calendar.getInstance()
-            val dayOfWeek = todayCalendar.get(Calendar.DAY_OF_WEEK)
-            val currentBit = when (dayOfWeek) {
-                Calendar.MONDAY -> 1
-                Calendar.TUESDAY -> 2
-                Calendar.WEDNESDAY -> 4
-                Calendar.THURSDAY -> 8
-                Calendar.FRIDAY -> 16
-                Calendar.SATURDAY -> 32
-                Calendar.SUNDAY -> 64
-                else -> 1
-            }
-
-            val todayDate = todayDateString()
-            val result = mutableListOf<TodayDoseItem>()
-
-            meds.forEach { medWithReminders ->
-                val med = medWithReminders.medication
-                val activeReminders = medWithReminders.reminders.filter {
-                    it.isEnabled && (it.daysOfWeekMask and currentBit) != 0
-                }
-
-                if (activeReminders.isNotEmpty()) {
-                    val createdCal = Calendar.getInstance().apply { timeInMillis = med.createdAt }
-                    val isCreatedToday = (createdCal.get(Calendar.YEAR) == todayCalendar.get(Calendar.YEAR)
-                            && createdCal.get(Calendar.DAY_OF_YEAR) == todayCalendar.get(Calendar.DAY_OF_YEAR))
-                    val createdHour = createdCal.get(Calendar.HOUR_OF_DAY)
-                    val createdMinute = createdCal.get(Calendar.MINUTE)
-
-                    activeReminders.forEach { reminder ->
-                        val scheduledTime = String.format(Locale.US, "%02d:%02d", reminder.hour, reminder.minute)
-                        val log = logs.find { it.medicationId == med.id && it.scheduledTime == scheduledTime }
-
-                        val isBeforeCreation = isCreatedToday &&
-                            (reminder.hour < createdHour || (reminder.hour == createdHour && reminder.minute < createdMinute))
-
-                        // If the reminder occurred before the medicine was created today and wasn't logged,
-                        // don't show it as an unfulfilled/pending dose for today.
-                        if (!isBeforeCreation || log != null) {
-                            val status = when (log?.status) {
-                                "TAKEN" -> DoseStatus.TAKEN
-                                "SKIPPED" -> DoseStatus.SKIPPED
-                                else -> DoseStatus.PENDING
-                            }
-
-                            result.add(
-                                TodayDoseItem(
-                                    logId = log?.id,
-                                    medication = med,
-                                    reminder = reminder,
-                                    scheduledTime = scheduledTime,
-                                    scheduledDate = todayDate,
-                                    status = status,
-                                    actionTimestamp = log?.actionTimestamp,
-                                    isAsNeeded = false
-                                )
-                            )
-                        }
-                    }
-                } else if (med.frequency == "AS_NEEDED" || med.frequency == "ONE_TIME") {
-                    // Check if any as-needed or one-time doses were logged today for this medicine
-                    val asNeededLogs = logs.filter { it.medicationId == med.id }
-                    asNeededLogs.forEach { log ->
-                        result.add(
-                            TodayDoseItem(
-                                logId = log.id,
-                                medication = med,
-                                reminder = null,
-                                scheduledTime = log.scheduledTime,
-                                scheduledDate = todayDate,
-                                status = DoseStatus.TAKEN,
-                                actionTimestamp = log.actionTimestamp,
-                                isAsNeeded = true
-                            )
-                        )
-                    }
-                }
-            }
-
-            result.sortedBy { it.scheduledTime }
+            repository.allMedications,
+            repository.getDoseLogsForDate(todayDateString()),
+            repository.getOverridesForDate(todayDateString())
+        ) { meds, logs, overrides ->
+            val today = LocalDate.now()
+            MedicationScheduleResolver.resolveForDate(
+                date = today,
+                medicationsWithReminders = meds,
+                doseLogs = logs,
+                overrides = overrides,
+                today = today
+            )
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
-
-    fun selectTab(index: Int) {
-        _selectedTab.value = index
-    }
 
     fun openAddMedication() {
         _editingMedication.value = null
@@ -173,154 +96,30 @@ class MedicationsViewModel(
         instructions: String?,
         reminderTimes: List<Pair<Int, Int>>,
         saveToPrescriptions: Boolean = true,
-        logDoseNow: Boolean = false
+        logDoseNow: Boolean = false,
+        targetDate: LocalDate = LocalDate.now(),
+        oneTimeHourMinute: Pair<Int, Int>? = null
     ) {
         viewModelScope.launch {
-            val existing = _editingMedication.value
-            val effectiveFrequency = if (frequency == "DAILY") {
-                "DAILY"
-            } else if (saveToPrescriptions) {
-                "AS_NEEDED"
-            } else {
-                "ONE_TIME"
-            }
-
-            val medToSave = existing?.medication?.copy(
-                name = name.trim(),
-                dosage = dosage.trim(),
+            val loggedMedName = MedicationActions.saveMedication(
+                repository = repository,
+                appContext = appContext,
+                existing = _editingMedication.value,
+                name = name,
+                dosage = dosage,
                 unit = unit,
-                frequency = effectiveFrequency,
-                instructions = instructions?.trim()?.ifBlank { null }
-            ) ?: Medication(
-                name = name.trim(),
-                dosage = dosage.trim(),
-                unit = unit,
-                frequency = effectiveFrequency,
-                instructions = instructions?.trim()?.ifBlank { null },
-                isActive = true
+                frequency = frequency,
+                instructions = instructions,
+                reminderTimes = reminderTimes,
+                saveToPrescriptions = saveToPrescriptions,
+                logDoseNow = logDoseNow,
+                targetDate = targetDate,
+                oneTimeHourMinute = oneTimeHourMinute
             )
-
-            val remindersToSave = if (effectiveFrequency == "DAILY") {
-                reminderTimes.map { (hour, minute) ->
-                    MedicationReminder(
-                        medicationId = medToSave.id,
-                        hour = hour,
-                        minute = minute,
-                        daysOfWeekMask = 127,
-                        isEnabled = true
-                    )
-                }
-            } else {
-                emptyList()
+            if (loggedMedName != null) {
+                _userMessage.emit(loggedMedName)
             }
-
-            val savedId = if (existing == null) {
-                repository.saveMedication(medToSave, remindersToSave)
-            } else {
-                // Cancel existing scheduled alarms for this medication before overwriting reminders,
-                // preventing orphaned alarms from previous edits from ringing.
-                val oldReminders = repository.getRemindersForMedication(medToSave.id)
-                oldReminders.forEach { reminder ->
-                    MedicationAlarmScheduler.cancelReminder(appContext, reminder.id)
-                }
-                existing.reminders.forEach { reminder ->
-                    MedicationAlarmScheduler.cancelReminder(appContext, reminder.id)
-                }
-
-                repository.updateMedication(medToSave, remindersToSave)
-                medToSave.id
-            }
-
-            // Schedule alarms for active recurring reminders using persisted reminders with real database IDs
-            val updatedMed = repository.getMedicationById(savedId)
-            if (updatedMed != null && updatedMed.isActive && effectiveFrequency == "DAILY") {
-                val actualReminders = repository.getRemindersForMedication(savedId)
-                actualReminders.forEach { reminder ->
-                    MedicationAlarmScheduler.scheduleReminder(appContext, updatedMed, reminder)
-                }
-            }
-
-            // If it's a one-time temporary intake or user requested logging a dose now
-            if (effectiveFrequency == "ONE_TIME" || (effectiveFrequency == "AS_NEEDED" && logDoseNow)) {
-                val nowTime = SimpleDateFormat("HH:mm", Locale.US).format(Date())
-                repository.recordAsNeededDose(
-                    medicationId = savedId,
-                    scheduledDate = todayDateString(),
-                    scheduledTime = nowTime,
-                    status = "TAKEN"
-                )
-                _userMessage.emit(medToSave.name)
-            }
-
             closeAddEditSheet()
-        }
-    }
-
-    fun markDoseTaken(doseItem: TodayDoseItem) {
-        viewModelScope.launch {
-            repository.recordDose(
-                medicationId = doseItem.medication.id,
-                scheduledDate = doseItem.scheduledDate,
-                scheduledTime = doseItem.scheduledTime,
-                status = "TAKEN"
-            )
-            // Dismiss active tray notification and cancel any pending snooze for this dose
-            doseItem.reminder?.let { reminder ->
-                MedicationNotificationHelper.cancelNotification(appContext, reminder.id.toInt())
-                val alarmManager = appContext.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
-                val snoozeIntent = android.content.Intent(appContext, com.example.healthlog.notifications.MedicationAlarmReceiver::class.java)
-                val snoozePendingIntent = android.app.PendingIntent.getBroadcast(
-                    appContext,
-                    reminder.id.toInt() + MedicationAlarmScheduler.SNOOZE_OFFSET,
-                    snoozeIntent,
-                    android.app.PendingIntent.FLAG_NO_CREATE or android.app.PendingIntent.FLAG_IMMUTABLE
-                )
-                if (snoozePendingIntent != null) {
-                    alarmManager.cancel(snoozePendingIntent)
-                    snoozePendingIntent.cancel()
-                }
-            }
-        }
-    }
-
-    fun markDoseSkipped(doseItem: TodayDoseItem) {
-        viewModelScope.launch {
-            repository.recordDose(
-                medicationId = doseItem.medication.id,
-                scheduledDate = doseItem.scheduledDate,
-                scheduledTime = doseItem.scheduledTime,
-                status = "SKIPPED"
-            )
-            // Dismiss active tray notification and cancel any pending snooze for this dose
-            doseItem.reminder?.let { reminder ->
-                MedicationNotificationHelper.cancelNotification(appContext, reminder.id.toInt())
-                val alarmManager = appContext.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
-                val snoozeIntent = android.content.Intent(appContext, com.example.healthlog.notifications.MedicationAlarmReceiver::class.java)
-                val snoozePendingIntent = android.app.PendingIntent.getBroadcast(
-                    appContext,
-                    reminder.id.toInt() + MedicationAlarmScheduler.SNOOZE_OFFSET,
-                    snoozeIntent,
-                    android.app.PendingIntent.FLAG_NO_CREATE or android.app.PendingIntent.FLAG_IMMUTABLE
-                )
-                if (snoozePendingIntent != null) {
-                    alarmManager.cancel(snoozePendingIntent)
-                    snoozePendingIntent.cancel()
-                }
-            }
-        }
-    }
-
-    fun undoDoseAction(doseItem: TodayDoseItem) {
-        viewModelScope.launch {
-            if (doseItem.logId != null) {
-                repository.deleteDoseById(doseItem.logId)
-            } else {
-                repository.deleteDose(
-                    medicationId = doseItem.medication.id,
-                    scheduledDate = doseItem.scheduledDate,
-                    scheduledTime = doseItem.scheduledTime
-                )
-            }
         }
     }
 
@@ -342,8 +141,6 @@ class MedicationsViewModel(
         onPermissionRequired: () -> Unit = {}
     ) {
         viewModelScope.launch {
-            // If notifications are not allowed, intercept ANY toggle tap on a daily medication
-            // with reminders (whether currently enabled or disabled) to request permission.
             if (medicationWithReminders.medication.frequency == "DAILY" && medicationWithReminders.reminders.isNotEmpty()) {
                 if (!MedicationNotificationHelper.areNotificationsEnabled(appContext)) {
                     onPermissionRequired()
@@ -354,25 +151,22 @@ class MedicationsViewModel(
             repository.setMedicationActive(medicationWithReminders.medication, newStatus)
             val actualReminders = repository.getRemindersForMedication(medicationWithReminders.medication.id)
             if (!newStatus) {
-                actualReminders.forEach {
-                    MedicationAlarmScheduler.cancelReminder(appContext, it.id)
+                actualReminders.forEach { reminder ->
+                    val overrides = repository.getOverridesForReminder(reminder.id)
+                    MedicationAlarmScheduler.cancelReminder(appContext, reminder.id, overrides)
                 }
             } else {
                 val updatedMed = repository.getMedicationById(medicationWithReminders.medication.id)
                 if (updatedMed != null) {
-                    actualReminders.filter { it.isEnabled }.forEach {
-                        MedicationAlarmScheduler.scheduleReminder(appContext, updatedMed, it)
+                    actualReminders.filter { it.isEnabled }.forEach { reminder ->
+                        val overrides = repository.getOverridesForReminder(reminder.id)
+                        MedicationAlarmScheduler.scheduleReminder(appContext, updatedMed, reminder, overrides)
                     }
                 }
             }
         }
     }
 
-    /**
-     * Called after the user grants notification permission from tapping a medication toggle.
-     * Ensures the tapped medication is enabled (even if it was previously disabled) and
-     * reschedules alarms for all active daily medications.
-     */
     fun enableMedicationAndSyncAlarms(medicationId: Long) {
         viewModelScope.launch {
             if (!MedicationNotificationHelper.areNotificationsEnabled(appContext)) return@launch
@@ -382,12 +176,12 @@ class MedicationsViewModel(
                 repository.setMedicationActive(tappedMed, true)
             }
 
-            // Reschedule all active daily medications so every enabled one rings again
             val activeMeds = repository.activeMedications.first()
             activeMeds.forEach { medItem ->
                 if (medItem.medication.frequency == "DAILY") {
                     medItem.reminders.filter { it.isEnabled }.forEach { reminder ->
-                        MedicationAlarmScheduler.scheduleReminder(appContext, medItem.medication, reminder)
+                        val overrides = repository.getOverridesForReminder(reminder.id)
+                        MedicationAlarmScheduler.scheduleReminder(appContext, medItem.medication, reminder, overrides)
                     }
                 }
             }
@@ -410,13 +204,13 @@ class MedicationsViewModel(
 
     fun deleteMedication(medicationWithReminders: MedicationWithReminders) {
         viewModelScope.launch {
-            // Cancel alarms for both the in-memory reminders and any reminders currently in the DB
             val persistedReminders = repository.getRemindersForMedication(medicationWithReminders.medication.id)
-            persistedReminders.forEach {
-                MedicationAlarmScheduler.cancelReminder(appContext, it.id)
+            persistedReminders.forEach { reminder ->
+                val overrides = repository.getOverridesForReminder(reminder.id)
+                MedicationAlarmScheduler.cancelReminder(appContext, reminder.id, overrides)
             }
-            medicationWithReminders.reminders.forEach {
-                MedicationAlarmScheduler.cancelReminder(appContext, it.id)
+            medicationWithReminders.reminders.forEach { reminder ->
+                MedicationAlarmScheduler.cancelReminder(appContext, reminder.id)
             }
             repository.deleteMedication(medicationWithReminders.medication)
         }

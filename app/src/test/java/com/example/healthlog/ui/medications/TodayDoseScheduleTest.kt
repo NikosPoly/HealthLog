@@ -1,52 +1,22 @@
 package com.example.healthlog.ui.medications
 
 import com.example.healthlog.database.Medication
-import com.example.healthlog.database.MedicationReminder
 import com.example.healthlog.database.MedicationWithReminders
+import com.example.healthlog.model.ScheduledDoseItem
+import com.example.healthlog.model.ScheduledDoseStatus
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.util.Calendar
 
 class TodayDoseScheduleTest {
 
     @Test
-    fun doseStatus_valuesAreCorrect() {
-        assertEquals(3, DoseStatus.entries.size)
-        assertTrue(DoseStatus.entries.contains(DoseStatus.PENDING))
-        assertTrue(DoseStatus.entries.contains(DoseStatus.TAKEN))
-        assertTrue(DoseStatus.entries.contains(DoseStatus.SKIPPED))
-    }
-
-    @Test
-    fun todayDoseItem_stableKey_usesLogIdWhenAvailable() {
-        val med = Medication(id = 1, name = "Amlodipine", dosage = "5", unit = "mg", frequency = "DAILY")
-        val itemWithLog = TodayDoseItem(
-            logId = 42L,
-            medication = med,
-            reminder = null,
-            scheduledTime = "08:00",
-            scheduledDate = "2026-11-18",
-            status = DoseStatus.TAKEN
-        )
-        val key = itemWithLog.logId ?: "${itemWithLog.medication.id}_${itemWithLog.scheduledTime}"
-        assertEquals(42L, key)
-    }
-
-    @Test
-    fun todayDoseItem_stableKey_usesMedicationIdAndTimeWhenPending() {
-        val med = Medication(id = 5, name = "Metformin", dosage = "500", unit = "mg", frequency = "DAILY")
-        val pendingItem = TodayDoseItem(
-            logId = null,
-            medication = med,
-            reminder = null,
-            scheduledTime = "13:00",
-            scheduledDate = "2026-11-18",
-            status = DoseStatus.PENDING
-        )
-        val key = pendingItem.logId ?: "${pendingItem.medication.id}_${pendingItem.scheduledTime}"
-        assertEquals("5_13:00", key)
+    fun scheduledDoseStatus_valuesAreCorrect() {
+        assertEquals(3, ScheduledDoseStatus.entries.size)
+        assertTrue(ScheduledDoseStatus.entries.contains(ScheduledDoseStatus.PENDING))
+        assertTrue(ScheduledDoseStatus.entries.contains(ScheduledDoseStatus.TAKEN))
+        assertTrue(ScheduledDoseStatus.entries.contains(ScheduledDoseStatus.SKIPPED))
     }
 
     @Test
@@ -92,7 +62,6 @@ class TodayDoseScheduleTest {
         val weekendsMask = saturdayBit or sundayBit
         assertEquals(96, weekendsMask)
 
-        // Verify day matching logic
         assertTrue((everydayMask and wednesdayBit) != 0)
         assertTrue((weekdaysMask and wednesdayBit) != 0)
         assertFalse((weekendsMask and wednesdayBit) != 0)
@@ -101,35 +70,18 @@ class TodayDoseScheduleTest {
 
     @Test
     fun scheduleGrouping_ordersByScheduledTime() {
-        val med = Medication(id = 1, name = "Pill A", dosage = "10", unit = "mg", frequency = "DAILY")
-        val evening = TodayDoseItem(logId = 1, medication = med, reminder = null, scheduledTime = "20:00", scheduledDate = "2026-11-18", status = DoseStatus.PENDING)
-        val morning = TodayDoseItem(logId = 2, medication = med, reminder = null, scheduledTime = "08:00", scheduledDate = "2026-11-18", status = DoseStatus.PENDING)
-        val noon = TodayDoseItem(logId = 3, medication = med, reminder = null, scheduledTime = "13:00", scheduledDate = "2026-11-18", status = DoseStatus.PENDING)
+        val evening = ScheduledDoseItem(
+            medicationId = 1, medicationName = "Pill A", dosage = "10", unit = "mg", instructions = null,
+            scheduledDate = "2026-11-18", scheduledTime = "20:00", hour = 20, minute = 0,
+            status = ScheduledDoseStatus.PENDING, isRecurring = true
+        )
+        val morning = evening.copy(scheduledTime = "08:00", hour = 8)
+        val noon = evening.copy(scheduledTime = "13:00", hour = 13)
 
-        val unsorted = listOf(evening, morning, noon)
-        val sorted = unsorted.sortedBy { it.scheduledTime }
+        val sorted = listOf(evening, morning, noon).sortedWith(compareBy({ it.hour }, { it.minute }))
 
         assertEquals("08:00", sorted[0].scheduledTime)
         assertEquals("13:00", sorted[1].scheduledTime)
         assertEquals("20:00", sorted[2].scheduledTime)
-    }
-
-    @Test
-    fun asNeededDose_isProperlyFlagged() {
-        val asNeededMed = Medication(id = 10, name = "Pain Reliever", dosage = "500", unit = "mg", frequency = "AS_NEEDED")
-        val item = TodayDoseItem(
-            logId = 100L,
-            medication = asNeededMed,
-            reminder = null,
-            scheduledTime = "14:15",
-            scheduledDate = "2026-11-18",
-            status = DoseStatus.TAKEN,
-            actionTimestamp = 1763475300000L,
-            isAsNeeded = true
-        )
-
-        assertTrue(item.isAsNeeded)
-        assertEquals(DoseStatus.TAKEN, item.status)
-        assertEquals("Pain Reliever", item.medication.name)
     }
 }

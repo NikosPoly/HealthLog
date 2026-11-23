@@ -88,6 +88,8 @@
     <string name="med_form_log_now">Log dose for right now</string>
     <string name="med_form_log_now_desc">Record that you took this medicine right now</string>
     <string name="med_form_action_log_dose">Log Dose Now</string>
+    <string name="med_form_dose_time_label">Dose Time</string>
+    <string name="med_form_for_date">For %1$s</string>
 
     <!-- Medication Notifications -->
     <string name="notification_channel_medications_name">Medication Reminders</string>

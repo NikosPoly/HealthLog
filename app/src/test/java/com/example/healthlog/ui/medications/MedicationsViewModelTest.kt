@@ -176,18 +176,6 @@ class MedicationsViewModelTest {
     }
 
     @Test
-    fun tabSelection_updatesSelectedTab() {
-        val fakeDao = FakeMedicationDao()
-        val repository = MedicationRepository(fakeDao)
-        val context = android.app.Application()
-        val viewModel = MedicationsViewModel(repository, context)
-
-        assertEquals(0, viewModel.selectedTab.value)
-        viewModel.selectTab(1)
-        assertEquals(1, viewModel.selectedTab.value)
-    }
-
-    @Test
     fun sheetState_openAndClose() {
         val fakeDao = FakeMedicationDao()
         val repository = MedicationRepository(fakeDao)

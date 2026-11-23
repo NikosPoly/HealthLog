@@ -83,6 +83,8 @@
     <string name="med_form_log_now">Καταγραφή λήψης τώρα</string>
     <string name="med_form_log_now_desc">Καταγραφή ότι πήρατε αυτό το φάρμακο αυτή τη στιγμή</string>
     <string name="med_form_action_log_dose">Καταγραφή Έκτακτης Λήψης</string>
+    <string name="med_form_dose_time_label">Ώρα Δόσης</string>
+    <string name="med_form_for_date">Για %1$s</string>
 
     <!-- Medication Notifications -->
     <string name="notification_channel_medications_name">Υπενθυμίσεις Φαρμάκων</string>
