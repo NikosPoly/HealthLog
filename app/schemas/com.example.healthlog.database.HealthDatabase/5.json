@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 5,
-    "identityHash": "5ba01f421e910f31fba86f7aa3edc203",
+    "identityHash": "daa66af12e8be46fb35295a01d879f4c",
     "entities": [
       {
         "tableName": "measurements",
@@ -131,7 +131,7 @@
       },
       {
         "tableName": "medication_reminders",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `medicationId` INTEGER NOT NULL, `hour` INTEGER NOT NULL, `minute` INTEGER NOT NULL, `daysOfWeekMask` INTEGER NOT NULL, `isEnabled` INTEGER NOT NULL, FOREIGN KEY(`medicationId`) REFERENCES `medications`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `medicationId` INTEGER NOT NULL, `hour` INTEGER NOT NULL, `minute` INTEGER NOT NULL, `daysOfWeekMask` INTEGER NOT NULL, `isEnabled` INTEGER NOT NULL, `startDate` TEXT, `endDate` TEXT, FOREIGN KEY(`medicationId`) REFERENCES `medications`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "id",
@@ -168,6 +168,16 @@
             "columnName": "isEnabled",
             "affinity": "INTEGER",
             "notNull": true
+          },
+          {
+            "fieldPath": "startDate",
+            "columnName": "startDate",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "endDate",
+            "columnName": "endDate",
+            "affinity": "TEXT"
           }
         ],
         "primaryKey": {
@@ -288,6 +298,112 @@
         ]
       },
       {
+        "tableName": "medication_schedule_overrides",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `reminderId` INTEGER NOT NULL, `medicationId` INTEGER NOT NULL, `originalDate` TEXT NOT NULL, `overrideType` TEXT NOT NULL, `newHour` INTEGER, `newMinute` INTEGER, FOREIGN KEY(`reminderId`) REFERENCES `medication_reminders`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`medicationId`) REFERENCES `medications`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reminderId",
+            "columnName": "reminderId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "medicationId",
+            "columnName": "medicationId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "originalDate",
+            "columnName": "originalDate",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "overrideType",
+            "columnName": "overrideType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "newHour",
+            "columnName": "newHour",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "newMinute",
+            "columnName": "newMinute",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_medication_schedule_overrides_medicationId",
+            "unique": false,
+            "columnNames": [
+              "medicationId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_medication_schedule_overrides_medicationId` ON `${TABLE_NAME}` (`medicationId`)"
+          },
+          {
+            "name": "index_medication_schedule_overrides_originalDate",
+            "unique": false,
+            "columnNames": [
+              "originalDate"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_medication_schedule_overrides_originalDate` ON `${TABLE_NAME}` (`originalDate`)"
+          },
+          {
+            "name": "index_medication_schedule_overrides_reminderId_originalDate",
+            "unique": true,
+            "columnNames": [
+              "reminderId",
+              "originalDate"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_medication_schedule_overrides_reminderId_originalDate` ON `${TABLE_NAME}` (`reminderId`, `originalDate`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "medication_reminders",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "reminderId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "medications",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "medicationId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
         "tableName": "symptoms",
         "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `symptomType` TEXT NOT NULL, `customName` TEXT, `severity` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, `notes` TEXT)",
         "fields": [
@@ -347,7 +463,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '5ba01f421e910f31fba86f7aa3edc203')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'daa66af12e8be46fb35295a01d879f4c')"
     ]
   }
 }

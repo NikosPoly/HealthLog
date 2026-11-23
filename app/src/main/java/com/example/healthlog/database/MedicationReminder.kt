@@ -34,5 +34,13 @@ data class MedicationReminder(
     val daysOfWeekMask: Int = 127,
 
     // Whether this reminder alarm is enabled.
-    val isEnabled: Boolean = true
+    val isEnabled: Boolean = true,
+
+    // Optional inclusive ISO-8601 start date (e.g. "2026-11-23").
+    // Null falls back to the medication's creation date.
+    val startDate: String? = null,
+
+    // Optional inclusive ISO-8601 end date (e.g. "2026-12-01").
+    // Null means the recurring reminder continues indefinitely.
+    val endDate: String? = null
 )

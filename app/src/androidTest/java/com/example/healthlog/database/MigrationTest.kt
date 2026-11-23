@@ -229,8 +229,12 @@ class MigrationTest {
                     "VALUES (1, 'Amlodipine', '5', 'mg', 'DAILY', 'After breakfast', 1, 2000)"
         )
         db.execSQL(
-            "INSERT INTO medication_reminders (id, medicationId, hour, minute, daysOfWeekMask, isEnabled) " +
-                    "VALUES (1, 1, 8, 30, 127, 1)"
+            "INSERT INTO medication_reminders (id, medicationId, hour, minute, daysOfWeekMask, isEnabled, startDate, endDate) " +
+                    "VALUES (1, 1, 8, 30, 127, 1, '2026-11-18', null)"
+        )
+        db.execSQL(
+            "INSERT INTO medication_schedule_overrides (id, reminderId, medicationId, originalDate, overrideType, newHour, newMinute) " +
+                    "VALUES (1, 1, 1, '2026-11-19', 'RESCHEDULED', 10, 15)"
         )
         db.execSQL(
             "INSERT INTO medication_dose_logs (id, medicationId, scheduledDate, scheduledTime, actionTimestamp, status, notes) " +
@@ -250,12 +254,25 @@ class MigrationTest {
             assertEquals(1, cursor.getInt(3))
         }
 
-        db.query("SELECT medicationId, hour, minute FROM medication_reminders WHERE id = 1").use { cursor ->
+        db.query("SELECT medicationId, hour, minute, startDate, endDate FROM medication_reminders WHERE id = 1").use { cursor ->
             assertEquals(1, cursor.count)
             cursor.moveToFirst()
             assertEquals(1L, cursor.getLong(0))
             assertEquals(8, cursor.getInt(1))
             assertEquals(30, cursor.getInt(2))
+            assertEquals("2026-11-18", cursor.getString(3))
+            assertTrue(cursor.isNull(4))
+        }
+
+        db.query("SELECT reminderId, medicationId, originalDate, overrideType, newHour, newMinute FROM medication_schedule_overrides WHERE id = 1").use { cursor ->
+            assertEquals(1, cursor.count)
+            cursor.moveToFirst()
+            assertEquals(1L, cursor.getLong(0))
+            assertEquals(1L, cursor.getLong(1))
+            assertEquals("2026-11-19", cursor.getString(2))
+            assertEquals("RESCHEDULED", cursor.getString(3))
+            assertEquals(10, cursor.getInt(4))
+            assertEquals(15, cursor.getInt(5))
         }
 
         db.query("SELECT medicationId, scheduledDate, status FROM medication_dose_logs WHERE id = 1").use { cursor ->

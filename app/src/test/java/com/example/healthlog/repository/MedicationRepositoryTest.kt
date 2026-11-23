@@ -4,6 +4,7 @@ import com.example.healthlog.database.Medication
 import com.example.healthlog.database.MedicationDao
 import com.example.healthlog.database.MedicationDoseLog
 import com.example.healthlog.database.MedicationReminder
+import com.example.healthlog.database.MedicationScheduleOverride
 import com.example.healthlog.database.MedicationWithReminders
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,8 +13,11 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.LocalDate
 
 class MedicationRepositoryTest {
 
@@ -21,13 +25,21 @@ class MedicationRepositoryTest {
         val medications = mutableListOf<Medication>()
         val reminders = mutableListOf<MedicationReminder>()
         val doseLogs = mutableListOf<MedicationDoseLog>()
+        val overrides = mutableListOf<MedicationScheduleOverride>()
+
+        private var nextMedId = 1L
+        private var nextReminderId = 1L
+        private var nextDoseLogId = 1L
+        private var nextOverrideId = 1L
 
         private val medicationsFlow = MutableStateFlow<List<Medication>>(emptyList())
         private val doseLogsFlow = MutableStateFlow<List<MedicationDoseLog>>(emptyList())
+        private val overridesFlow = MutableStateFlow<List<MedicationScheduleOverride>>(emptyList())
 
         private fun notifyChanges() {
             medicationsFlow.value = medications.toList()
             doseLogsFlow.value = doseLogs.toList()
+            overridesFlow.value = overrides.toList()
         }
 
         override fun getAllMedicationsWithReminders(): Flow<List<MedicationWithReminders>> {
@@ -76,8 +88,12 @@ class MedicationRepositoryTest {
             return reminders.filter { it.medicationId == medicationId }
         }
 
+        override suspend fun getReminderById(id: Long): MedicationReminder? {
+            return reminders.find { it.id == id }
+        }
+
         override suspend fun insertMedication(medication: Medication): Long {
-            val id = if (medication.id == 0L) (medications.size + 1).toLong() else medication.id
+            val id = if (medication.id == 0L) nextMedId++ else medication.id
             val toSave = medication.copy(id = id)
             medications.removeAll { it.id == id }
             medications.add(toSave)
@@ -95,27 +111,47 @@ class MedicationRepositoryTest {
             medications.removeAll { it.id == medication.id }
             reminders.removeAll { it.medicationId == medication.id }
             doseLogs.removeAll { it.medicationId == medication.id }
+            overrides.removeAll { it.medicationId == medication.id }
             notifyChanges()
+        }
+
+        override suspend fun insertReminder(reminder: MedicationReminder): Long {
+            val id = if (reminder.id == 0L) nextReminderId++ else reminder.id
+            reminders.removeAll { it.id == id }
+            reminders.add(reminder.copy(id = id))
+            notifyChanges()
+            return id
         }
 
         override suspend fun insertReminders(reminders: List<MedicationReminder>): List<Long> {
             val ids = mutableListOf<Long>()
-            reminders.forEachIndexed { index, reminder ->
-                val id = (this.reminders.size + 1 + index).toLong()
-                this.reminders.add(reminder.copy(id = id))
-                ids.add(id)
+            reminders.forEach { reminder ->
+                ids.add(insertReminder(reminder))
             }
-            notifyChanges()
             return ids
         }
 
+        override suspend fun updateReminder(reminder: MedicationReminder) {
+            reminders.removeAll { it.id == reminder.id }
+            reminders.add(reminder)
+            notifyChanges()
+        }
+
+        override suspend fun deleteReminderById(id: Long) {
+            reminders.removeAll { it.id == id }
+            overrides.removeAll { it.reminderId == id }
+            notifyChanges()
+        }
+
         override suspend fun deleteRemindersForMedication(medicationId: Long) {
+            val removedIds = reminders.filter { it.medicationId == medicationId }.map { it.id }.toSet()
             reminders.removeAll { it.medicationId == medicationId }
+            overrides.removeAll { it.reminderId in removedIds }
             notifyChanges()
         }
 
         override suspend fun insertDoseLog(log: MedicationDoseLog): Long {
-            val id = (doseLogs.size + 1).toLong()
+            val id = if (log.id == 0L) nextDoseLogId++ else log.id
             doseLogs.add(log.copy(id = id))
             notifyChanges()
             return id
@@ -143,6 +179,54 @@ class MedicationRepositoryTest {
             return doseLogsFlow.map { list ->
                 list.filter { it.scheduledDate >= startDate && it.scheduledDate <= endDate }
             }
+        }
+
+        override suspend fun upsertOverride(override: MedicationScheduleOverride): Long {
+            overrides.removeAll { it.reminderId == override.reminderId && it.originalDate == override.originalDate }
+            val id = if (override.id == 0L) nextOverrideId++ else override.id
+            overrides.add(override.copy(id = id))
+            notifyChanges()
+            return id
+        }
+
+        override suspend fun getOverrideById(id: Long): MedicationScheduleOverride? {
+            return overrides.find { it.id == id }
+        }
+
+        override fun getOverridesForDate(date: String): Flow<List<MedicationScheduleOverride>> {
+            return overridesFlow.map { list -> list.filter { it.originalDate == date } }
+        }
+
+        override fun getOverridesInDateRange(
+            startDate: String,
+            endDate: String
+        ): Flow<List<MedicationScheduleOverride>> {
+            return overridesFlow.map { list ->
+                list.filter { it.originalDate >= startDate && it.originalDate <= endDate }
+            }
+        }
+
+        override suspend fun getOverridesForReminder(reminderId: Long): List<MedicationScheduleOverride> {
+            return overrides.filter { it.reminderId == reminderId }
+        }
+
+        override suspend fun getOverridesFromDate(fromDate: String): List<MedicationScheduleOverride> {
+            return overrides.filter { it.originalDate >= fromDate }
+        }
+
+        override suspend fun deleteOverrideById(id: Long) {
+            overrides.removeAll { it.id == id }
+            notifyChanges()
+        }
+
+        override suspend fun deleteOverride(reminderId: Long, date: String) {
+            overrides.removeAll { it.reminderId == reminderId && it.originalDate == date }
+            notifyChanges()
+        }
+
+        override suspend fun deleteOverridesForReminderFromDate(reminderId: Long, fromDate: String) {
+            overrides.removeAll { it.reminderId == reminderId && it.originalDate >= fromDate }
+            notifyChanges()
         }
     }
 
@@ -223,5 +307,160 @@ class MedicationRepositoryTest {
         // Delete dose
         repository.deleteDose(medId, "2026-11-18", "08:00")
         assertTrue(repository.getDoseLogsForDate("2026-11-18").first().isEmpty())
+    }
+
+    @Test
+    fun rescheduleDoseForDate_createsReplacesAndClearsOverride() = runBlocking {
+        val medId = repository.saveMedication(
+            Medication(name = "Amlodipine", dosage = "5", unit = "mg", frequency = "DAILY"),
+            listOf(MedicationReminder(medicationId = 0, hour = 8, minute = 0))
+        )
+        val reminderId = repository.getRemindersForMedication(medId).first().id
+
+        // Move 08:00 → 10:30 on 2026-11-23
+        val created = repository.rescheduleDoseForDate(reminderId, "2026-11-23", 10, 30)
+        assertNotNull(created)
+        assertEquals(MedicationScheduleOverride.TYPE_RESCHEDULED, created!!.overrideType)
+        assertEquals(10, created.newHour)
+        assertEquals(30, created.newMinute)
+        assertEquals(1, repository.getOverridesForDate("2026-11-23").first().size)
+
+        // Move again 10:30 → 11:15 replaces existing override (still 1 row)
+        val replaced = repository.rescheduleDoseForDate(reminderId, "2026-11-23", 11, 15)
+        assertNotNull(replaced)
+        assertEquals(11, replaced!!.newHour)
+        assertEquals(15, replaced.newMinute)
+        assertEquals(1, repository.getOverridesForDate("2026-11-23").first().size)
+
+        // Moving back to original 08:00 clears the override cleanly
+        val cleared = repository.rescheduleDoseForDate(reminderId, "2026-11-23", 8, 0)
+        assertNull(cleared)
+        assertTrue(repository.getOverridesForDate("2026-11-23").first().isEmpty())
+    }
+
+    @Test
+    fun cancelDoseForDate_persistsCancelledOverride() = runBlocking {
+        val medId = repository.saveMedication(
+            Medication(name = "Metformin", dosage = "500", unit = "mg", frequency = "DAILY"),
+            listOf(MedicationReminder(medicationId = 0, hour = 9, minute = 0))
+        )
+        val reminderId = repository.getRemindersForMedication(medId).first().id
+
+        val cancelled = repository.cancelDoseForDate(reminderId, "2026-11-24")
+        assertNotNull(cancelled)
+        assertEquals(MedicationScheduleOverride.TYPE_CANCELLED, cancelled!!.overrideType)
+        assertNull(cancelled.newHour)
+        assertNull(cancelled.newMinute)
+
+        val rangeOverrides = repository.getOverridesInDateRange("2026-11-01", "2026-11-30").first()
+        assertEquals(1, rangeOverrides.size)
+        assertEquals("2026-11-24", rangeOverrides.first().originalDate)
+    }
+
+    @Test
+    fun rescheduleReminderFromDate_todayUpdatesInPlaceAndClearsFutureOverrides() = runBlocking {
+        val today = LocalDate.of(2026, 11, 23)
+        val medId = repository.saveMedication(
+            Medication(name = "Amlodipine", dosage = "5", unit = "mg", frequency = "DAILY"),
+            listOf(MedicationReminder(medicationId = 0, hour = 8, minute = 0))
+        )
+        val reminderId = repository.getRemindersForMedication(medId).first().id
+        repository.rescheduleDoseForDate(reminderId, "2026-11-22", 9, 0) // past override (kept)
+        repository.rescheduleDoseForDate(reminderId, "2026-11-25", 10, 0) // future override (cleared)
+
+        val (updated, split) = repository.rescheduleReminderFromDate(
+            reminderId = reminderId,
+            fromDate = today,
+            newHour = 9,
+            newMinute = 30,
+            today = today
+        )
+
+        assertNotNull(updated)
+        assertNull(split)
+        assertEquals(9, updated!!.hour)
+        assertEquals(30, updated.minute)
+        assertNull(updated.endDate)
+
+        // Only the pre-fromDate override survives
+        val remainingOverrides = repository.getOverridesForReminder(reminderId)
+        assertEquals(1, remainingOverrides.size)
+        assertEquals("2026-11-22", remainingOverrides.first().originalDate)
+    }
+
+    @Test
+    fun rescheduleReminderFromDate_futureDateSplitsReminderCleanly() = runBlocking {
+        val today = LocalDate.of(2026, 11, 23)
+        val futureDate = LocalDate.of(2026, 11, 27)
+        val medId = repository.saveMedication(
+            Medication(name = "Amlodipine", dosage = "5", unit = "mg", frequency = "DAILY"),
+            listOf(MedicationReminder(medicationId = 0, hour = 8, minute = 0, startDate = "2026-11-20"))
+        )
+        val reminderId = repository.getRemindersForMedication(medId).first().id
+        repository.rescheduleDoseForDate(reminderId, "2026-11-25", 9, 0) // before split (kept)
+        repository.rescheduleDoseForDate(reminderId, "2026-11-28", 10, 0) // after split (cleared)
+
+        val (cappedOriginal, splitNew) = repository.rescheduleReminderFromDate(
+            reminderId = reminderId,
+            fromDate = futureDate,
+            newHour = 10,
+            newMinute = 15,
+            today = today
+        )
+
+        assertNotNull(cappedOriginal)
+        assertNotNull(splitNew)
+        assertEquals(8, cappedOriginal!!.hour)
+        assertEquals("2026-11-26", cappedOriginal.endDate)
+
+        assertEquals(10, splitNew!!.hour)
+        assertEquals(15, splitNew.minute)
+        assertEquals("2026-11-27", splitNew.startDate)
+        assertNull(splitNew.endDate)
+
+        val allReminders = repository.getRemindersForMedication(medId)
+        assertEquals(2, allReminders.size)
+
+        val remainingOverrides = repository.getOverridesForReminder(reminderId)
+        assertEquals(1, remainingOverrides.size)
+        assertEquals("2026-11-25", remainingOverrides.first().originalDate)
+    }
+
+    @Test
+    fun deleteReminderFromDate_todayDeletesReminder_futureDateCapsEndDate() = runBlocking {
+        val today = LocalDate.of(2026, 11, 23)
+        val medId = repository.saveMedication(
+            Medication(name = "Aspirin", dosage = "100", unit = "mg", frequency = "DAILY"),
+            listOf(
+                MedicationReminder(medicationId = 0, hour = 8, minute = 0),
+                MedicationReminder(medicationId = 0, hour = 20, minute = 0)
+            )
+        )
+        val reminders = repository.getRemindersForMedication(medId)
+        val morningId = reminders.first { it.hour == 8 }.id
+        val eveningId = reminders.first { it.hour == 20 }.id
+
+        // Future delete caps evening reminder at 2026-11-25
+        val capped = repository.deleteReminderFromDate(
+            reminderId = eveningId,
+            fromDate = LocalDate.of(2026, 11, 26),
+            today = today
+        )
+        assertNotNull(capped)
+        assertEquals("2026-11-25", capped!!.endDate)
+
+        // Today delete removes morning reminder completely
+        val deleted = repository.deleteReminderFromDate(
+            reminderId = morningId,
+            fromDate = today,
+            today = today
+        )
+        assertNull(deleted)
+
+        val remaining = repository.getRemindersForMedication(medId)
+        assertEquals(1, remaining.size)
+        assertEquals(eveningId, remaining.first().id)
+        // Parent medication is preserved so past dose logs are never lost
+        assertNotNull(repository.getMedicationById(medId))
     }
 }

@@ -13,6 +13,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         Medication::class,
         MedicationReminder::class,
         MedicationDoseLog::class,
+        MedicationScheduleOverride::class,
         SymptomEntry::class,
     ],
     version = 5,
@@ -93,12 +94,38 @@ abstract class HealthDatabase : RoomDatabase() {
                         `minute` INTEGER NOT NULL,
                         `daysOfWeekMask` INTEGER NOT NULL,
                         `isEnabled` INTEGER NOT NULL,
+                        `startDate` TEXT,
+                        `endDate` TEXT,
                         FOREIGN KEY(`medicationId`) REFERENCES `medications`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
                     )
                     """.trimIndent()
                 )
                 db.execSQL(
                     "CREATE INDEX IF NOT EXISTS `index_medication_reminders_medicationId` ON `medication_reminders` (`medicationId`)"
+                )
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `medication_schedule_overrides` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `reminderId` INTEGER NOT NULL,
+                        `medicationId` INTEGER NOT NULL,
+                        `originalDate` TEXT NOT NULL,
+                        `overrideType` TEXT NOT NULL,
+                        `newHour` INTEGER,
+                        `newMinute` INTEGER,
+                        FOREIGN KEY(`reminderId`) REFERENCES `medication_reminders`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE,
+                        FOREIGN KEY(`medicationId`) REFERENCES `medications`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_medication_schedule_overrides_medicationId` ON `medication_schedule_overrides` (`medicationId`)"
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_medication_schedule_overrides_originalDate` ON `medication_schedule_overrides` (`originalDate`)"
+                )
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS `index_medication_schedule_overrides_reminderId_originalDate` ON `medication_schedule_overrides` (`reminderId`, `originalDate`)"
                 )
                 db.execSQL(
                     """

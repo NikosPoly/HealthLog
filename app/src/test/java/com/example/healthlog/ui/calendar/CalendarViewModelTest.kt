@@ -6,6 +6,7 @@ import com.example.healthlog.database.Medication
 import com.example.healthlog.database.MedicationDao
 import com.example.healthlog.database.MedicationDoseLog
 import com.example.healthlog.database.MedicationReminder
+import com.example.healthlog.database.MedicationScheduleOverride
 import com.example.healthlog.database.MedicationWithReminders
 import com.example.healthlog.database.SymptomDao
 import com.example.healthlog.database.SymptomEntry
@@ -49,10 +50,14 @@ class CalendarViewModelTest {
         override suspend fun getMedicationById(id: Long): Medication? = null
         override suspend fun getAllActiveReminders(): List<MedicationReminder> = emptyList()
         override suspend fun getRemindersForMedication(medicationId: Long): List<MedicationReminder> = emptyList()
+        override suspend fun getReminderById(id: Long): MedicationReminder? = null
         override suspend fun insertMedication(medication: Medication): Long = 1L
         override suspend fun updateMedication(medication: Medication) {}
         override suspend fun deleteMedication(medication: Medication) {}
+        override suspend fun insertReminder(reminder: MedicationReminder): Long = 1L
         override suspend fun insertReminders(reminders: List<MedicationReminder>): List<Long> = emptyList()
+        override suspend fun updateReminder(reminder: MedicationReminder) {}
+        override suspend fun deleteReminderById(id: Long) {}
         override suspend fun deleteRemindersForMedication(medicationId: Long) {}
         override suspend fun insertDoseLog(log: MedicationDoseLog): Long {
             doseLogs.add(log)
@@ -66,6 +71,15 @@ class CalendarViewModelTest {
             doseLogs.find { it.medicationId == medicationId && it.scheduledDate == date && it.scheduledTime == time }
         override fun getDoseLogsInDateRange(startDate: String, endDate: String): Flow<List<MedicationDoseLog>> =
             MutableStateFlow(doseLogs.filter { it.scheduledDate >= startDate && it.scheduledDate <= endDate })
+        override suspend fun upsertOverride(override: MedicationScheduleOverride): Long = 1L
+        override suspend fun getOverrideById(id: Long): MedicationScheduleOverride? = null
+        override fun getOverridesForDate(date: String): Flow<List<MedicationScheduleOverride>> = MutableStateFlow(emptyList())
+        override fun getOverridesInDateRange(startDate: String, endDate: String): Flow<List<MedicationScheduleOverride>> = MutableStateFlow(emptyList())
+        override suspend fun getOverridesForReminder(reminderId: Long): List<MedicationScheduleOverride> = emptyList()
+        override suspend fun getOverridesFromDate(fromDate: String): List<MedicationScheduleOverride> = emptyList()
+        override suspend fun deleteOverrideById(id: Long) {}
+        override suspend fun deleteOverride(reminderId: Long, date: String) {}
+        override suspend fun deleteOverridesForReminderFromDate(reminderId: Long, fromDate: String) {}
     }
 
     private class FakeSymptomDao : SymptomDao {

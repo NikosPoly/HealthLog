@@ -4,6 +4,7 @@ import com.example.healthlog.database.Medication
 import com.example.healthlog.database.MedicationDao
 import com.example.healthlog.database.MedicationDoseLog
 import com.example.healthlog.database.MedicationReminder
+import com.example.healthlog.database.MedicationScheduleOverride
 import com.example.healthlog.database.MedicationWithReminders
 import com.example.healthlog.repository.MedicationRepository
 import kotlinx.coroutines.flow.Flow
@@ -71,6 +72,10 @@ class MedicationsViewModelTest {
             return reminders.filter { it.medicationId == medicationId }
         }
 
+        override suspend fun getReminderById(id: Long): MedicationReminder? {
+            return reminders.find { it.id == id }
+        }
+
         override suspend fun insertMedication(medication: Medication): Long {
             val id = if (medication.id == 0L) (medications.size + 1).toLong() else medication.id
             val toSave = medication.copy(id = id)
@@ -93,6 +98,14 @@ class MedicationsViewModelTest {
             notifyChanges()
         }
 
+        override suspend fun insertReminder(reminder: MedicationReminder): Long {
+            val id = if (reminder.id == 0L) (this.reminders.size + 1).toLong() else reminder.id
+            this.reminders.removeAll { it.id == id }
+            this.reminders.add(reminder.copy(id = id))
+            notifyChanges()
+            return id
+        }
+
         override suspend fun insertReminders(reminders: List<MedicationReminder>): List<Long> {
             val ids = mutableListOf<Long>()
             reminders.forEachIndexed { index, reminder ->
@@ -102,6 +115,17 @@ class MedicationsViewModelTest {
             }
             notifyChanges()
             return ids
+        }
+
+        override suspend fun updateReminder(reminder: MedicationReminder) {
+            this.reminders.removeAll { it.id == reminder.id }
+            this.reminders.add(reminder)
+            notifyChanges()
+        }
+
+        override suspend fun deleteReminderById(id: Long) {
+            this.reminders.removeAll { it.id == id }
+            notifyChanges()
         }
 
         override suspend fun deleteRemindersForMedication(medicationId: Long) {
@@ -139,6 +163,16 @@ class MedicationsViewModelTest {
                 list.filter { it.scheduledDate >= startDate && it.scheduledDate <= endDate }
             }
         }
+
+        override suspend fun upsertOverride(override: MedicationScheduleOverride): Long = 1L
+        override suspend fun getOverrideById(id: Long): MedicationScheduleOverride? = null
+        override fun getOverridesForDate(date: String): Flow<List<MedicationScheduleOverride>> = MutableStateFlow(emptyList())
+        override fun getOverridesInDateRange(startDate: String, endDate: String): Flow<List<MedicationScheduleOverride>> = MutableStateFlow(emptyList())
+        override suspend fun getOverridesForReminder(reminderId: Long): List<MedicationScheduleOverride> = emptyList()
+        override suspend fun getOverridesFromDate(fromDate: String): List<MedicationScheduleOverride> = emptyList()
+        override suspend fun deleteOverrideById(id: Long) {}
+        override suspend fun deleteOverride(reminderId: Long, date: String) {}
+        override suspend fun deleteOverridesForReminderFromDate(reminderId: Long, fromDate: String) {}
     }
 
     @Test
