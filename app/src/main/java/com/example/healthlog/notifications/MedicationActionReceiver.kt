@@ -40,13 +40,14 @@ class MedicationActionReceiver : BroadcastReceiver() {
                 val scheduledDate = intent.getStringExtra(MedicationNotificationHelper.EXTRA_SCHEDULED_DATE)
                     ?: SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
 
-                // Cancel any pending snooze for this dose since it is now taken
-                if (reminderId != -1L) {
+                // Cancel any pending snooze for this notification since it is now taken
+                val snoozeKey = if (notificationId != -1) notificationId else reminderId.toInt()
+                if (snoozeKey != -1) {
                     val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
                     val snoozeIntent = Intent(context, MedicationAlarmReceiver::class.java)
                     val snoozePendingIntent = android.app.PendingIntent.getBroadcast(
                         context,
-                        reminderId.toInt() + MedicationAlarmScheduler.SNOOZE_OFFSET,
+                        snoozeKey + MedicationAlarmScheduler.SNOOZE_OFFSET,
                         snoozeIntent,
                         android.app.PendingIntent.FLAG_NO_CREATE or android.app.PendingIntent.FLAG_IMMUTABLE
                     )
@@ -104,6 +105,7 @@ class MedicationActionReceiver : BroadcastReceiver() {
                 val unit = intent.getStringExtra(MedicationNotificationHelper.EXTRA_UNIT) ?: ""
                 val instructions = intent.getStringExtra(MedicationNotificationHelper.EXTRA_INSTRUCTIONS)
                 val scheduledTime = intent.getStringExtra(MedicationNotificationHelper.EXTRA_SCHEDULED_TIME) ?: ""
+                val scheduledDate = intent.getStringExtra(MedicationNotificationHelper.EXTRA_SCHEDULED_DATE)
 
                 MedicationAlarmScheduler.scheduleSnooze(
                     context = context,
@@ -114,7 +116,8 @@ class MedicationActionReceiver : BroadcastReceiver() {
                     instructions = instructions,
                     scheduledTime = scheduledTime,
                     notificationId = notificationId,
-                    reminderId = reminderId
+                    reminderId = reminderId,
+                    scheduledDate = scheduledDate
                 )
             }
         }

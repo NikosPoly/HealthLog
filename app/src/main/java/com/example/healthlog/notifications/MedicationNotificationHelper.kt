@@ -23,10 +23,12 @@ object MedicationNotificationHelper {
     const val EXTRA_SCHEDULED_DATE = "extra_scheduled_date"
     const val EXTRA_NOTIFICATION_ID = "extra_notification_id"
     const val EXTRA_REMINDER_ID = "extra_reminder_id"
+    const val EXTRA_OVERRIDE_ID = "extra_override_id"
     const val EXTRA_ALARM_TYPE = "extra_alarm_type"
 
     const val ALARM_TYPE_MAIN = "MAIN"
     const val ALARM_TYPE_SNOOZE = "SNOOZE"
+    const val ALARM_TYPE_OVERRIDE = "OVERRIDE"
 
     const val ACTION_MARK_TAKEN = "com.example.healthlog.ACTION_MEDICATION_MARK_TAKEN"
     const val ACTION_SNOOZE = "com.example.healthlog.ACTION_MEDICATION_SNOOZE"

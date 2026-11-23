@@ -74,17 +74,24 @@ class MainActivity : ComponentActivity() {
         val db = HealthDatabase.getDatabase(applicationContext)
 
         CoroutineScope(Dispatchers.IO).launch {
-            val activeMeds = db.medicationDao().getActiveMedicationsWithReminders().first()
+            val dao = db.medicationDao()
+            val activeMeds = dao.getActiveMedicationsWithReminders().first()
             activeMeds.forEach { medWithReminders ->
                 if (medWithReminders.medication.frequency == "DAILY") {
                     medWithReminders.reminders.forEach { reminder ->
+                        val overrides = dao.getOverridesForReminder(reminder.id)
                         if (!notificationsEnabled || !reminder.isEnabled) {
-                            MedicationAlarmScheduler.cancelReminder(applicationContext, reminder.id)
+                            MedicationAlarmScheduler.cancelReminder(
+                                applicationContext,
+                                reminder.id,
+                                overrides
+                            )
                         } else {
                             MedicationAlarmScheduler.scheduleReminder(
                                 applicationContext,
                                 medWithReminders.medication,
-                                reminder
+                                reminder,
+                                overrides
                             )
                         }
                     }

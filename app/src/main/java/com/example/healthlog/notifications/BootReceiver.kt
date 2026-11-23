@@ -35,16 +35,19 @@ class BootReceiver : BroadcastReceiver() {
             CoroutineScope(Dispatchers.IO).launch {
                 try {
                     val db = HealthDatabase.getDatabase(context)
-                    val activeMedications = db.medicationDao().getActiveMedicationsWithReminders().first()
+                    val dao = db.medicationDao()
+                    val activeMedications = dao.getActiveMedicationsWithReminders().first()
 
                     activeMedications.forEach { medWithReminders ->
                         medWithReminders.reminders
                             .filter { it.isEnabled }
                             .forEach { reminder ->
+                                val overrides = dao.getOverridesForReminder(reminder.id)
                                 MedicationAlarmScheduler.scheduleReminder(
                                     context = context,
                                     medication = medWithReminders.medication,
-                                    reminder = reminder
+                                    reminder = reminder,
+                                    overrides = overrides
                                 )
                             }
                     }
