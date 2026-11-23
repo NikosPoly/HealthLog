@@ -144,6 +144,15 @@
     <string name="calendar_next_month">Next month</string>
     <string name="calendar_prev_year">Previous year</string>
     <string name="calendar_next_year">Next year</string>
+    <string name="calendar_action_open_day">Open Day</string>
+
+    <!-- Day Timeline Screen -->
+    <string name="day_timeline_title">Day Timeline</string>
+    <string name="day_timeline_prev_day">Previous day</string>
+    <string name="day_timeline_next_day">Next day</string>
+    <string name="timeline_filter_all">All</string>
+    <string name="day_timeline_empty_slot">Empty • Tap to log</string>
+    <string name="day_timeline_action_add_to_slot">Add event to this hour</string>
 
     <!-- Symptom Form Sheet -->
     <string name="symptom_form_title_add">Log Symptom</string>

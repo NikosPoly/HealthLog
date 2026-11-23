@@ -74,6 +74,7 @@ import java.time.temporal.WeekFields
 fun CalendarScreen(
     viewModel: CalendarViewModel,
     onOpenMeasurementDetails: (Long) -> Unit = {},
+    onOpenDayTimeline: (LocalDate) -> Unit = {},
     bottomBar: @Composable () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -96,6 +97,7 @@ fun CalendarScreen(
         onConfirmDeleteSymptom = viewModel::onConfirmDeleteSymptom,
         onDismissDeleteDialog = viewModel::onDismissDeleteDialog,
         onOpenMeasurementDetails = onOpenMeasurementDetails,
+        onOpenDayTimeline = onOpenDayTimeline,
         bottomBar = bottomBar
     )
 }
@@ -117,6 +119,7 @@ fun CalendarContent(
     onConfirmDeleteSymptom: () -> Unit,
     onDismissDeleteDialog: () -> Unit,
     onOpenMeasurementDetails: (Long) -> Unit,
+    onOpenDayTimeline: (LocalDate) -> Unit = {},
     onMarkDoseTaken: (ScheduledDoseItem) -> Unit = {},
     onMarkDoseSkipped: (ScheduledDoseItem) -> Unit = {},
     onUndoDoseAction: (ScheduledDoseItem) -> Unit = {},
@@ -192,7 +195,13 @@ fun CalendarContent(
                     selectedDate = uiState.selectedDate,
                     today = today,
                     daySummaries = uiState.daySummaries,
-                    onSelectDate = onSelectDate
+                    onSelectDate = { tappedDate ->
+                        if (tappedDate == uiState.selectedDate) {
+                            onOpenDayTimeline(tappedDate)
+                        } else {
+                            onSelectDate(tappedDate)
+                        }
+                    }
                 )
                 Spacer(modifier = Modifier.height(12.dp))
             }
@@ -209,12 +218,38 @@ fun CalendarContent(
                     DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy", locale)
                 ).replaceFirstChar { if (it.isLowerCase()) it.titlecase(locale) else it.toString() }
 
-                Text(
-                    text = fullDateText,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = fullDateText,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    OutlinedButton(
+                        onClick = { onOpenDayTimeline(uiState.selectedDate) },
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                        modifier = Modifier.height(34.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_nav_calendar),
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = stringResource(R.string.calendar_action_open_day),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
                 Spacer(modifier = Modifier.height(8.dp))
             }
 

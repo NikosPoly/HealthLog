@@ -139,6 +139,15 @@
     <string name="calendar_next_month">Επόμενος μήνας</string>
     <string name="calendar_prev_year">Προηγούμενο έτος</string>
     <string name="calendar_next_year">Επόμενο έτος</string>
+    <string name="calendar_action_open_day">Άνοιγμα Ημέρας</string>
+
+    <!-- Day Timeline Screen -->
+    <string name="day_timeline_title">Χρονολόγιο Ημέρας</string>
+    <string name="day_timeline_prev_day">Προηγούμενη ημέρα</string>
+    <string name="day_timeline_next_day">Επόμενη ημέρα</string>
+    <string name="timeline_filter_all">Όλα</string>
+    <string name="day_timeline_empty_slot">Κενό • Πατήστε για καταγραφή</string>
+    <string name="day_timeline_action_add_to_slot">Προσθήκη συμβάντος σε αυτή την ώρα</string>
 
     <!-- Symptom Form Sheet -->
     <string name="symptom_form_title_add">Καταγραφή Συμπτώματος</string>

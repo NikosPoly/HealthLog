@@ -34,9 +34,11 @@ private object Routes {
     const val HISTORY = "history"
     const val DETAILS = "details/{measurementId}"
     const val GUIDE = "guide/{type}"
+    const val DAY_TIMELINE = "day_timeline/{date}"
 
     fun details(measurementId: Long) = "details/$measurementId"
     fun guide(type: MeasurementType) = "guide/${type.name}"
+    fun dayTimeline(date: java.time.LocalDate) = "day_timeline/$date"
 }
 
 // Decides which screen is shown and how to move between them.
@@ -132,6 +134,9 @@ fun HealthLogNavHost(
                             onOpenMeasurementDetails = { measurementId ->
                                 navController.navigate(Routes.details(measurementId)) { launchSingleTop = true }
                             },
+                            onOpenDayTimeline = { date ->
+                                navController.navigate(Routes.dayTimeline(date)) { launchSingleTop = true }
+                            },
                             bottomBar = bottomBarComposable
                         )
                     } else {
@@ -194,6 +199,38 @@ fun HealthLogNavHost(
                 showTabs = false,
                 onBack = { navController.popBackStack() }
             )
+        }
+
+        composable(
+            route = Routes.DAY_TIMELINE,
+            arguments = listOf(
+                navArgument("date") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val dateStr = backStackEntry.arguments?.getString("date")
+            val date = dateStr?.let { runCatching { java.time.LocalDate.parse(it) }.getOrNull() }
+                ?: java.time.LocalDate.now()
+
+            if (medicationRepository != null && symptomRepository != null) {
+                val context = androidx.compose.ui.platform.LocalContext.current
+                val timelineViewModel: com.example.healthlog.ui.calendar.timeline.DayTimelineViewModel = viewModel(
+                    factory = com.example.healthlog.ui.calendar.timeline.DayTimelineViewModel.factory(
+                        date = date,
+                        measurementRepository = repository,
+                        medicationRepository = medicationRepository,
+                        symptomRepository = symptomRepository,
+                        appContext = context
+                    )
+                )
+
+                com.example.healthlog.ui.calendar.timeline.DayTimelineScreen(
+                    viewModel = timelineViewModel,
+                    onBack = { navController.popBackStack() },
+                    onOpenMeasurementDetails = { measurementId ->
+                        navController.navigate(Routes.details(measurementId)) { launchSingleTop = true }
+                    }
+                )
+            }
         }
     }
 }
