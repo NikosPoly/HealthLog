@@ -54,6 +54,8 @@ data class TimelineHourSlot(
     val isPopulated: Boolean get() = events.isNotEmpty()
 }
 
+typealias PendingDoseMove = com.example.healthlog.ui.medications.MedicationActions.PendingDoseMove
+
 data class DayTimelineUiState(
     val selectedDate: LocalDate = LocalDate.now(),
     val activeFilter: TimelineFilter = TimelineFilter.ALL,
@@ -64,5 +66,12 @@ data class DayTimelineUiState(
     val symptomsCount: Int = 0,
     val editingSymptom: SymptomEntry? = null,
     val showAddEditSymptomSheet: Boolean = false,
-    val symptomToDelete: SymptomEntry? = null
+    val symptomDefaultHour: Int? = null,
+    val symptomToDelete: SymptomEntry? = null,
+    val slotChooserHour: Int? = null,
+    val showAddMedicationSheet: Boolean = false,
+    val medicationDefaultHour: Int? = null,
+    val doseToMove: ScheduledDoseItem? = null,
+    val pendingDoseMove: PendingDoseMove? = null,
+    val doseToDelete: ScheduledDoseItem? = null
 )

@@ -15,6 +15,7 @@ import com.example.healthlog.model.ScheduledDoseStatus
 import com.example.healthlog.repository.MeasurementRepository
 import com.example.healthlog.repository.MedicationRepository
 import com.example.healthlog.repository.SymptomRepository
+import com.example.healthlog.ui.medications.MedicationActions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -25,6 +26,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -68,11 +70,18 @@ class DayTimelineViewModelTest {
         val medicationsFlow = MutableStateFlow<List<MedicationWithReminders>>(emptyList())
         val doseLogs = mutableListOf<MedicationDoseLog>()
         val doseLogsFlow = MutableStateFlow<List<MedicationDoseLog>>(emptyList())
+        val overrides = mutableListOf<MedicationScheduleOverride>()
         val overridesFlow = MutableStateFlow<List<MedicationScheduleOverride>>(emptyList())
         private var nextDoseId = 1L
+        private var nextReminderId = 500L
+        private var nextOverrideId = 1L
 
         private fun notifyDoseChanges() {
             doseLogsFlow.value = doseLogs.toList()
+        }
+
+        private fun notifyOverrideChanges() {
+            overridesFlow.value = overrides.toList()
         }
 
         override fun getAllMedicationsWithReminders(): Flow<List<MedicationWithReminders>> = medicationsFlow
@@ -83,19 +92,58 @@ class DayTimelineViewModelTest {
         override suspend fun getMedicationById(id: Long): Medication? =
             medicationsFlow.value.find { it.medication.id == id }?.medication
         override suspend fun getAllActiveReminders(): List<MedicationReminder> =
-            medicationsFlow.value.filter { it.medication.isActive }.flatMap { it.reminders }
+            medicationsFlow.value.filter { it.medication.isActive && !it.medication.isDeleted }.flatMap { it.reminders }
         override suspend fun getRemindersForMedication(medicationId: Long): List<MedicationReminder> =
             medicationsFlow.value.find { it.medication.id == medicationId }?.reminders.orEmpty()
         override suspend fun getReminderById(id: Long): MedicationReminder? =
             medicationsFlow.value.flatMap { it.reminders }.find { it.id == id }
         override suspend fun insertMedication(medication: Medication): Long = 1L
-        override suspend fun updateMedication(medication: Medication) {}
-        override suspend fun deleteMedication(medication: Medication) {}
-        override suspend fun insertReminder(reminder: MedicationReminder): Long = 1L
-        override suspend fun insertReminders(reminders: List<MedicationReminder>): List<Long> = emptyList()
-        override suspend fun updateReminder(reminder: MedicationReminder) {}
-        override suspend fun deleteReminderById(id: Long) {}
-        override suspend fun deleteRemindersForMedication(medicationId: Long) {}
+        override suspend fun updateMedication(medication: Medication) {
+            medicationsFlow.value = medicationsFlow.value.map { item ->
+                if (item.medication.id == medication.id) item.copy(medication = medication) else item
+            }
+        }
+        override suspend fun deleteMedication(medication: Medication) {
+            medicationsFlow.value = medicationsFlow.value.filterNot { it.medication.id == medication.id }
+        }
+        override suspend fun insertReminder(reminder: MedicationReminder): Long {
+            val id = if (reminder.id == 0L) nextReminderId++ else reminder.id
+            val inserted = reminder.copy(id = id)
+            medicationsFlow.value = medicationsFlow.value.map { item ->
+                if (item.medication.id == reminder.medicationId) {
+                    item.copy(reminders = item.reminders.filterNot { it.id == id } + inserted)
+                } else {
+                    item
+                }
+            }
+            return id
+        }
+        override suspend fun insertReminders(reminders: List<MedicationReminder>): List<Long> =
+            reminders.map { insertReminder(it) }
+        override suspend fun updateReminder(reminder: MedicationReminder) {
+            medicationsFlow.value = medicationsFlow.value.map { item ->
+                if (item.medication.id == reminder.medicationId) {
+                    item.copy(reminders = item.reminders.map { if (it.id == reminder.id) reminder else it })
+                } else {
+                    item
+                }
+            }
+        }
+        override suspend fun deleteReminderById(id: Long) {
+            medicationsFlow.value = medicationsFlow.value.map { item ->
+                item.copy(reminders = item.reminders.filterNot { it.id == id })
+            }
+            overrides.removeAll { it.reminderId == id }
+            notifyOverrideChanges()
+        }
+        override suspend fun deleteRemindersForMedication(medicationId: Long) {
+            val removedIds = getRemindersForMedication(medicationId).map { it.id }.toSet()
+            medicationsFlow.value = medicationsFlow.value.map { item ->
+                if (item.medication.id == medicationId) item.copy(reminders = emptyList()) else item
+            }
+            overrides.removeAll { it.reminderId in removedIds }
+            notifyOverrideChanges()
+        }
         override suspend fun insertDoseLog(log: MedicationDoseLog): Long {
             val id = if (log.id == 0L) nextDoseId++ else log.id
             val entry = log.copy(id = id)
@@ -122,17 +170,35 @@ class DayTimelineViewModelTest {
             doseLogs.count { it.medicationId == medicationId }
         override fun getDoseLogsInDateRange(startDate: String, endDate: String): Flow<List<MedicationDoseLog>> =
             doseLogsFlow.map { list -> list.filter { it.scheduledDate >= startDate && it.scheduledDate <= endDate } }
-        override suspend fun upsertOverride(override: MedicationScheduleOverride): Long = 1L
-        override suspend fun getOverrideById(id: Long): MedicationScheduleOverride? = null
+        override suspend fun upsertOverride(override: MedicationScheduleOverride): Long {
+            overrides.removeAll { it.reminderId == override.reminderId && it.originalDate == override.originalDate }
+            val id = if (override.id == 0L) nextOverrideId++ else override.id
+            overrides.add(override.copy(id = id))
+            notifyOverrideChanges()
+            return id
+        }
+        override suspend fun getOverrideById(id: Long): MedicationScheduleOverride? =
+            overrides.find { it.id == id }
         override fun getOverridesForDate(date: String): Flow<List<MedicationScheduleOverride>> =
             overridesFlow.map { list -> list.filter { it.originalDate == date } }
         override fun getOverridesInDateRange(startDate: String, endDate: String): Flow<List<MedicationScheduleOverride>> =
             overridesFlow.map { list -> list.filter { it.originalDate >= startDate && it.originalDate <= endDate } }
-        override suspend fun getOverridesForReminder(reminderId: Long): List<MedicationScheduleOverride> = emptyList()
-        override suspend fun getOverridesFromDate(fromDate: String): List<MedicationScheduleOverride> = emptyList()
-        override suspend fun deleteOverrideById(id: Long) {}
-        override suspend fun deleteOverride(reminderId: Long, date: String) {}
-        override suspend fun deleteOverridesForReminderFromDate(reminderId: Long, fromDate: String) {}
+        override suspend fun getOverridesForReminder(reminderId: Long): List<MedicationScheduleOverride> =
+            overrides.filter { it.reminderId == reminderId }
+        override suspend fun getOverridesFromDate(fromDate: String): List<MedicationScheduleOverride> =
+            overrides.filter { it.originalDate >= fromDate }
+        override suspend fun deleteOverrideById(id: Long) {
+            overrides.removeAll { it.id == id }
+            notifyOverrideChanges()
+        }
+        override suspend fun deleteOverride(reminderId: Long, date: String) {
+            overrides.removeAll { it.reminderId == reminderId && it.originalDate == date }
+            notifyOverrideChanges()
+        }
+        override suspend fun deleteOverridesForReminderFromDate(reminderId: Long, fromDate: String) {
+            overrides.removeAll { it.reminderId == reminderId && it.originalDate >= fromDate }
+            notifyOverrideChanges()
+        }
     }
 
     private class FakeSymptomDao : SymptomDao {
@@ -341,5 +407,161 @@ class DayTimelineViewModelTest {
         }
         val skippedDose = (skippedState.hourSlots[9].events.single() as TimelineEvent.Medication).doseItem
         assertEquals(ScheduledDoseStatus.SKIPPED, skippedDose.status)
+    }
+
+    @Test
+    fun hourSlotChooser_opensPreFilledSymptomOrMedicationSheet() = runBlocking {
+        viewModel.onHourSlotClick(15)
+        val chooserState = withTimeout(5.seconds) {
+            viewModel.uiState.first { it.slotChooserHour == 15 }
+        }
+        assertEquals(15, chooserState.slotChooserHour)
+
+        viewModel.onChooseLogSymptomFromSlot()
+        val symptomSheetState = withTimeout(5.seconds) {
+            viewModel.uiState.first { it.showAddEditSymptomSheet }
+        }
+        assertNull(symptomSheetState.slotChooserHour)
+        assertEquals(15, symptomSheetState.symptomDefaultHour)
+        viewModel.onDismissAddEditSymptomSheet()
+
+        viewModel.onHourSlotClick(19)
+        withTimeout(5.seconds) { viewModel.uiState.first { it.slotChooserHour == 19 } }
+        viewModel.onChooseAddMedicationFromSlot()
+        val medSheetState = withTimeout(5.seconds) {
+            viewModel.uiState.first { it.showAddMedicationSheet }
+        }
+        assertNull(medSheetState.slotChooserHour)
+        assertEquals(19, medSheetState.medicationDefaultHour)
+    }
+
+    @Test
+    fun moveRecurringDose_thisDayOnly_movesOnlySelectedDateAndPreservesNextDay() = runBlocking {
+        val med = Medication(id = 10L, name = "Metformin", dosage = "500", unit = "mg", frequency = "DAILY", isActive = true)
+        val reminder = MedicationReminder(id = 100L, medicationId = 10L, hour = 9, minute = 0, daysOfWeekMask = 127, isEnabled = true, startDate = testDate.toString())
+        medicationDao.medicationsFlow.value = listOf(MedicationWithReminders(med, listOf(reminder)))
+
+        val initial = withTimeout(5.seconds) { viewModel.uiState.first { it.medsCount == 1 } }
+        val dose = (initial.hourSlots[9].events.single() as TimelineEvent.Medication).doseItem
+
+        viewModel.onRequestMoveDose(dose)
+        withTimeout(5.seconds) { viewModel.uiState.first { it.doseToMove == dose } }
+
+        viewModel.onPickMoveTime(11, 30)
+        val pendingState = withTimeout(5.seconds) { viewModel.uiState.first { it.pendingDoseMove != null } }
+        val pendingMove = requireNotNull(pendingState.pendingDoseMove)
+        assertEquals(11, pendingMove.newHour)
+        assertEquals(30, pendingMove.newMinute)
+
+        viewModel.onConfirmMoveScope(MedicationActions.RecurringDoseScope.THIS_DAY_ONLY)
+        val movedState = withTimeout(5.seconds) {
+            viewModel.uiState.first { it.hourSlots[11].isPopulated && !it.hourSlots[9].isPopulated }
+        }
+        val movedEvent = movedState.hourSlots[11].events.single() as TimelineEvent.Medication
+        assertEquals("11:30", movedEvent.doseItem.scheduledTime)
+        assertEquals("09:00", movedEvent.doseItem.originalTime)
+
+        // Tomorrow still keeps the original 09:00 schedule
+        viewModel.onNextDay()
+        val nextDayState = withTimeout(5.seconds) {
+            viewModel.uiState.first { it.selectedDate == testDate.plusDays(1) && it.hourSlots[9].isPopulated }
+        }
+        assertEquals("09:00", (nextDayState.hourSlots[9].events.single() as TimelineEvent.Medication).doseItem.scheduledTime)
+    }
+
+    @Test
+    fun moveRecurringDose_thisAndFutureOnFutureDate_splitsReminder() = runBlocking {
+        val med = Medication(id = 10L, name = "Amlodipine", dosage = "5", unit = "mg", frequency = "DAILY", isActive = true)
+        val reminder = MedicationReminder(id = 100L, medicationId = 10L, hour = 8, minute = 0, daysOfWeekMask = 127, isEnabled = true, startDate = testDate.toString())
+        medicationDao.medicationsFlow.value = listOf(MedicationWithReminders(med, listOf(reminder)))
+
+        // Navigate to tomorrow (future date relative to todayProvider = testDate)
+        viewModel.onNextDay()
+        val tomorrowState = withTimeout(5.seconds) {
+            viewModel.uiState.first { it.selectedDate == testDate.plusDays(1) && it.hourSlots[8].isPopulated }
+        }
+        val tomorrowDose = (tomorrowState.hourSlots[8].events.single() as TimelineEvent.Medication).doseItem
+
+        viewModel.onRequestMoveDose(tomorrowDose)
+        viewModel.onPickMoveTime(10, 15)
+        viewModel.onConfirmMoveScope(MedicationActions.RecurringDoseScope.THIS_AND_FUTURE)
+
+        val movedTomorrow = withTimeout(5.seconds) {
+            viewModel.uiState.first { it.hourSlots[10].isPopulated && !it.hourSlots[8].isPopulated }
+        }
+        assertEquals("10:15", (movedTomorrow.hourSlots[10].events.single() as TimelineEvent.Medication).doseItem.scheduledTime)
+
+        // Today still keeps 08:00 because the reminder was split at tomorrow
+        viewModel.onPreviousDay()
+        val todayState = withTimeout(5.seconds) {
+            viewModel.uiState.first { it.selectedDate == testDate && it.hourSlots[8].isPopulated }
+        }
+        assertEquals("08:00", (todayState.hourSlots[8].events.single() as TimelineEvent.Medication).doseItem.scheduledTime)
+    }
+
+    @Test
+    fun deleteRecurringDose_thisDayOnlyAndAllFuture_behaveCorrectly() = runBlocking {
+        val med = Medication(id = 10L, name = "Vitamin D", dosage = "1000", unit = "IU", frequency = "DAILY", isActive = true)
+        val reminder = MedicationReminder(id = 100L, medicationId = 10L, hour = 9, minute = 0, daysOfWeekMask = 127, isEnabled = true, startDate = testDate.toString())
+        medicationDao.medicationsFlow.value = listOf(MedicationWithReminders(med, listOf(reminder)))
+
+        val initial = withTimeout(5.seconds) { viewModel.uiState.first { it.medsCount == 1 } }
+        val doseToday = (initial.hourSlots[9].events.single() as TimelineEvent.Medication).doseItem
+
+        // Delete today only -> cancelled on testDate, still present tomorrow
+        viewModel.onRequestDeleteDose(doseToday)
+        viewModel.onConfirmDeleteDose(MedicationActions.RecurringDoseScope.THIS_DAY_ONLY)
+        withTimeout(5.seconds) { viewModel.uiState.first { it.medsCount == 0 } }
+
+        viewModel.onNextDay()
+        val tomorrowState = withTimeout(5.seconds) {
+            viewModel.uiState.first { it.selectedDate == testDate.plusDays(1) && it.medsCount == 1 }
+        }
+        val doseTomorrow = (tomorrowState.hourSlots[9].events.single() as TimelineEvent.Medication).doseItem
+
+        // Delete tomorrow & all future -> empty on tomorrow and day after
+        viewModel.onRequestDeleteDose(doseTomorrow)
+        viewModel.onConfirmDeleteDose(MedicationActions.RecurringDoseScope.THIS_AND_FUTURE)
+        withTimeout(5.seconds) { viewModel.uiState.first { it.medsCount == 0 } }
+
+        viewModel.onNextDay()
+        val dayAfter = withTimeout(5.seconds) {
+            viewModel.uiState.first { it.selectedDate == testDate.plusDays(2) }
+        }
+        assertEquals(0, dayAfter.medsCount)
+    }
+
+    @Test
+    fun oneTimeDose_moveAndDelete_updatesLogDirectlyWithoutScopeDialog() = runBlocking {
+        val med = Medication(id = 20L, name = "Ibuprofen", dosage = "400", unit = "mg", frequency = "ONE_TIME", isActive = true)
+        medicationDao.medicationsFlow.value = listOf(MedicationWithReminders(med, emptyList()))
+        medicationDao.insertDoseLog(
+            MedicationDoseLog(
+                medicationId = 20L,
+                scheduledDate = testDate.toString(),
+                scheduledTime = "13:00",
+                status = "TAKEN"
+            )
+        )
+
+        val initial = withTimeout(5.seconds) { viewModel.uiState.first { it.hourSlots[13].isPopulated } }
+        val oneTimeDose = (initial.hourSlots[13].events.single() as TimelineEvent.Medication).doseItem
+        assertFalse(oneTimeDose.isRecurring)
+
+        // Move one-time dose directly to 16:45 (no scope dialog needed)
+        viewModel.onRequestMoveDose(oneTimeDose)
+        viewModel.onPickMoveTime(16, 45)
+        val movedState = withTimeout(5.seconds) {
+            viewModel.uiState.first { it.hourSlots[16].isPopulated && !it.hourSlots[13].isPopulated }
+        }
+        assertNull(movedState.pendingDoseMove)
+        val movedDose = (movedState.hourSlots[16].events.single() as TimelineEvent.Medication).doseItem
+        assertEquals("16:45", movedDose.scheduledTime)
+
+        // Delete one-time dose removes the single log
+        viewModel.onRequestDeleteDose(movedDose)
+        viewModel.onConfirmDeleteDose(MedicationActions.RecurringDoseScope.THIS_DAY_ONLY)
+        val deletedState = withTimeout(5.seconds) { viewModel.uiState.first { it.medsCount == 0 } }
+        assertEquals(0, deletedState.medsCount)
     }
 }

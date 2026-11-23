@@ -41,7 +41,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -70,6 +69,7 @@ import java.time.format.DateTimeFormatter
 fun AddEditSymptomSheet(
     editingItem: SymptomEntry?,
     defaultDate: LocalDate = LocalDate.now(),
+    defaultTime: Pair<Int, Int>? = null,
     onDismiss: () -> Unit,
     onSave: (
         symptomType: String,
@@ -82,26 +82,29 @@ fun AddEditSymptomSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val context = LocalContext.current
     val locale = formatLocale()
+    val stateKey = "${editingItem?.id}_${defaultDate}_${defaultTime?.first}_${defaultTime?.second}"
 
     // Form states
-    var selectedType by rememberSaveable {
+    var selectedType by rememberSaveable(stateKey) {
         mutableStateOf(editingItem?.symptomType ?: SymptomType.HEADACHE.name)
     }
-    var customName by rememberSaveable {
+    var customName by rememberSaveable(stateKey) {
         mutableStateOf(editingItem?.customName.orEmpty())
     }
-    var severityLevel by rememberSaveable {
+    var severityLevel by rememberSaveable(stateKey) {
         mutableIntStateOf(editingItem?.severity ?: 3)
     }
-    var timestamp by rememberSaveable {
+    var timestamp by rememberSaveable(stateKey) {
+        val initialTime = defaultTime?.let { (h, m) -> LocalTime.of(h.coerceIn(0, 23), m.coerceIn(0, 59)) }
+            ?: LocalTime.now()
         mutableLongStateOf(
-            editingItem?.timestamp ?: defaultDate.atTime(LocalTime.now())
+            editingItem?.timestamp ?: defaultDate.atTime(initialTime)
                 .atZone(ZoneId.systemDefault())
                 .toInstant()
                 .toEpochMilli()
         )
     }
-    var notes by rememberSaveable {
+    var notes by rememberSaveable(stateKey) {
         mutableStateOf(editingItem?.notes.orEmpty())
     }
 

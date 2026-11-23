@@ -1,5 +1,6 @@
 package com.example.healthlog.ui.calendar.timeline
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -27,6 +28,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -43,6 +45,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -52,8 +56,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.healthlog.R
-import com.example.healthlog.database.Measurement
 import com.example.healthlog.database.SymptomEntry
+import com.example.healthlog.model.MedicationScheduleResolver
 import com.example.healthlog.model.ScheduledDoseItem
 import com.example.healthlog.model.ScheduledDoseStatus
 import com.example.healthlog.model.SymptomSeverity
@@ -62,6 +66,8 @@ import com.example.healthlog.ui.calendar.AddEditSymptomSheet
 import com.example.healthlog.ui.format.decimalSeparator
 import com.example.healthlog.ui.format.formatLocale
 import com.example.healthlog.ui.format.formatMeasurementValue
+import com.example.healthlog.ui.medications.AddEditMedicationSheet
+import com.example.healthlog.ui.medications.MedicationActions
 import com.example.healthlog.ui.theme.icon
 import java.time.LocalDate
 import java.time.LocalTime
@@ -71,10 +77,21 @@ import java.time.format.DateTimeFormatter
 fun DayTimelineScreen(
     viewModel: DayTimelineViewModel,
     onBack: () -> Unit,
-    onOpenMeasurementDetails: (Long) -> Unit,
-    onEmptyHourClick: (hour: Int) -> Unit = {}
+    onOpenMeasurementDetails: (Long) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val resources = LocalResources.current
+
+    LaunchedEffect(viewModel) {
+        viewModel.userMessage.collect { medName ->
+            Toast.makeText(
+                context,
+                resources.getString(R.string.dose_logged_toast, medName),
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
 
     DayTimelineContent(
         uiState = uiState,
@@ -86,6 +103,13 @@ fun DayTimelineScreen(
         onMarkDoseTaken = viewModel::onMarkDoseTaken,
         onMarkDoseSkipped = viewModel::onMarkDoseSkipped,
         onUndoDose = viewModel::onUndoDose,
+        onRequestMoveDose = viewModel::onRequestMoveDose,
+        onDismissMoveDose = viewModel::onDismissMoveDose,
+        onPickMoveTime = viewModel::onPickMoveTime,
+        onConfirmMoveScope = viewModel::onConfirmMoveScope,
+        onRequestDeleteDose = viewModel::onRequestDeleteDose,
+        onDismissDeleteDose = viewModel::onDismissDeleteDose,
+        onConfirmDeleteDose = viewModel::onConfirmDeleteDose,
         onOpenEditSymptom = viewModel::onOpenEditSymptom,
         onDismissAddEditSymptomSheet = viewModel::onDismissAddEditSymptomSheet,
         onSaveSymptom = viewModel::onSaveSymptom,
@@ -93,7 +117,12 @@ fun DayTimelineScreen(
         onConfirmDeleteSymptom = viewModel::onConfirmDeleteSymptom,
         onDismissDeleteDialog = viewModel::onDismissDeleteDialog,
         onOpenMeasurementDetails = onOpenMeasurementDetails,
-        onEmptyHourClick = onEmptyHourClick
+        onEmptyHourClick = viewModel::onHourSlotClick,
+        onDismissSlotChooser = viewModel::onDismissSlotChooser,
+        onChooseLogSymptomFromSlot = viewModel::onChooseLogSymptomFromSlot,
+        onChooseAddMedicationFromSlot = viewModel::onChooseAddMedicationFromSlot,
+        onDismissAddMedicationSheet = viewModel::onDismissAddMedicationSheet,
+        onSaveMedication = viewModel::onSaveMedication
     )
 }
 
@@ -117,6 +146,29 @@ fun DayTimelineContent(
     onDismissDeleteDialog: () -> Unit,
     onOpenMeasurementDetails: (Long) -> Unit,
     onEmptyHourClick: (hour: Int) -> Unit = {},
+    onDismissSlotChooser: () -> Unit = {},
+    onChooseLogSymptomFromSlot: () -> Unit = {},
+    onChooseAddMedicationFromSlot: () -> Unit = {},
+    onDismissAddMedicationSheet: () -> Unit = {},
+    onSaveMedication: (
+        name: String,
+        dosage: String,
+        unit: String,
+        frequency: String,
+        instructions: String?,
+        reminderTimes: List<Pair<Int, Int>>,
+        saveToPrescriptions: Boolean,
+        logDoseNow: Boolean,
+        targetDate: LocalDate,
+        oneTimeHourMinute: Pair<Int, Int>?
+    ) -> Unit = { _, _, _, _, _, _, _, _, _, _ -> },
+    onRequestMoveDose: (ScheduledDoseItem) -> Unit = {},
+    onDismissMoveDose: () -> Unit = {},
+    onPickMoveTime: (newHour: Int, newMinute: Int) -> Unit = { _, _ -> },
+    onConfirmMoveScope: (MedicationActions.RecurringDoseScope) -> Unit = {},
+    onRequestDeleteDose: (ScheduledDoseItem) -> Unit = {},
+    onDismissDeleteDose: () -> Unit = {},
+    onConfirmDeleteDose: (MedicationActions.RecurringDoseScope) -> Unit = {},
     today: LocalDate = LocalDate.now()
 ) {
     val locale = formatLocale()
@@ -213,11 +265,13 @@ fun DayTimelineContent(
                     TimelineHourSlotRow(
                         slot = slot,
                         isFutureDate = isFutureDate,
-                        onEmptySlotClick = { onEmptyHourClick(slot.hour) },
+                        onAddToSlotClick = { onEmptyHourClick(slot.hour) },
                         onOpenMeasurementDetails = onOpenMeasurementDetails,
                         onMarkDoseTaken = onMarkDoseTaken,
                         onMarkDoseSkipped = onMarkDoseSkipped,
                         onUndoDose = onUndoDose,
+                        onMoveDose = onRequestMoveDose,
+                        onDeleteDose = onRequestDeleteDose,
                         onEditSymptom = onOpenEditSymptom,
                         onDeleteSymptom = onRequestDeleteSymptom
                     )
@@ -234,13 +288,112 @@ fun DayTimelineContent(
         }
     }
 
+    // Time-slot chooser dialog (Log Symptom vs Add Medicine)
+    if (uiState.slotChooserHour != null) {
+        val formattedHour = MedicationScheduleResolver.formatTime(uiState.slotChooserHour, 0)
+        AlertDialog(
+            onDismissRequest = onDismissSlotChooser,
+            title = {
+                Text(
+                    text = stringResource(R.string.day_timeline_slot_chooser_title, formattedHour),
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    FilledTonalButton(
+                        onClick = onChooseLogSymptomFromSlot,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_add),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = stringResource(R.string.day_timeline_slot_chooser_symptom),
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+
+                    FilledTonalButton(
+                        onClick = onChooseAddMedicationFromSlot,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_nav_medications),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = stringResource(R.string.day_timeline_slot_chooser_medication),
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = onDismissSlotChooser) {
+                    Text(text = stringResource(android.R.string.cancel))
+                }
+            }
+        )
+    }
+
     // Add / Edit Symptom Sheet
     if (uiState.showAddEditSymptomSheet) {
         AddEditSymptomSheet(
             editingItem = uiState.editingSymptom,
             defaultDate = uiState.selectedDate,
+            defaultTime = uiState.symptomDefaultHour?.let { it to 0 },
             onDismiss = onDismissAddEditSymptomSheet,
             onSave = onSaveSymptom
+        )
+    }
+
+    // Add Medicine Sheet (pre-filled with selected date & hour slot)
+    if (uiState.showAddMedicationSheet) {
+        AddEditMedicationSheet(
+            editingItem = null,
+            onDismiss = onDismissAddMedicationSheet,
+            onSave = onSaveMedication,
+            initialDate = uiState.selectedDate,
+            initialTime = uiState.medicationDefaultHour?.let { it to 0 }
+        )
+    }
+
+    // Move Dose TimePicker Dialog
+    if (uiState.doseToMove != null) {
+        com.example.healthlog.ui.calendar.DoseTimePickerDialog(
+            dose = uiState.doseToMove,
+            onDismiss = onDismissMoveDose,
+            onConfirm = onPickMoveTime
+        )
+    }
+
+    // Recurring Dose Move Scope Dialog ("This day only" vs "This & all future days")
+    if (uiState.pendingDoseMove != null) {
+        com.example.healthlog.ui.calendar.DoseMoveScopeDialog(
+            pendingMove = uiState.pendingDoseMove,
+            onDismiss = onDismissMoveDose,
+            onConfirmScope = onConfirmMoveScope
+        )
+    }
+
+    // Delete Dose Dialog (scope dialog for recurring doses, simple confirmation for one-time logs)
+    if (uiState.doseToDelete != null) {
+        com.example.healthlog.ui.calendar.DoseDeleteDialog(
+            dose = uiState.doseToDelete,
+            onDismiss = onDismissDeleteDose,
+            onConfirmScope = onConfirmDeleteDose
         )
     }
 
@@ -379,11 +532,13 @@ private fun TimelineFilterChipsRow(
 private fun TimelineHourSlotRow(
     slot: TimelineHourSlot,
     isFutureDate: Boolean,
-    onEmptySlotClick: () -> Unit,
+    onAddToSlotClick: () -> Unit,
     onOpenMeasurementDetails: (Long) -> Unit,
     onMarkDoseTaken: (ScheduledDoseItem) -> Unit,
     onMarkDoseSkipped: (ScheduledDoseItem) -> Unit,
     onUndoDose: (ScheduledDoseItem) -> Unit,
+    onMoveDose: (ScheduledDoseItem) -> Unit,
+    onDeleteDose: (ScheduledDoseItem) -> Unit,
     onEditSymptom: (SymptomEntry) -> Unit,
     onDeleteSymptom: (SymptomEntry) -> Unit
 ) {
@@ -393,10 +548,12 @@ private fun TimelineHourSlotRow(
             .padding(vertical = 2.dp),
         verticalAlignment = Alignment.Top
     ) {
-        // Left Column: Hour label + vertical timeline track
+        // Left Column: Hour label (tappable to add to any hour) + vertical timeline track
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.width(52.dp)
+            modifier = Modifier
+                .width(52.dp)
+                .clickable(onClick = onAddToSlotClick)
         ) {
             Text(
                 text = slot.timeLabel,
@@ -438,7 +595,9 @@ private fun TimelineHourSlotRow(
                                 isFutureDate = isFutureDate,
                                 onMarkTaken = { onMarkDoseTaken(event.doseItem) },
                                 onMarkSkipped = { onMarkDoseSkipped(event.doseItem) },
-                                onUndo = { onUndoDose(event.doseItem) }
+                                onUndo = { onUndoDose(event.doseItem) },
+                                onMove = { onMoveDose(event.doseItem) },
+                                onDelete = { onDeleteDose(event.doseItem) }
                             )
                         }
                         is TimelineEvent.Symptom -> {
@@ -454,7 +613,7 @@ private fun TimelineHourSlotRow(
         } else {
             // Compact empty slot row
             Surface(
-                onClick = onEmptySlotClick,
+                onClick = onAddToSlotClick,
                 shape = RoundedCornerShape(10.dp),
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
                 modifier = Modifier
@@ -553,7 +712,9 @@ private fun TimelineMedicationCard(
     isFutureDate: Boolean,
     onMarkTaken: () -> Unit,
     onMarkSkipped: () -> Unit,
-    onUndo: () -> Unit
+    onUndo: () -> Unit,
+    onMove: () -> Unit,
+    onDelete: () -> Unit
 ) {
     val dose = event.doseItem
     val takenGreen = Color(0xFF387A40)
@@ -640,6 +801,24 @@ private fun TimelineMedicationCard(
                         )
                     }
                 }
+
+                IconButton(onClick = onMove, modifier = Modifier.size(32.dp)) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_history),
+                        contentDescription = stringResource(R.string.dose_action_move_time),
+                        modifier = Modifier.size(18.dp),
+                        tint = Color.Unspecified
+                    )
+                }
+
+                IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_delete),
+                        contentDescription = stringResource(R.string.dose_action_delete),
+                        modifier = Modifier.size(18.dp),
+                        tint = Color.Unspecified
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(6.dp))
@@ -724,16 +903,18 @@ private fun TimelineMedicationCard(
                             )
                         }
 
-                        TextButton(
-                            onClick = onUndo,
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                            modifier = Modifier.height(30.dp)
-                        ) {
-                            Text(
-                                text = stringResource(R.string.dose_action_undo),
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.SemiBold
-                            )
+                        if (dose.isRecurring) {
+                            TextButton(
+                                onClick = onUndo,
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                                modifier = Modifier.height(30.dp)
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.dose_action_undo),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
                         }
                     }
                 }
@@ -837,7 +1018,7 @@ private fun TimelineSymptomCard(
                     painter = painterResource(R.drawable.ic_delete),
                     contentDescription = stringResource(R.string.symptom_action_delete),
                     modifier = Modifier.size(18.dp),
-                    tint = MaterialTheme.colorScheme.error
+                    tint = Color.Unspecified
                 )
             }
         }

@@ -585,4 +585,127 @@ class CalendarUiTest {
         assertEquals(5, savedSeverity)
         assertEquals("Improved after rest", savedNotes)
     }
+
+    @Test
+    fun calendarContent_scheduledDose_moveAndDeleteButtonsTriggerCallbacks() {
+        val today = LocalDate.of(2026, 11, 10)
+        val month = YearMonth.from(today)
+        val dose = ScheduledDoseItem(
+            medicationId = 5L,
+            medicationName = "Lipitor",
+            dosage = "20",
+            unit = "mg",
+            instructions = "At bedtime",
+            scheduledDate = today.toString(),
+            scheduledTime = "21:00",
+            hour = 21,
+            minute = 0,
+            status = ScheduledDoseStatus.PENDING,
+            isRecurring = true,
+            reminderId = 50L
+        )
+
+        var movedDose: ScheduledDoseItem? = null
+        var deletedDose: ScheduledDoseItem? = null
+
+        composeRule.setContent {
+            HealthLogTheme {
+                CalendarContent(
+                    uiState = CalendarUiState(
+                        displayedMonth = month,
+                        selectedDate = today,
+                        daySummaries = mapOf(today to CalendarDaySummary(date = today, scheduledDoses = listOf(dose)))
+                    ),
+                    onPreviousMonth = {},
+                    onNextMonth = {},
+                    onJumpToToday = {},
+                    onSelectMonthYear = {},
+                    onSelectDate = {},
+                    onOpenAddSymptom = {},
+                    onOpenEditSymptom = {},
+                    onDismissAddEditSheet = {},
+                    onSaveSymptom = { _, _, _, _, _ -> },
+                    onRequestDeleteSymptom = {},
+                    onConfirmDeleteSymptom = {},
+                    onDismissDeleteDialog = {},
+                    onOpenMeasurementDetails = {},
+                    onRequestMoveDose = { movedDose = it },
+                    onRequestDeleteDose = { deletedDose = it },
+                    today = today
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag("calendar_list").performScrollToNode(hasText("Lipitor"))
+        composeRule.onNodeWithText("Lipitor").assertIsDisplayed()
+
+        // Move time button
+        composeRule.onNodeWithContentDescription(context.getString(R.string.dose_action_move_time))
+            .assertIsDisplayed()
+            .performClick()
+        assertEquals(dose, movedDose)
+
+        // Delete dose button
+        composeRule.onNodeWithContentDescription(context.getString(R.string.dose_action_delete))
+            .assertIsDisplayed()
+            .performClick()
+        assertEquals(dose, deletedDose)
+    }
+
+    @Test
+    fun calendarContent_oneTimeDose_showsDeleteButtonWithoutUndoButton() {
+        val today = LocalDate.of(2026, 11, 10)
+        val month = YearMonth.from(today)
+        val oneTimeDose = ScheduledDoseItem(
+            medicationId = 6L,
+            medicationName = "Paracetamol",
+            dosage = "500",
+            unit = "mg",
+            instructions = "As needed",
+            scheduledDate = today.toString(),
+            scheduledTime = "14:00",
+            hour = 14,
+            minute = 0,
+            status = ScheduledDoseStatus.TAKEN,
+            isRecurring = false,
+            reminderId = null,
+            doseLogId = 123L
+        )
+
+        composeRule.setContent {
+            HealthLogTheme {
+                CalendarContent(
+                    uiState = CalendarUiState(
+                        displayedMonth = month,
+                        selectedDate = today,
+                        daySummaries = mapOf(today to CalendarDaySummary(date = today, scheduledDoses = listOf(oneTimeDose)))
+                    ),
+                    onPreviousMonth = {},
+                    onNextMonth = {},
+                    onJumpToToday = {},
+                    onSelectMonthYear = {},
+                    onSelectDate = {},
+                    onOpenAddSymptom = {},
+                    onOpenEditSymptom = {},
+                    onDismissAddEditSheet = {},
+                    onSaveSymptom = { _, _, _, _, _ -> },
+                    onRequestDeleteSymptom = {},
+                    onConfirmDeleteSymptom = {},
+                    onDismissDeleteDialog = {},
+                    onOpenMeasurementDetails = {},
+                    today = today
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag("calendar_list").performScrollToNode(hasText("Paracetamol"))
+        composeRule.onNodeWithText("Paracetamol").assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.dose_status_taken)).assertIsDisplayed()
+
+        // Delete button is present
+        composeRule.onNodeWithContentDescription(context.getString(R.string.dose_action_delete)).assertIsDisplayed()
+
+        // Undo button does NOT exist for one-time medicine
+        composeRule.onNodeWithText(context.getString(R.string.dose_action_undo)).assertDoesNotExist()
+    }
 }

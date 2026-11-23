@@ -30,7 +30,10 @@ data class CalendarUiState(
     val isLoading: Boolean = false,
     val editingSymptom: SymptomEntry? = null,
     val showAddEditSheet: Boolean = false,
-    val symptomToDelete: SymptomEntry? = null
+    val symptomToDelete: SymptomEntry? = null,
+    val doseToMove: ScheduledDoseItem? = null,
+    val pendingDoseMove: MedicationActions.PendingDoseMove? = null,
+    val doseToDelete: ScheduledDoseItem? = null
 )
 
 class CalendarViewModel(
@@ -57,6 +60,42 @@ class CalendarViewModel(
 
     private val _symptomToDelete = MutableStateFlow<SymptomEntry?>(null)
     val symptomToDelete: StateFlow<SymptomEntry?> = _symptomToDelete.asStateFlow()
+
+    private val _doseToMove = MutableStateFlow<ScheduledDoseItem?>(null)
+    val doseToMove: StateFlow<ScheduledDoseItem?> = _doseToMove.asStateFlow()
+
+    private val _pendingDoseMove = MutableStateFlow<MedicationActions.PendingDoseMove?>(null)
+    val pendingDoseMove: StateFlow<MedicationActions.PendingDoseMove?> = _pendingDoseMove.asStateFlow()
+
+    private val _doseToDelete = MutableStateFlow<ScheduledDoseItem?>(null)
+    val doseToDelete: StateFlow<ScheduledDoseItem?> = _doseToDelete.asStateFlow()
+
+    private data class CalendarDialogState(
+        val editingSymptom: SymptomEntry? = null,
+        val showAddEditSheet: Boolean = false,
+        val symptomToDelete: SymptomEntry? = null,
+        val doseToMove: ScheduledDoseItem? = null,
+        val pendingDoseMove: MedicationActions.PendingDoseMove? = null,
+        val doseToDelete: ScheduledDoseItem? = null
+    )
+
+    private val dialogStateFlow = combine(
+        combine(_editingSymptom, _showAddEditSheet, _symptomToDelete) { editing, showSheet, toDelete ->
+            Triple(editing, showSheet, toDelete)
+        },
+        combine(_doseToMove, _pendingDoseMove, _doseToDelete) { toMove, pendingMove, toDeleteDose ->
+            Triple(toMove, pendingMove, toDeleteDose)
+        }
+    ) { (editing, showSheet, toDelete), (toMove, pendingMove, toDeleteDose) ->
+        CalendarDialogState(
+            editingSymptom = editing,
+            showAddEditSheet = showSheet,
+            symptomToDelete = toDelete,
+            doseToMove = toMove,
+            pendingDoseMove = pendingMove,
+            doseToDelete = toDeleteDose
+        )
+    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val monthSummariesFlow = _displayedMonth.flatMapLatest { month ->
@@ -93,10 +132,8 @@ class CalendarViewModel(
         combine(_displayedMonth, _selectedDate, monthSummariesFlow) { month, selected, (summaries, height) ->
             Triple(month, selected, summaries to height)
         },
-        combine(_editingSymptom, _showAddEditSheet, _symptomToDelete) { editing, showSheet, toDelete ->
-            Triple(editing, showSheet, toDelete)
-        }
-    ) { (month, selected, summariesAndHeight), (editing, showSheet, toDelete) ->
+        dialogStateFlow
+    ) { (month, selected, summariesAndHeight), dialogs ->
         val (summaries, height) = summariesAndHeight
         CalendarUiState(
             displayedMonth = month,
@@ -104,9 +141,12 @@ class CalendarViewModel(
             daySummaries = summaries,
             latestHeightCm = height,
             isLoading = false,
-            editingSymptom = editing,
-            showAddEditSheet = showSheet,
-            symptomToDelete = toDelete
+            editingSymptom = dialogs.editingSymptom,
+            showAddEditSheet = dialogs.showAddEditSheet,
+            symptomToDelete = dialogs.symptomToDelete,
+            doseToMove = dialogs.doseToMove,
+            pendingDoseMove = dialogs.pendingDoseMove,
+            doseToDelete = dialogs.doseToDelete
         )
     }.stateIn(
         scope = scope,
@@ -244,6 +284,73 @@ class CalendarViewModel(
         scope.launch {
             symptomRepository.delete(toDelete)
             _symptomToDelete.value = null
+        }
+    }
+
+    fun onRequestMoveDose(dose: ScheduledDoseItem) {
+        _doseToMove.value = dose
+        _pendingDoseMove.value = null
+    }
+
+    fun onDismissMoveDose() {
+        _doseToMove.value = null
+        _pendingDoseMove.value = null
+    }
+
+    fun onPickMoveTime(hour: Int, minute: Int) {
+        val dose = _doseToMove.value ?: return
+        if (dose.isRecurring && dose.reminderId != null) {
+            _doseToMove.value = null
+            _pendingDoseMove.value = MedicationActions.PendingDoseMove(dose, hour, minute)
+        } else {
+            _doseToMove.value = null
+            _pendingDoseMove.value = null
+            scope.launch {
+                MedicationActions.moveScheduledDose(
+                    repository = medicationRepository,
+                    appContext = appContext,
+                    doseItem = dose,
+                    newHour = hour,
+                    newMinute = minute,
+                    scope = MedicationActions.RecurringDoseScope.THIS_DAY_ONLY
+                )
+            }
+        }
+    }
+
+    fun onConfirmMoveScope(moveScope: MedicationActions.RecurringDoseScope) {
+        val pending = _pendingDoseMove.value ?: return
+        _pendingDoseMove.value = null
+        scope.launch {
+            MedicationActions.moveScheduledDose(
+                repository = medicationRepository,
+                appContext = appContext,
+                doseItem = pending.dose,
+                newHour = pending.newHour,
+                newMinute = pending.newMinute,
+                scope = moveScope
+            )
+        }
+    }
+
+    fun onRequestDeleteDose(dose: ScheduledDoseItem) {
+        _doseToDelete.value = dose
+    }
+
+    fun onDismissDeleteDose() {
+        _doseToDelete.value = null
+    }
+
+    fun onConfirmDeleteDose(deleteScope: MedicationActions.RecurringDoseScope) {
+        val dose = _doseToDelete.value ?: return
+        _doseToDelete.value = null
+        scope.launch {
+            MedicationActions.deleteScheduledDose(
+                repository = medicationRepository,
+                appContext = appContext,
+                doseItem = dose,
+                scope = deleteScope
+            )
         }
     }
 

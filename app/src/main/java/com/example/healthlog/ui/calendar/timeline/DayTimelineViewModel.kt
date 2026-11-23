@@ -14,19 +14,36 @@ import com.example.healthlog.ui.calendar.CalendarAggregator
 import com.example.healthlog.ui.medications.MedicationActions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+
+private data class TimelineDialogState(
+    val editingSymptom: SymptomEntry? = null,
+    val showAddEditSymptomSheet: Boolean = false,
+    val symptomDefaultHour: Int? = null,
+    val symptomToDelete: SymptomEntry? = null,
+    val slotChooserHour: Int? = null,
+    val showAddMedicationSheet: Boolean = false,
+    val medicationDefaultHour: Int? = null,
+    val doseToMove: ScheduledDoseItem? = null,
+    val pendingDoseMove: PendingDoseMove? = null,
+    val doseToDelete: ScheduledDoseItem? = null
+)
 
 class DayTimelineViewModel(
     initialDate: LocalDate,
@@ -45,16 +62,11 @@ class DayTimelineViewModel(
     val selectedDate: StateFlow<LocalDate> = _selectedDate.asStateFlow()
 
     private val _activeFilter = MutableStateFlow(TimelineFilter.ALL)
-    val activeFilter: StateFlow<TimelineFilter> = _activeFilter.asStateFlow()
 
-    private val _editingSymptom = MutableStateFlow<SymptomEntry?>(null)
-    val editingSymptom: StateFlow<SymptomEntry?> = _editingSymptom.asStateFlow()
+    private val _dialogState = MutableStateFlow(TimelineDialogState())
 
-    private val _showAddEditSymptomSheet = MutableStateFlow(false)
-    val showAddEditSymptomSheet: StateFlow<Boolean> = _showAddEditSymptomSheet.asStateFlow()
-
-    private val _symptomToDelete = MutableStateFlow<SymptomEntry?>(null)
-    val symptomToDelete: StateFlow<SymptomEntry?> = _symptomToDelete.asStateFlow()
+    private val _userMessage = MutableSharedFlow<String>()
+    val userMessage: SharedFlow<String> = _userMessage.asSharedFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val dayDataFlow = _selectedDate.flatMapLatest { date ->
@@ -83,13 +95,10 @@ class DayTimelineViewModel(
         _selectedDate,
         _activeFilter,
         dayDataFlow,
-        combine(_editingSymptom, _showAddEditSymptomSheet, _symptomToDelete) { editing, showSheet, toDelete ->
-            Triple(editing, showSheet, toDelete)
-        }
-    ) { date, filter, dayData, symptomState ->
+        _dialogState
+    ) { date, filter, dayData, dialogState ->
         val (measurements, medData, symptoms) = dayData
         val (meds, logs, overrides) = medData
-        val (editing, showSheet, toDelete) = symptomState
         val filteredMeasurements = CalendarAggregator.filterCompanionPulses(measurements)
         val timeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.US)
 
@@ -163,9 +172,16 @@ class DayTimelineViewModel(
             vitalsCount = vitalEvents.size,
             medsCount = medEvents.size,
             symptomsCount = symptomEvents.size,
-            editingSymptom = editing,
-            showAddEditSymptomSheet = showSheet,
-            symptomToDelete = toDelete
+            editingSymptom = dialogState.editingSymptom,
+            showAddEditSymptomSheet = dialogState.showAddEditSymptomSheet,
+            symptomDefaultHour = dialogState.symptomDefaultHour,
+            symptomToDelete = dialogState.symptomToDelete,
+            slotChooserHour = dialogState.slotChooserHour,
+            showAddMedicationSheet = dialogState.showAddMedicationSheet,
+            medicationDefaultHour = dialogState.medicationDefaultHour,
+            doseToMove = dialogState.doseToMove,
+            pendingDoseMove = dialogState.pendingDoseMove,
+            doseToDelete = dialogState.doseToDelete
         )
     }.stateIn(
         scope = scope,
@@ -188,6 +204,88 @@ class DayTimelineViewModel(
     fun onSelectFilter(filter: TimelineFilter) {
         _activeFilter.value = filter
     }
+
+    // --- Time-slot chooser & creation ---
+
+    fun onHourSlotClick(hour: Int) {
+        _dialogState.update { it.copy(slotChooserHour = hour.coerceIn(0, 23)) }
+    }
+
+    fun onDismissSlotChooser() {
+        _dialogState.update { it.copy(slotChooserHour = null) }
+    }
+
+    fun onChooseLogSymptomFromSlot() {
+        val hour = _dialogState.value.slotChooserHour ?: return
+        _dialogState.update {
+            it.copy(
+                slotChooserHour = null,
+                editingSymptom = null,
+                symptomDefaultHour = hour,
+                showAddEditSymptomSheet = true
+            )
+        }
+    }
+
+    fun onChooseAddMedicationFromSlot() {
+        val hour = _dialogState.value.slotChooserHour ?: return
+        _dialogState.update {
+            it.copy(
+                slotChooserHour = null,
+                medicationDefaultHour = hour,
+                showAddMedicationSheet = true
+            )
+        }
+    }
+
+    fun onDismissAddMedicationSheet() {
+        _dialogState.update {
+            it.copy(
+                showAddMedicationSheet = false,
+                medicationDefaultHour = null
+            )
+        }
+    }
+
+    fun onSaveMedication(
+        name: String,
+        dosage: String,
+        unit: String,
+        frequency: String,
+        instructions: String?,
+        reminderTimes: List<Pair<Int, Int>>,
+        saveToPrescriptions: Boolean,
+        logDoseNow: Boolean,
+        targetDate: LocalDate,
+        oneTimeHourMinute: Pair<Int, Int>?
+    ) {
+        val ctx = appContext
+        scope.launch {
+            if (ctx != null) {
+                val loggedMedName = MedicationActions.saveMedication(
+                    repository = medicationRepository,
+                    appContext = ctx,
+                    existing = null,
+                    name = name,
+                    dosage = dosage,
+                    unit = unit,
+                    frequency = frequency,
+                    instructions = instructions,
+                    reminderTimes = reminderTimes,
+                    saveToPrescriptions = saveToPrescriptions,
+                    logDoseNow = logDoseNow,
+                    targetDate = targetDate,
+                    oneTimeHourMinute = oneTimeHourMinute
+                )
+                if (loggedMedName != null) {
+                    _userMessage.emit(loggedMedName)
+                }
+            }
+            onDismissAddMedicationSheet()
+        }
+    }
+
+    // --- Dose quick actions, move time, and delete ---
 
     fun onMarkDoseTaken(doseItem: ScheduledDoseItem) {
         scope.launch {
@@ -220,14 +318,111 @@ class DayTimelineViewModel(
         }
     }
 
+    fun onRequestMoveDose(doseItem: ScheduledDoseItem) {
+        _dialogState.update {
+            it.copy(
+                doseToMove = doseItem,
+                pendingDoseMove = null
+            )
+        }
+    }
+
+    fun onDismissMoveDose() {
+        _dialogState.update {
+            it.copy(
+                doseToMove = null,
+                pendingDoseMove = null
+            )
+        }
+    }
+
+    fun onPickMoveTime(newHour: Int, newMinute: Int) {
+        val dose = _dialogState.value.doseToMove ?: return
+        if (dose.isRecurring && dose.reminderId != null) {
+            _dialogState.update {
+                it.copy(
+                    doseToMove = null,
+                    pendingDoseMove = PendingDoseMove(
+                        dose = dose,
+                        newHour = newHour,
+                        newMinute = newMinute
+                    )
+                )
+            }
+        } else {
+            _dialogState.update { it.copy(doseToMove = null, pendingDoseMove = null) }
+            scope.launch {
+                MedicationActions.moveScheduledDose(
+                    repository = medicationRepository,
+                    appContext = appContext,
+                    doseItem = dose,
+                    newHour = newHour,
+                    newMinute = newMinute,
+                    scope = MedicationActions.RecurringDoseScope.THIS_DAY_ONLY,
+                    today = todayProvider()
+                )
+            }
+        }
+    }
+
+    fun onConfirmMoveScope(moveScope: MedicationActions.RecurringDoseScope) {
+        val pending = _dialogState.value.pendingDoseMove ?: return
+        _dialogState.update { it.copy(pendingDoseMove = null) }
+        scope.launch {
+            MedicationActions.moveScheduledDose(
+                repository = medicationRepository,
+                appContext = appContext,
+                doseItem = pending.dose,
+                newHour = pending.newHour,
+                newMinute = pending.newMinute,
+                scope = moveScope,
+                today = todayProvider()
+            )
+        }
+    }
+
+    fun onRequestDeleteDose(doseItem: ScheduledDoseItem) {
+        _dialogState.update { it.copy(doseToDelete = doseItem) }
+    }
+
+    fun onDismissDeleteDose() {
+        _dialogState.update { it.copy(doseToDelete = null) }
+    }
+
+    fun onConfirmDeleteDose(deleteScope: MedicationActions.RecurringDoseScope) {
+        val dose = _dialogState.value.doseToDelete ?: return
+        _dialogState.update { it.copy(doseToDelete = null) }
+        scope.launch {
+            MedicationActions.deleteScheduledDose(
+                repository = medicationRepository,
+                appContext = appContext,
+                doseItem = dose,
+                scope = deleteScope,
+                today = todayProvider()
+            )
+        }
+    }
+
+    // --- Symptom edit & delete ---
+
     fun onOpenEditSymptom(symptom: SymptomEntry) {
-        _editingSymptom.value = symptom
-        _showAddEditSymptomSheet.value = true
+        _dialogState.update {
+            it.copy(
+                editingSymptom = symptom,
+                symptomDefaultHour = null,
+                showAddEditSymptomSheet = true
+            )
+        }
     }
 
     fun onDismissAddEditSymptomSheet() {
-        _showAddEditSymptomSheet.value = false
-        _editingSymptom.value = null
+        _dialogState.update {
+            it.copy(
+                showAddEditSymptomSheet = false,
+                editingSymptom = null,
+                symptomDefaultHour = null
+            )
+        }
     }
 
     fun onSaveSymptom(
@@ -238,7 +433,7 @@ class DayTimelineViewModel(
         notes: String?
     ) {
         scope.launch {
-            val existing = _editingSymptom.value
+            val existing = _dialogState.value.editingSymptom
             if (existing != null) {
                 symptomRepository.update(
                     existing.copy(
@@ -265,18 +460,18 @@ class DayTimelineViewModel(
     }
 
     fun onRequestDeleteSymptom(symptom: SymptomEntry) {
-        _symptomToDelete.value = symptom
+        _dialogState.update { it.copy(symptomToDelete = symptom) }
     }
 
     fun onDismissDeleteDialog() {
-        _symptomToDelete.value = null
+        _dialogState.update { it.copy(symptomToDelete = null) }
     }
 
     fun onConfirmDeleteSymptom() {
-        val toDelete = _symptomToDelete.value ?: return
+        val toDelete = _dialogState.value.symptomToDelete ?: return
         scope.launch {
             symptomRepository.delete(toDelete)
-            _symptomToDelete.value = null
+            _dialogState.update { it.copy(symptomToDelete = null) }
         }
     }
 

@@ -153,6 +153,19 @@
     <string name="timeline_filter_all">All</string>
     <string name="day_timeline_empty_slot">Empty • Tap to log</string>
     <string name="day_timeline_action_add_to_slot">Add event to this hour</string>
+    <string name="day_timeline_slot_chooser_title">Add to %1$s</string>
+    <string name="day_timeline_slot_chooser_symptom">Log Symptom</string>
+    <string name="day_timeline_slot_chooser_medication">Add Medicine</string>
+    <string name="dose_action_move_time">Move time</string>
+    <string name="dose_action_delete">Delete dose</string>
+    <string name="dose_move_picker_title">Move %1$s</string>
+    <string name="dose_move_scope_title">Move to %1$s</string>
+    <string name="dose_move_scope_desc">Apply this time change for %1$s to:</string>
+    <string name="dose_delete_scope_title">Remove %1$s?</string>
+    <string name="dose_delete_scope_desc">Choose whether to remove this scheduled dose for this day only, or stop it from this day onward (past history stays intact).</string>
+    <string name="dose_delete_single_desc">Are you sure you want to remove this %1$s entry from your log?</string>
+    <string name="dose_scope_this_day">This day only</string>
+    <string name="dose_scope_this_and_future">This &amp; all future days</string>
 
     <!-- Symptom Form Sheet -->
     <string name="symptom_form_title_add">Log Symptom</string>

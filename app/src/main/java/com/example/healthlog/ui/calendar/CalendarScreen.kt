@@ -89,6 +89,13 @@ fun CalendarScreen(
         onMarkDoseTaken = viewModel::onMarkDoseTaken,
         onMarkDoseSkipped = viewModel::onMarkDoseSkipped,
         onUndoDoseAction = viewModel::onUndoDoseAction,
+        onRequestMoveDose = viewModel::onRequestMoveDose,
+        onDismissMoveDose = viewModel::onDismissMoveDose,
+        onPickMoveTime = viewModel::onPickMoveTime,
+        onConfirmMoveScope = viewModel::onConfirmMoveScope,
+        onRequestDeleteDose = viewModel::onRequestDeleteDose,
+        onDismissDeleteDose = viewModel::onDismissDeleteDose,
+        onConfirmDeleteDose = viewModel::onConfirmDeleteDose,
         onOpenAddSymptom = viewModel::onOpenAddSymptom,
         onOpenEditSymptom = viewModel::onOpenEditSymptom,
         onDismissAddEditSheet = viewModel::onDismissAddEditSheet,
@@ -123,6 +130,13 @@ fun CalendarContent(
     onMarkDoseTaken: (ScheduledDoseItem) -> Unit = {},
     onMarkDoseSkipped: (ScheduledDoseItem) -> Unit = {},
     onUndoDoseAction: (ScheduledDoseItem) -> Unit = {},
+    onRequestMoveDose: (ScheduledDoseItem) -> Unit = {},
+    onDismissMoveDose: () -> Unit = {},
+    onPickMoveTime: (Int, Int) -> Unit = { _, _ -> },
+    onConfirmMoveScope: (com.example.healthlog.ui.medications.MedicationActions.RecurringDoseScope) -> Unit = {},
+    onRequestDeleteDose: (ScheduledDoseItem) -> Unit = {},
+    onDismissDeleteDose: () -> Unit = {},
+    onConfirmDeleteDose: (com.example.healthlog.ui.medications.MedicationActions.RecurringDoseScope) -> Unit = {},
     today: LocalDate = LocalDate.now(),
     bottomBar: @Composable () -> Unit = {}
 ) {
@@ -324,7 +338,9 @@ fun CalendarContent(
                         isFutureDate = isFutureDate,
                         onMarkTaken = { onMarkDoseTaken(dose) },
                         onMarkSkipped = { onMarkDoseSkipped(dose) },
-                        onUndo = { onUndoDoseAction(dose) }
+                        onUndo = { onUndoDoseAction(dose) },
+                        onMove = { onRequestMoveDose(dose) },
+                        onDelete = { onRequestDeleteDose(dose) }
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                 }
@@ -389,6 +405,33 @@ fun CalendarContent(
                     Text(text = stringResource(android.R.string.cancel))
                 }
             }
+        )
+    }
+
+    // Move Dose TimePicker Dialog
+    if (uiState.doseToMove != null) {
+        DoseTimePickerDialog(
+            dose = uiState.doseToMove,
+            onDismiss = onDismissMoveDose,
+            onConfirm = onPickMoveTime
+        )
+    }
+
+    // Recurring Dose Move Scope Dialog ("This day only" vs "This & all future days")
+    if (uiState.pendingDoseMove != null) {
+        DoseMoveScopeDialog(
+            pendingMove = uiState.pendingDoseMove,
+            onDismiss = onDismissMoveDose,
+            onConfirmScope = onConfirmMoveScope
+        )
+    }
+
+    // Delete Dose Dialog (scope dialog for recurring doses, simple confirmation for one-time logs)
+    if (uiState.doseToDelete != null) {
+        DoseDeleteDialog(
+            dose = uiState.doseToDelete,
+            onDismiss = onDismissDeleteDose,
+            onConfirmScope = onConfirmDeleteDose
         )
     }
 }
@@ -941,7 +984,9 @@ private fun ScheduledDoseDayItemCard(
     isFutureDate: Boolean,
     onMarkTaken: () -> Unit,
     onMarkSkipped: () -> Unit,
-    onUndo: () -> Unit
+    onUndo: () -> Unit,
+    onMove: () -> Unit,
+    onDelete: () -> Unit
 ) {
     val takenGreen = Color(0xFF387A40)
     val displayName = dose.medicationName.ifBlank { stringResource(R.string.nav_medications) }
@@ -1028,6 +1073,24 @@ private fun ScheduledDoseDayItemCard(
                             fontWeight = FontWeight.Medium
                         )
                     }
+                }
+
+                IconButton(onClick = onMove, modifier = Modifier.size(32.dp)) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_history),
+                        contentDescription = stringResource(R.string.dose_action_move_time),
+                        modifier = Modifier.size(18.dp),
+                        tint = Color.Unspecified
+                    )
+                }
+
+                IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_delete),
+                        contentDescription = stringResource(R.string.dose_action_delete),
+                        modifier = Modifier.size(18.dp),
+                        tint = Color.Unspecified
+                    )
                 }
             }
 
@@ -1127,16 +1190,18 @@ private fun ScheduledDoseDayItemCard(
                             )
                         }
 
-                        TextButton(
-                            onClick = onUndo,
-                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
-                            modifier = Modifier.height(32.dp)
-                        ) {
-                            Text(
-                                text = stringResource(R.string.dose_action_undo),
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.SemiBold
-                            )
+                        if (dose.isRecurring) {
+                            TextButton(
+                                onClick = onUndo,
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                                modifier = Modifier.height(32.dp)
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.dose_action_undo),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
                         }
                     }
                 }

@@ -168,6 +168,203 @@ object MedicationActions {
         }
     }
 
+    enum class RecurringDoseScope {
+        THIS_DAY_ONLY,
+        THIS_AND_FUTURE
+    }
+
+    data class PendingDoseMove(
+        val dose: ScheduledDoseItem,
+        val newHour: Int,
+        val newMinute: Int
+    )
+
+    /**
+     * Moves a scheduled or logged dose to [newHour]:[newMinute] and keeps OS alarms in sync.
+     *
+     * - For recurring doses with [RecurringDoseScope.THIS_DAY_ONLY]: creates/updates a single-day
+     *   `RESCHEDULED` override (or clears it if moved back to the base time) and reschedules alarms.
+     * - For recurring doses with [RecurringDoseScope.THIS_AND_FUTURE]: updates the reminder in place
+     *   (on today/startDate) or splits it from `scheduledDate` onward, clearing future overrides
+     *   and rescheduling alarms for both the capped and split reminders.
+     * - For one-time/logged-only doses: moves the dose log's `scheduledTime`.
+     */
+    suspend fun moveScheduledDose(
+        repository: MedicationRepository,
+        appContext: Context?,
+        doseItem: ScheduledDoseItem,
+        newHour: Int,
+        newMinute: Int,
+        scope: RecurringDoseScope,
+        today: LocalDate = LocalDate.now()
+    ) {
+        val newTime = MedicationScheduleResolver.formatTime(newHour, newMinute)
+
+        if (doseItem.isRecurring && doseItem.reminderId != null) {
+            val reminderId = doseItem.reminderId
+            val oldOverrides = repository.getOverridesForReminder(reminderId)
+
+            when (scope) {
+                RecurringDoseScope.THIS_DAY_ONLY -> {
+                    if (appContext != null) {
+                        oldOverrides
+                            .filter { it.originalDate == doseItem.scheduledDate }
+                            .forEach { MedicationAlarmScheduler.cancelOverrideAlarm(appContext, it.id) }
+                    }
+
+                    repository.rescheduleDoseForDate(
+                        reminderId = reminderId,
+                        date = doseItem.scheduledDate,
+                        newHour = newHour,
+                        newMinute = newMinute
+                    )
+
+                    if (doseItem.doseLogId != null) {
+                        repository.deleteDoseById(doseItem.doseLogId)
+                        repository.recordDose(
+                            medicationId = doseItem.medicationId,
+                            scheduledDate = doseItem.scheduledDate,
+                            scheduledTime = newTime,
+                            status = doseItem.status.name
+                        )
+                    }
+
+                    if (appContext != null) {
+                        val med = repository.getMedicationById(doseItem.medicationId)
+                        val reminder = repository.getReminderById(reminderId)
+                        if (med != null && reminder != null) {
+                            val updatedOverrides = repository.getOverridesForReminder(reminderId)
+                            MedicationAlarmScheduler.scheduleReminder(appContext, med, reminder, updatedOverrides)
+                        }
+                    }
+                }
+
+                RecurringDoseScope.THIS_AND_FUTURE -> {
+                    val fromDate = MedicationScheduleResolver.parseIsoDateOrNull(doseItem.scheduledDate) ?: today
+                    if (appContext != null) {
+                        oldOverrides
+                            .filter { it.originalDate >= doseItem.scheduledDate }
+                            .forEach { MedicationAlarmScheduler.cancelOverrideAlarm(appContext, it.id) }
+                    }
+
+                    val (updatedOriginal, splitNew) = repository.rescheduleReminderFromDate(
+                        reminderId = reminderId,
+                        fromDate = fromDate,
+                        newHour = newHour,
+                        newMinute = newMinute,
+                        today = today
+                    )
+
+                    if (doseItem.doseLogId != null) {
+                        repository.deleteDoseById(doseItem.doseLogId)
+                        repository.recordDose(
+                            medicationId = doseItem.medicationId,
+                            scheduledDate = doseItem.scheduledDate,
+                            scheduledTime = newTime,
+                            status = doseItem.status.name
+                        )
+                    }
+
+                    if (appContext != null) {
+                        val med = repository.getMedicationById(doseItem.medicationId)
+                        if (med != null) {
+                            if (updatedOriginal != null) {
+                                val remainingOverrides = repository.getOverridesForReminder(updatedOriginal.id)
+                                MedicationAlarmScheduler.scheduleReminder(appContext, med, updatedOriginal, remainingOverrides)
+                            }
+                            if (splitNew != null) {
+                                MedicationAlarmScheduler.scheduleReminder(appContext, med, splitNew, emptyList())
+                            }
+                        }
+                    }
+                }
+            }
+        } else if (doseItem.doseLogId != null) {
+            repository.deleteDoseById(doseItem.doseLogId)
+            repository.recordAsNeededDose(
+                medicationId = doseItem.medicationId,
+                scheduledDate = doseItem.scheduledDate,
+                scheduledTime = newTime,
+                status = doseItem.status.name
+            )
+        }
+    }
+
+    /**
+     * Deletes/cancels a scheduled or logged dose and keeps OS alarms in sync.
+     *
+     * - For recurring doses with [RecurringDoseScope.THIS_DAY_ONLY]: removes any dose log for that
+     *   day, records a `CANCELLED` override, dismisses active notifications/snooze, and reschedules.
+     * - For recurring doses with [RecurringDoseScope.THIS_AND_FUTURE]: deletes or caps the reminder
+     *   from `scheduledDate` onward (preserving past dose history) and cancels/reschedules alarms.
+     * - For one-time/logged-only doses: removes the single `MedicationDoseLog`.
+     */
+    suspend fun deleteScheduledDose(
+        repository: MedicationRepository,
+        appContext: Context?,
+        doseItem: ScheduledDoseItem,
+        scope: RecurringDoseScope,
+        today: LocalDate = LocalDate.now()
+    ) {
+        if (doseItem.isRecurring && doseItem.reminderId != null) {
+            val reminderId = doseItem.reminderId
+            val oldOverrides = repository.getOverridesForReminder(reminderId)
+
+            if (appContext != null) {
+                dismissNotificationAndSnooze(appContext, doseItem)
+            }
+
+            when (scope) {
+                RecurringDoseScope.THIS_DAY_ONLY -> {
+                    if (appContext != null) {
+                        oldOverrides
+                            .filter { it.originalDate == doseItem.scheduledDate }
+                            .forEach { MedicationAlarmScheduler.cancelOverrideAlarm(appContext, it.id) }
+                    }
+                    if (doseItem.doseLogId != null) {
+                        repository.deleteDoseById(doseItem.doseLogId)
+                    }
+                    repository.cancelDoseForDate(reminderId, doseItem.scheduledDate)
+
+                    if (appContext != null) {
+                        val med = repository.getMedicationById(doseItem.medicationId)
+                        val reminder = repository.getReminderById(reminderId)
+                        if (med != null && reminder != null) {
+                            val updatedOverrides = repository.getOverridesForReminder(reminderId)
+                            MedicationAlarmScheduler.scheduleReminder(appContext, med, reminder, updatedOverrides)
+                        }
+                    }
+                }
+
+                RecurringDoseScope.THIS_AND_FUTURE -> {
+                    val fromDate = MedicationScheduleResolver.parseIsoDateOrNull(doseItem.scheduledDate) ?: today
+                    val capped = repository.deleteReminderFromDate(
+                        reminderId = reminderId,
+                        fromDate = fromDate,
+                        today = today
+                    )
+
+                    if (appContext != null) {
+                        if (capped == null) {
+                            MedicationAlarmScheduler.cancelReminder(appContext, reminderId, oldOverrides)
+                        } else {
+                            oldOverrides
+                                .filter { it.originalDate >= doseItem.scheduledDate }
+                                .forEach { MedicationAlarmScheduler.cancelOverrideAlarm(appContext, it.id) }
+                            val med = repository.getMedicationById(doseItem.medicationId)
+                            if (med != null) {
+                                val remainingOverrides = repository.getOverridesForReminder(capped.id)
+                                MedicationAlarmScheduler.scheduleReminder(appContext, med, capped, remainingOverrides)
+                            }
+                        }
+                    }
+                }
+            }
+        } else if (doseItem.doseLogId != null) {
+            repository.deleteDoseById(doseItem.doseLogId)
+        }
+    }
+
     fun dismissNotificationAndSnooze(
         appContext: Context,
         doseItem: ScheduledDoseItem

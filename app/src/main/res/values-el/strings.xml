@@ -148,6 +148,19 @@
     <string name="timeline_filter_all">Όλα</string>
     <string name="day_timeline_empty_slot">Κενό • Πατήστε για καταγραφή</string>
     <string name="day_timeline_action_add_to_slot">Προσθήκη συμβάντος σε αυτή την ώρα</string>
+    <string name="day_timeline_slot_chooser_title">Προσθήκη στις %1$s</string>
+    <string name="day_timeline_slot_chooser_symptom">Καταγραφή Συμπτώματος</string>
+    <string name="day_timeline_slot_chooser_medication">Προσθήκη Φαρμάκου</string>
+    <string name="dose_action_move_time">Αλλαγή ώρας</string>
+    <string name="dose_action_delete">Διαγραφή δόσης</string>
+    <string name="dose_move_picker_title">Μετακίνηση: %1$s</string>
+    <string name="dose_move_scope_title">Μετακίνηση στις %1$s</string>
+    <string name="dose_move_scope_desc">Εφαρμογή της αλλαγής ώρας για %1$s σε:</string>
+    <string name="dose_delete_scope_title">Αφαίρεση: %1$s;</string>
+    <string name="dose_delete_scope_desc">Επιλέξτε αν θέλετε να αφαιρέσετε τη δόση μόνο για αυτή την ημέρα ή από αυτή την ημέρα και στο εξής (το προηγούμενο ιστορικό παραμένει).</string>
+    <string name="dose_delete_single_desc">Είστε βέβαιοι ότι θέλετε να αφαιρέσετε αυτή την καταχώρηση (%1$s) από το ιστορικό;</string>
+    <string name="dose_scope_this_day">Μόνο για αυτή την ημέρα</string>
+    <string name="dose_scope_this_and_future">Αυτή και όλες οι μελλοντικές ημέρες</string>
 
     <!-- Symptom Form Sheet -->
     <string name="symptom_form_title_add">Καταγραφή Συμπτώματος</string>
