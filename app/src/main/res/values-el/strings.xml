@@ -91,7 +91,7 @@
     <string name="notification_medication_text">%1$s %2$s • %3$s</string>
     <string name="notification_medication_text_no_instructions">%1$s %2$s</string>
     <string name="notification_action_mark_taken">Ελήφθη</string>
-    <string name="notification_action_snooze">Αναβολή 15λ</string>
+    <string name="notification_action_snooze">Αναβολή 30λ</string>
     <string name="notification_dose_taken_toast">Καταγράφηκε η λήψη: %1$s</string>
     <string name="notification_permission_required_title">Απαιτούνται Ειδοποιήσεις</string>
     <string name="notification_permission_required_desc">Για να λαμβάνετε υπενθυμίσεις για το φάρμακό σας, πρέπει να ενεργοποιήσετε τις ειδοποιήσεις.</string>

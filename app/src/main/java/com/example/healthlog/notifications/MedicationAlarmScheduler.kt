@@ -145,7 +145,7 @@ object MedicationAlarmScheduler {
         scheduledTime: String,
         notificationId: Int,
         reminderId: Long = notificationId.toLong(),
-        snoozeMinutes: Int = 15
+        snoozeMinutes: Int = 30
     ) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val triggerAtMillis = System.currentTimeMillis() + (snoozeMinutes * 60 * 1000L)
