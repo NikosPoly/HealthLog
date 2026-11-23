@@ -1,14 +1,15 @@
 package com.example.healthlog.ui.calendar
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.healthlog.database.Measurement
-import com.example.healthlog.database.MedicationDoseLog
 import com.example.healthlog.database.SymptomEntry
+import com.example.healthlog.model.ScheduledDoseItem
 import com.example.healthlog.repository.MeasurementRepository
 import com.example.healthlog.repository.MedicationRepository
 import com.example.healthlog.repository.SymptomRepository
+import com.example.healthlog.ui.medications.MedicationActions
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -36,6 +37,7 @@ class CalendarViewModel(
     private val measurementRepository: MeasurementRepository,
     private val medicationRepository: MedicationRepository,
     private val symptomRepository: SymptomRepository,
+    private val appContext: Context? = null,
     private val coroutineScope: kotlinx.coroutines.CoroutineScope? = null
 ) : ViewModel() {
 
@@ -61,17 +63,27 @@ class CalendarViewModel(
         val (startMillis, endMillis) = CalendarAggregator.monthTimeRange(month)
         val (startDate, endDate) = CalendarAggregator.monthIsoDateRange(month)
 
+        val medicationDataFlow = combine(
+            medicationRepository.allMedications,
+            medicationRepository.getDoseLogsInDateRange(startDate, endDate),
+            medicationRepository.getOverridesInDateRange(startDate, endDate)
+        ) { meds, doses, overrides ->
+            Triple(meds, doses, overrides)
+        }
+
         combine(
             measurementRepository.getMeasurementsInRange(startMillis, endMillis),
-            medicationRepository.getDoseLogsInDateRange(startDate, endDate),
+            medicationDataFlow,
             symptomRepository.getSymptomsInRange(startMillis, endMillis),
             measurementRepository.getLatestHeight()
-        ) { measurements, doses, symptoms, height ->
+        ) { measurements, (meds, doses, overrides), symptoms, height ->
             CalendarAggregator.aggregateMonth(
                 yearMonth = month,
                 measurements = measurements,
                 doseLogs = doses,
                 symptoms = symptoms,
+                medicationsWithReminders = meds,
+                overrides = overrides,
                 latestHeightCm = height
             ) to height
         }
@@ -136,6 +148,37 @@ class CalendarViewModel(
         _selectedDate.value = date
         if (YearMonth.from(date) != _displayedMonth.value) {
             _displayedMonth.value = YearMonth.from(date)
+        }
+    }
+
+    fun onMarkDoseTaken(doseItem: ScheduledDoseItem) {
+        scope.launch {
+            MedicationActions.recordScheduledDoseStatus(
+                repository = medicationRepository,
+                appContext = appContext,
+                doseItem = doseItem,
+                status = "TAKEN"
+            )
+        }
+    }
+
+    fun onMarkDoseSkipped(doseItem: ScheduledDoseItem) {
+        scope.launch {
+            MedicationActions.recordScheduledDoseStatus(
+                repository = medicationRepository,
+                appContext = appContext,
+                doseItem = doseItem,
+                status = "SKIPPED"
+            )
+        }
+    }
+
+    fun onUndoDoseAction(doseItem: ScheduledDoseItem) {
+        scope.launch {
+            MedicationActions.undoScheduledDose(
+                repository = medicationRepository,
+                doseItem = doseItem
+            )
         }
     }
 
@@ -208,14 +251,16 @@ class CalendarViewModel(
         fun factory(
             measurementRepository: MeasurementRepository,
             medicationRepository: MedicationRepository,
-            symptomRepository: SymptomRepository
+            symptomRepository: SymptomRepository,
+            appContext: Context? = null
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 return CalendarViewModel(
                     measurementRepository = measurementRepository,
                     medicationRepository = medicationRepository,
-                    symptomRepository = symptomRepository
+                    symptomRepository = symptomRepository,
+                    appContext = appContext?.applicationContext
                 ) as T
             }
         }

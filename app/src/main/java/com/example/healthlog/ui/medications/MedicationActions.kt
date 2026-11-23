@@ -138,7 +138,7 @@ object MedicationActions {
      */
     suspend fun recordScheduledDoseStatus(
         repository: MedicationRepository,
-        appContext: Context,
+        appContext: Context?,
         doseItem: ScheduledDoseItem,
         status: String
     ) {
@@ -148,7 +148,9 @@ object MedicationActions {
             scheduledTime = doseItem.scheduledTime,
             status = status
         )
-        dismissNotificationAndSnooze(appContext, doseItem)
+        if (appContext != null) {
+            dismissNotificationAndSnooze(appContext, doseItem)
+        }
     }
 
     suspend fun undoScheduledDose(

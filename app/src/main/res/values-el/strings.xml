@@ -38,6 +38,8 @@
     <string name="dose_status_taken">Ελήφθη</string>
     <string name="dose_status_skipped">Παραλείφθηκε</string>
     <string name="dose_status_pending">Εκκρεμεί</string>
+    <string name="dose_status_scheduled">Προγραμματισμένο</string>
+    <string name="dose_moved_from">Μετακινήθηκε από %1$s</string>
     <string name="dose_action_mark_taken">Λήψη</string>
     <string name="dose_action_mark_skipped">Παράλειψη</string>
     <string name="dose_action_undo">Αναίρεση</string>
@@ -127,7 +129,7 @@
     <string name="calendar_day_empty">Δεν καταγράφηκαν συμβάντα υγείας αυτή την ημέρα.</string>
     <string name="calendar_section_symptoms">Συμπτώματα</string>
     <string name="calendar_section_vitals">Ζωτικές Μετρήσεις</string>
-    <string name="calendar_section_medications">Ληφθέντα Φάρμακα</string>
+    <string name="calendar_section_medications">Φάρμακα</string>
     <string name="calendar_jump_today">Σήμερα</string>
     <string name="calendar_legend_vitals">Μετρήσεις</string>
     <string name="calendar_legend_symptoms">Συμπτώματα</string>

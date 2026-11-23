@@ -43,6 +43,8 @@
     <string name="dose_status_taken">Taken</string>
     <string name="dose_status_skipped">Skipped</string>
     <string name="dose_status_pending">Pending</string>
+    <string name="dose_status_scheduled">Scheduled</string>
+    <string name="dose_moved_from">Moved from %1$s</string>
     <string name="dose_action_mark_taken">Take</string>
     <string name="dose_action_mark_skipped">Skip</string>
     <string name="dose_action_undo">Undo</string>
@@ -132,7 +134,7 @@
     <string name="calendar_day_empty">No health events recorded for this date.</string>
     <string name="calendar_section_symptoms">Symptoms</string>
     <string name="calendar_section_vitals">Vital Signs</string>
-    <string name="calendar_section_medications">Medications Taken</string>
+    <string name="calendar_section_medications">Medications</string>
     <string name="calendar_jump_today">Today</string>
     <string name="calendar_legend_vitals">Vitals</string>
     <string name="calendar_legend_symptoms">Symptoms</string>

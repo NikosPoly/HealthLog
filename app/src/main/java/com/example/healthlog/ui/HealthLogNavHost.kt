@@ -123,7 +123,8 @@ fun HealthLogNavHost(
                             factory = com.example.healthlog.ui.calendar.CalendarViewModel.factory(
                                 measurementRepository = repository,
                                 medicationRepository = medicationRepository,
-                                symptomRepository = symptomRepository
+                                symptomRepository = symptomRepository,
+                                appContext = context
                             )
                         )
                         com.example.healthlog.ui.calendar.CalendarScreen(

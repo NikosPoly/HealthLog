@@ -2,8 +2,11 @@ package com.example.healthlog.ui.calendar
 
 import com.example.healthlog.database.Measurement
 import com.example.healthlog.database.MedicationDoseLog
+import com.example.healthlog.database.MedicationScheduleOverride
+import com.example.healthlog.database.MedicationWithReminders
 import com.example.healthlog.database.SymptomEntry
 import com.example.healthlog.model.MeasurementType
+import com.example.healthlog.model.MedicationScheduleResolver
 import com.example.healthlog.model.SymptomSeverity
 import java.time.Instant
 import java.time.LocalDate
@@ -64,14 +67,17 @@ object CalendarAggregator {
         }
     }
 
-    // Aggregates raw lists of measurements, dose logs, and symptoms for a month into
-    // a Map of LocalDate -> CalendarDaySummary.
+    // Aggregates raw lists of measurements, medications/schedules, dose logs, overrides,
+    // and symptoms for a month into a Map of LocalDate -> CalendarDaySummary.
     fun aggregateMonth(
         yearMonth: YearMonth,
         measurements: List<Measurement>,
         doseLogs: List<MedicationDoseLog>,
         symptoms: List<SymptomEntry>,
+        medicationsWithReminders: List<MedicationWithReminders> = emptyList(),
+        overrides: List<MedicationScheduleOverride> = emptyList(),
         latestHeightCm: Double? = null,
+        today: LocalDate = LocalDate.now(),
         zoneId: ZoneId = ZoneId.systemDefault()
     ): Map<LocalDate, CalendarDaySummary> {
         // Group measurements by LocalDate
@@ -83,6 +89,16 @@ object CalendarAggregator {
         val doseLogsByDate = doseLogs.groupBy {
             parseIsoDateOrNull(it.scheduledDate)
         }.filterKeys { it != null }.mapKeys { it.key!! }
+
+        // Resolve full scheduled + logged doses for every day of the month
+        val scheduledDosesByDate = MedicationScheduleResolver.resolveForMonth(
+            yearMonth = yearMonth,
+            medicationsWithReminders = medicationsWithReminders,
+            doseLogs = doseLogs,
+            overrides = overrides,
+            today = today,
+            zoneId = zoneId
+        )
 
         // Group symptoms by LocalDate
         val symptomsByDate = symptoms.groupBy {
@@ -96,6 +112,7 @@ object CalendarAggregator {
             val date = yearMonth.atDay(day)
             val dayMeasurements = filterCompanionPulses(measurementsByDate[date].orEmpty())
             val dayDoseLogs = doseLogsByDate[date].orEmpty()
+            val dayScheduledDoses = scheduledDosesByDate[date].orEmpty()
             val daySymptoms = symptomsByDate[date].orEmpty()
 
             val highestRank = calculateHighestVitalRank(dayMeasurements, latestHeightCm)
@@ -106,6 +123,7 @@ object CalendarAggregator {
                 date = date,
                 measurements = dayMeasurements,
                 doseLogs = dayDoseLogs,
+                scheduledDoses = dayScheduledDoses,
                 symptoms = daySymptoms,
                 highestVitalRank = highestRank,
                 maxSymptomSeverity = maxSeverity

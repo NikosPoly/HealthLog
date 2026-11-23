@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,6 +19,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -25,6 +28,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -46,19 +50,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
-import com.example.healthlog.database.MedicationDoseLog
 import com.example.healthlog.database.SymptomEntry
+import com.example.healthlog.model.ScheduledDoseItem
+import com.example.healthlog.model.ScheduledDoseStatus
 import com.example.healthlog.model.SymptomSeverity
 import com.example.healthlog.model.SymptomType
 import com.example.healthlog.ui.format.decimalSeparator
 import com.example.healthlog.ui.format.formatLocale
 import com.example.healthlog.ui.format.formatMeasurementValue
 import com.example.healthlog.ui.theme.icon
-import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
@@ -82,6 +85,9 @@ fun CalendarScreen(
         onJumpToToday = viewModel::onJumpToToday,
         onSelectMonthYear = viewModel::onSelectMonthYear,
         onSelectDate = viewModel::onSelectDate,
+        onMarkDoseTaken = viewModel::onMarkDoseTaken,
+        onMarkDoseSkipped = viewModel::onMarkDoseSkipped,
+        onUndoDoseAction = viewModel::onUndoDoseAction,
         onOpenAddSymptom = viewModel::onOpenAddSymptom,
         onOpenEditSymptom = viewModel::onOpenEditSymptom,
         onDismissAddEditSheet = viewModel::onDismissAddEditSheet,
@@ -111,6 +117,10 @@ fun CalendarContent(
     onConfirmDeleteSymptom: () -> Unit,
     onDismissDeleteDialog: () -> Unit,
     onOpenMeasurementDetails: (Long) -> Unit,
+    onMarkDoseTaken: (ScheduledDoseItem) -> Unit = {},
+    onMarkDoseSkipped: (ScheduledDoseItem) -> Unit = {},
+    onUndoDoseAction: (ScheduledDoseItem) -> Unit = {},
+    today: LocalDate = LocalDate.now(),
     bottomBar: @Composable () -> Unit = {}
 ) {
     val locale = formatLocale()
@@ -180,6 +190,7 @@ fun CalendarContent(
                 CalendarGridCard(
                     displayedMonth = uiState.displayedMonth,
                     selectedDate = uiState.selectedDate,
+                    today = today,
                     daySummaries = uiState.daySummaries,
                     onSelectDate = onSelectDate
                 )
@@ -262,19 +273,35 @@ fun CalendarContent(
             }
 
             // Medications section
-            if (selectedSummary.hasMedications) {
+            if (selectedSummary.scheduledDoses.isNotEmpty()) {
+                val isFutureDate = uiState.selectedDate.isAfter(today)
                 item(key = "section_meds_title") {
                     SectionTitle(title = stringResource(R.string.calendar_section_medications))
                 }
-                items(selectedSummary.doseLogs, key = { "dose_${it.id}" }) { dose ->
-                    MedicationDoseDayItemCard(doseLog = dose)
+                items(
+                    items = selectedSummary.scheduledDoses,
+                    key = { dose ->
+                        "dose_${dose.medicationId}_${dose.reminderId ?: -1}_${dose.doseLogId ?: -1}_${dose.scheduledDate}_${dose.scheduledTime}"
+                    }
+                ) { dose ->
+                    ScheduledDoseDayItemCard(
+                        dose = dose,
+                        isFutureDate = isFutureDate,
+                        onMarkTaken = { onMarkDoseTaken(dose) },
+                        onMarkSkipped = { onMarkDoseSkipped(dose) },
+                        onUndo = { onUndoDoseAction(dose) }
+                    )
                     Spacer(modifier = Modifier.height(6.dp))
                 }
             }
 
             // Extra space at bottom so FAB doesn't obscure cards
             item(key = "bottom_spacing") {
-                Spacer(modifier = Modifier.height(80.dp))
+                Spacer(
+                    modifier = Modifier
+                        .height(96.dp)
+                        .testTag("calendar_bottom_spacing")
+                )
             }
         }
     }
@@ -509,6 +536,7 @@ private fun MonthYearPickerDialog(
 private fun CalendarGridCard(
     displayedMonth: YearMonth,
     selectedDate: LocalDate,
+    today: LocalDate,
     daySummaries: Map<LocalDate, CalendarDaySummary>,
     onSelectDate: (LocalDate) -> Unit
 ) {
@@ -558,7 +586,7 @@ private fun CalendarGridCard(
                             val date = displayedMonth.atDay(dayNumber)
                             val summary = daySummaries[date] ?: CalendarDaySummary(date)
                             val isSelected = date == selectedDate
-                            val isToday = date == LocalDate.now()
+                            val isToday = date == today
 
                             CalendarDayCell(
                                 dayNumber = dayNumber,
@@ -873,14 +901,24 @@ private fun MeasurementDayItemCard(
 }
 
 @Composable
-private fun MedicationDoseDayItemCard(
-    doseLog: MedicationDoseLog
+private fun ScheduledDoseDayItemCard(
+    dose: ScheduledDoseItem,
+    isFutureDate: Boolean,
+    onMarkTaken: () -> Unit,
+    onMarkSkipped: () -> Unit,
+    onUndo: () -> Unit
 ) {
-    val isTaken = doseLog.status == "TAKEN"
-    val statusText = stringResource(
-        if (isTaken) R.string.dose_status_taken else R.string.dose_status_skipped
-    )
-    val statusColor = if (isTaken) Color(0xFF387A40) else MaterialTheme.colorScheme.error
+    val takenGreen = Color(0xFF387A40)
+    val displayName = dose.medicationName.ifBlank { stringResource(R.string.nav_medications) }
+    val dosageText = listOf(dose.dosage, dose.unit)
+        .filter { it.isNotBlank() }
+        .joinToString(" ")
+
+    val iconTint = when (dose.status) {
+        ScheduledDoseStatus.TAKEN -> takenGreen
+        ScheduledDoseStatus.SKIPPED -> MaterialTheme.colorScheme.error
+        ScheduledDoseStatus.PENDING -> MaterialTheme.colorScheme.primary
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -889,38 +927,184 @@ private fun MedicationDoseDayItemCard(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
         )
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(12.dp)
         ) {
-            Box(
-                modifier = Modifier.size(38.dp),
-                contentAlignment = Alignment.Center
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_nav_medications),
-                    contentDescription = null,
-                    modifier = Modifier.size(26.dp),
-                    tint = Color.Unspecified
-                )
+                Box(
+                    modifier = Modifier.size(38.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_nav_medications),
+                        contentDescription = null,
+                        modifier = Modifier.size(26.dp),
+                        tint = iconTint
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = displayName,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "• ${dose.scheduledTime}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    val subtitle = buildString {
+                        if (dosageText.isNotBlank()) append(dosageText)
+                        if (!dose.instructions.isNullOrBlank()) {
+                            if (isNotEmpty()) append(" — ")
+                            append(dose.instructions)
+                        }
+                    }
+                    if (subtitle.isNotBlank()) {
+                        Text(
+                            text = subtitle,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
+                    if (!dose.originalTime.isNullOrBlank()) {
+                        Text(
+                            text = stringResource(R.string.dose_moved_from, dose.originalTime),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
             }
 
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "${stringResource(R.string.nav_medications)} (${doseLog.scheduledTime})",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Text(
-                    text = statusText,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = statusColor,
-                    fontWeight = FontWeight.Medium
-                )
+            when (dose.status) {
+                ScheduledDoseStatus.PENDING -> {
+                    if (!isFutureDate) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            OutlinedButton(
+                                onClick = onMarkSkipped,
+                                shape = RoundedCornerShape(10.dp),
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
+                                modifier = Modifier.height(34.dp)
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.dose_action_mark_skipped),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Button(
+                                onClick = onMarkTaken,
+                                shape = RoundedCornerShape(10.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = takenGreen,
+                                    contentColor = Color.White
+                                ),
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                                modifier = Modifier.height(34.dp)
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.dose_action_mark_taken),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        }
+                    } else {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Start,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.secondaryContainer
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.dose_status_scheduled),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                ScheduledDoseStatus.TAKEN, ScheduledDoseStatus.SKIPPED -> {
+                    val isTaken = dose.status == ScheduledDoseStatus.TAKEN
+                    val statusText = stringResource(
+                        if (isTaken) R.string.dose_status_taken else R.string.dose_status_skipped
+                    )
+                    val badgeBg = if (isTaken) {
+                        takenGreen.copy(alpha = 0.15f)
+                    } else {
+                        MaterialTheme.colorScheme.errorContainer
+                    }
+                    val badgeTextColor = if (isTaken) {
+                        takenGreen
+                    } else {
+                        MaterialTheme.colorScheme.onErrorContainer
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = badgeBg
+                        ) {
+                            Text(
+                                text = statusText,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = badgeTextColor,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
+
+                        TextButton(
+                            onClick = onUndo,
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                            modifier = Modifier.height(32.dp)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.dose_action_undo),
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                }
             }
         }
     }
