@@ -326,7 +326,7 @@ This document outlines the architectural strategy, feature specifications, and i
   * Create `MedicationDao` with reactive `Flow` queries and intake adherence tracking.
 * **Step 3 — Offline Local Notifications & Alarm Architecture:**
   * Implement `MedicationAlarmScheduler` using Android `AlarmManager` with exact alarm capabilities (`setExactAndAllowWhileIdle` / `SCHEDULE_EXACT_ALARM`).
-  * `MedicationAlarmReceiver`: BroadcastReceiver triggering high-priority notification with instant actions ("Mark Taken", "Snooze 15m").
+  * `MedicationAlarmReceiver`: BroadcastReceiver triggering high-priority notification with instant actions ("Mark Taken", "Snooze 30m").
   * `BootReceiver`: Reschedules active medication alarms upon device reboot (`ACTION_BOOT_COMPLETED`).
   * Android 13+ runtime permission flow for `POST_NOTIFICATIONS`.
 * **Step 4 — Medication Management UI (`ui/medications/`):**
