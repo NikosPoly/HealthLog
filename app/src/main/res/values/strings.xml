@@ -96,7 +96,7 @@
     <string name="notification_medication_text">%1$s %2$s • %3$s</string>
     <string name="notification_medication_text_no_instructions">%1$s %2$s</string>
     <string name="notification_action_mark_taken">Mark Taken</string>
-    <string name="notification_action_snooze">Snooze 15m</string>
+    <string name="notification_action_snooze">Snooze 30m</string>
     <string name="notification_dose_taken_toast">Marked %1$s as taken</string>
     <string name="notification_permission_required_title">Notifications Required</string>
     <string name="notification_permission_required_desc">To receive reminders for your medication, you need to enable notifications.</string>

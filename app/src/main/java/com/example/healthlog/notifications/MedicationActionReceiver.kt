@@ -3,6 +3,7 @@ package com.example.healthlog.notifications
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.os.PowerManager
 import android.widget.Toast
 import com.example.healthlog.R
 import com.example.healthlog.database.HealthDatabase
@@ -20,7 +21,12 @@ class MedicationActionReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val medicationId = intent.getLongExtra(MedicationNotificationHelper.EXTRA_MEDICATION_ID, -1L)
         val notificationId = intent.getIntExtra(MedicationNotificationHelper.EXTRA_NOTIFICATION_ID, -1)
+        val reminderId = intent.getLongExtra(
+            MedicationNotificationHelper.EXTRA_REMINDER_ID,
+            if (notificationId != -1) notificationId.toLong() else -1L
+        )
 
+        // Dismiss the active tray notification
         if (notificationId != -1) {
             MedicationNotificationHelper.cancelNotification(context, notificationId)
         }
@@ -31,17 +37,43 @@ class MedicationActionReceiver : BroadcastReceiver() {
             MedicationNotificationHelper.ACTION_MARK_TAKEN -> {
                 val medicationName = intent.getStringExtra(MedicationNotificationHelper.EXTRA_MEDICATION_NAME) ?: ""
                 val scheduledTime = intent.getStringExtra(MedicationNotificationHelper.EXTRA_SCHEDULED_TIME) ?: ""
+                val scheduledDate = intent.getStringExtra(MedicationNotificationHelper.EXTRA_SCHEDULED_DATE)
+                    ?: SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+
+                // Cancel any pending snooze for this dose since it is now taken
+                if (reminderId != -1L) {
+                    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+                    val snoozeIntent = Intent(context, MedicationAlarmReceiver::class.java)
+                    val snoozePendingIntent = android.app.PendingIntent.getBroadcast(
+                        context,
+                        reminderId.toInt() + MedicationAlarmScheduler.SNOOZE_OFFSET,
+                        snoozeIntent,
+                        android.app.PendingIntent.FLAG_NO_CREATE or android.app.PendingIntent.FLAG_IMMUTABLE
+                    )
+                    if (snoozePendingIntent != null) {
+                        alarmManager.cancel(snoozePendingIntent)
+                        snoozePendingIntent.cancel()
+                    }
+                }
 
                 val pendingResult = goAsync()
+                val powerManager = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
+                val wakeLock = powerManager?.newWakeLock(
+                    PowerManager.PARTIAL_WAKE_LOCK,
+                    "HealthLog:MedicationActionReceiver"
+                )?.apply {
+                    setReferenceCounted(false)
+                    acquire(10_000L)
+                }
+
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
                         val db = HealthDatabase.getDatabase(context)
                         val repository = MedicationRepository(db.medicationDao())
-                        val todayDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
 
                         repository.recordDose(
                             medicationId = medicationId,
-                            scheduledDate = todayDate,
+                            scheduledDate = scheduledDate,
                             scheduledTime = scheduledTime,
                             status = "TAKEN"
                         )
@@ -55,6 +87,12 @@ class MedicationActionReceiver : BroadcastReceiver() {
                         }
                     } catch (_: Exception) {
                     } finally {
+                        try {
+                            if (wakeLock?.isHeld == true) {
+                                wakeLock.release()
+                            }
+                        } catch (_: Exception) {
+                        }
                         pendingResult.finish()
                     }
                 }
@@ -75,7 +113,8 @@ class MedicationActionReceiver : BroadcastReceiver() {
                     unit = unit,
                     instructions = instructions,
                     scheduledTime = scheduledTime,
-                    notificationId = notificationId
+                    notificationId = notificationId,
+                    reminderId = reminderId
                 )
             }
         }

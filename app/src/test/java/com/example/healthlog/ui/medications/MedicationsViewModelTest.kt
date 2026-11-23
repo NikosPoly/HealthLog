@@ -130,6 +130,10 @@ class MedicationsViewModelTest {
             return doseLogsFlow.map { list -> list.filter { it.scheduledDate == date } }
         }
 
+        override suspend fun getDoseLog(medicationId: Long, date: String, time: String): MedicationDoseLog? {
+            return doseLogs.find { it.medicationId == medicationId && it.scheduledDate == date && it.scheduledTime == time }
+        }
+
         override fun getDoseLogsInDateRange(startDate: String, endDate: String): Flow<List<MedicationDoseLog>> {
             return doseLogsFlow.map { list ->
                 list.filter { it.scheduledDate >= startDate && it.scheduledDate <= endDate }

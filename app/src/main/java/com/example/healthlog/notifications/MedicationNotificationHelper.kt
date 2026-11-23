@@ -20,10 +20,34 @@ object MedicationNotificationHelper {
     const val EXTRA_UNIT = "extra_unit"
     const val EXTRA_INSTRUCTIONS = "extra_instructions"
     const val EXTRA_SCHEDULED_TIME = "extra_scheduled_time"
+    const val EXTRA_SCHEDULED_DATE = "extra_scheduled_date"
     const val EXTRA_NOTIFICATION_ID = "extra_notification_id"
+    const val EXTRA_REMINDER_ID = "extra_reminder_id"
+    const val EXTRA_ALARM_TYPE = "extra_alarm_type"
+
+    const val ALARM_TYPE_MAIN = "MAIN"
+    const val ALARM_TYPE_SNOOZE = "SNOOZE"
 
     const val ACTION_MARK_TAKEN = "com.example.healthlog.ACTION_MEDICATION_MARK_TAKEN"
     const val ACTION_SNOOZE = "com.example.healthlog.ACTION_MEDICATION_SNOOZE"
+
+    fun areNotificationsEnabled(context: Context): Boolean {
+        // 1. App-level permission check across all Android versions (including POST_NOTIFICATIONS on Android 13+)
+        if (!androidx.core.app.NotificationManagerCompat.from(context).areNotificationsEnabled()) {
+            return false
+        }
+
+        // 2. Channel-level check: ensure the medication channel exists and is not blocked
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            val channel = notificationManager.getNotificationChannel(CHANNEL_ID)
+            if (channel != null && channel.importance == NotificationManager.IMPORTANCE_NONE) {
+                return false
+            }
+        }
+
+        return true
+    }
 
     fun createNotificationChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -47,7 +71,8 @@ object MedicationNotificationHelper {
         unit: String,
         instructions: String?,
         scheduledTime: String,
-        notificationId: Int
+        notificationId: Int,
+        scheduledDate: String? = null
     ) {
         createNotificationChannel(context)
 
@@ -68,7 +93,9 @@ object MedicationNotificationHelper {
             putExtra(EXTRA_MEDICATION_ID, medicationId)
             putExtra(EXTRA_MEDICATION_NAME, medicationName)
             putExtra(EXTRA_SCHEDULED_TIME, scheduledTime)
+            putExtra(EXTRA_SCHEDULED_DATE, scheduledDate)
             putExtra(EXTRA_NOTIFICATION_ID, notificationId)
+            putExtra(EXTRA_REMINDER_ID, notificationId.toLong())
         }
         val markTakenPendingIntent = PendingIntent.getBroadcast(
             context,
@@ -86,7 +113,9 @@ object MedicationNotificationHelper {
             putExtra(EXTRA_UNIT, unit)
             putExtra(EXTRA_INSTRUCTIONS, instructions)
             putExtra(EXTRA_SCHEDULED_TIME, scheduledTime)
+            putExtra(EXTRA_SCHEDULED_DATE, scheduledDate)
             putExtra(EXTRA_NOTIFICATION_ID, notificationId)
+            putExtra(EXTRA_REMINDER_ID, notificationId.toLong())
         }
         val snoozePendingIntent = PendingIntent.getBroadcast(
             context,

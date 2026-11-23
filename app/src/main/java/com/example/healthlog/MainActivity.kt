@@ -66,22 +66,26 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        // If the user stopped giving notification permission, immediately disable active alarms
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.POST_NOTIFICATIONS
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                val db = HealthDatabase.getDatabase(applicationContext)
-                CoroutineScope(Dispatchers.IO).launch {
-                    val activeMeds = db.medicationDao().getActiveMedicationsWithReminders().first()
-                    activeMeds.forEach { medWithReminders ->
-                        if (medWithReminders.medication.frequency == "DAILY" && medWithReminders.reminders.isNotEmpty()) {
-                            medWithReminders.reminders.forEach { reminder ->
-                                MedicationAlarmScheduler.cancelReminder(applicationContext, reminder.id)
-                            }
-                            db.medicationDao().updateMedication(medWithReminders.medication.copy(isActive = false))
+        // Synchronize scheduled alarms with the current notification permission state:
+        // - If notifications are disabled: cancel all alarms from the OS scheduler without altering the
+        //   user's medication isActive status in the database.
+        // - If notifications are enabled: ensure all active medications have their alarms scheduled.
+        val notificationsEnabled = MedicationNotificationHelper.areNotificationsEnabled(this)
+        val db = HealthDatabase.getDatabase(applicationContext)
+
+        CoroutineScope(Dispatchers.IO).launch {
+            val activeMeds = db.medicationDao().getActiveMedicationsWithReminders().first()
+            activeMeds.forEach { medWithReminders ->
+                if (medWithReminders.medication.frequency == "DAILY") {
+                    medWithReminders.reminders.forEach { reminder ->
+                        if (!notificationsEnabled || !reminder.isEnabled) {
+                            MedicationAlarmScheduler.cancelReminder(applicationContext, reminder.id)
+                        } else {
+                            MedicationAlarmScheduler.scheduleReminder(
+                                applicationContext,
+                                medWithReminders.medication,
+                                reminder
+                            )
                         }
                     }
                 }
