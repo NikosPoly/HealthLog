@@ -12,6 +12,7 @@ import com.example.healthlog.database.MedicationScheduleOverride
 import com.example.healthlog.model.MedicationScheduleResolver
 import java.time.LocalDate
 import java.util.Calendar
+import java.util.TimeZone
 
 object MedicationAlarmScheduler {
 
@@ -172,6 +173,7 @@ object MedicationAlarmScheduler {
             cancelMainAlarmOnly(context, alarmManager, reminder.id.toInt())
         } else {
             val scheduledTime = MedicationScheduleResolver.formatTime(reminder.hour, reminder.minute)
+            val scheduledDate = formatTriggerDate(triggerAtMillis, nowCalendar.timeZone)
 
             val intent = Intent(context, MedicationAlarmReceiver::class.java).apply {
                 putExtra(MedicationNotificationHelper.EXTRA_MEDICATION_ID, medication.id)
@@ -180,6 +182,7 @@ object MedicationAlarmScheduler {
                 putExtra(MedicationNotificationHelper.EXTRA_UNIT, medication.unit)
                 putExtra(MedicationNotificationHelper.EXTRA_INSTRUCTIONS, medication.instructions)
                 putExtra(MedicationNotificationHelper.EXTRA_SCHEDULED_TIME, scheduledTime)
+                putExtra(MedicationNotificationHelper.EXTRA_SCHEDULED_DATE, scheduledDate)
                 putExtra(MedicationNotificationHelper.EXTRA_NOTIFICATION_ID, reminder.id.toInt())
                 putExtra(MedicationNotificationHelper.EXTRA_REMINDER_ID, reminder.id)
                 putExtra(MedicationNotificationHelper.EXTRA_ALARM_TYPE, MedicationNotificationHelper.ALARM_TYPE_MAIN)
@@ -360,6 +363,16 @@ object MedicationAlarmScheduler {
         )
 
         scheduleReliableAlarm(context, alarmManager, triggerAtMillis, pendingIntent)
+    }
+
+    internal fun formatTriggerDate(
+        triggerAtMillis: Long,
+        timeZone: TimeZone = TimeZone.getDefault()
+    ): String {
+        val triggerCal = Calendar.getInstance(timeZone).apply {
+            timeInMillis = triggerAtMillis
+        }
+        return calendarToLocalDate(triggerCal).toString()
     }
 
     private fun overrideRequestCode(overrideId: Long): Int = overrideId.toInt() + OVERRIDE_OFFSET
