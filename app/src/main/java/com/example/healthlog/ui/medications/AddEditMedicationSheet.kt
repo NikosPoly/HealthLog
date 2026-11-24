@@ -12,6 +12,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -285,29 +286,16 @@ fun AddEditMedicationSheet(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(4.dp))
-                    Row(
+                    FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        units.take(3).forEach { unit ->
+                        units.forEach { unit ->
                             FilterChip(
                                 selected = selectedUnit == unit,
                                 onClick = { selectedUnit = unit },
-                                label = { Text(unit, style = MaterialTheme.typography.labelSmall) },
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                    }
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        units.drop(3).forEach { unit ->
-                            FilterChip(
-                                selected = selectedUnit == unit,
-                                onClick = { selectedUnit = unit },
-                                label = { Text(unit, style = MaterialTheme.typography.labelSmall) },
-                                modifier = Modifier.weight(1f)
+                                label = { Text(unit, style = MaterialTheme.typography.labelSmall, maxLines = 1) }
                             )
                         }
                     }
