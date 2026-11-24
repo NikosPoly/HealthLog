@@ -21,13 +21,16 @@ object MedicationAlarmScheduler {
 
     /**
      * Calculates the next epoch millis for a given reminder (hour:minute and days of week).
+     * Returns null if [daysOfWeekMask] has no valid weekday bit set.
      */
     fun calculateNextTriggerMillis(
         hour: Int,
         minute: Int,
         daysOfWeekMask: Int,
         nowCalendar: Calendar = Calendar.getInstance()
-    ): Long {
+    ): Long? {
+        if (daysOfWeekMask == 0) return null
+
         val target = Calendar.getInstance(nowCalendar.timeZone).apply {
             timeInMillis = nowCalendar.timeInMillis
             set(Calendar.HOUR_OF_DAY, hour)
@@ -42,7 +45,7 @@ object MedicationAlarmScheduler {
         }
 
         // Check daysOfWeekMask. Bitmask mapping: 1=Mon, 2=Tue, 4=Wed, 8=Thu, 16=Fri, 32=Sat, 64=Sun.
-        for (dayOffset in 0..7) {
+        for (dayOffset in 0..6) {
             val date = calendarToLocalDate(target)
             if (MedicationScheduleResolver.matchesDayOfWeek(date, daysOfWeekMask)) {
                 return target.timeInMillis
@@ -50,7 +53,7 @@ object MedicationAlarmScheduler {
             target.add(Calendar.DAY_OF_YEAR, 1)
         }
 
-        return target.timeInMillis
+        return null
     }
 
     /**

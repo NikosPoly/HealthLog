@@ -27,10 +27,6 @@ class MedicationAlarmReceiver : BroadcastReceiver() {
         val alarmType = intent.getStringExtra(MedicationNotificationHelper.EXTRA_ALARM_TYPE)
             ?: MedicationNotificationHelper.ALARM_TYPE_MAIN
 
-        val medicationName = intent.getStringExtra(MedicationNotificationHelper.EXTRA_MEDICATION_NAME) ?: return
-        val dosage = intent.getStringExtra(MedicationNotificationHelper.EXTRA_DOSAGE) ?: ""
-        val unit = intent.getStringExtra(MedicationNotificationHelper.EXTRA_UNIT) ?: ""
-        val instructions = intent.getStringExtra(MedicationNotificationHelper.EXTRA_INSTRUCTIONS)
         val scheduledTime = intent.getStringExtra(MedicationNotificationHelper.EXTRA_SCHEDULED_TIME) ?: ""
         val scheduledDateExtra = intent.getStringExtra(MedicationNotificationHelper.EXTRA_SCHEDULED_DATE)
         val notificationId = intent.getIntExtra(
@@ -115,11 +111,11 @@ class MedicationAlarmReceiver : BroadcastReceiver() {
                 if (shouldRingForSchedule && !isAlreadyLogged) {
                     MedicationNotificationHelper.showMedicationNotification(
                         context = context,
-                        medicationId = medicationId,
-                        medicationName = medicationName,
-                        dosage = dosage,
-                        unit = unit,
-                        instructions = instructions,
+                        medicationId = medication.id,
+                        medicationName = medication.name,
+                        dosage = medication.dosage,
+                        unit = medication.unit,
+                        instructions = medication.instructions,
                         scheduledTime = scheduledTime,
                         notificationId = notificationId,
                         scheduledDate = effectiveDate,

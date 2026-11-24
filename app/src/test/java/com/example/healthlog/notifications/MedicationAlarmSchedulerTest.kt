@@ -78,11 +78,29 @@ class MedicationAlarmSchedulerTest {
             nowCalendar = now
         )
 
-        val resultCalendar = Calendar.getInstance().apply { timeInMillis = trigger }
+        assertNotNull(trigger)
+        val resultCalendar = Calendar.getInstance().apply { timeInMillis = trigger!! }
         assertEquals(Calendar.FRIDAY, resultCalendar.get(Calendar.DAY_OF_WEEK))
         assertEquals(8, resultCalendar.get(Calendar.HOUR_OF_DAY))
         assertEquals(0, resultCalendar.get(Calendar.MINUTE))
-        assertTrue(trigger > now.timeInMillis)
+        assertTrue(trigger!! > now.timeInMillis)
+    }
+
+    @Test
+    fun calculateNextTriggerMillis_emptyMask_returnsNull() {
+        val now = Calendar.getInstance().apply {
+            set(2026, Calendar.NOVEMBER, 18, 10, 0, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+
+        assertNull(
+            MedicationAlarmScheduler.calculateNextTriggerMillis(
+                hour = 8,
+                minute = 0,
+                daysOfWeekMask = 0,
+                nowCalendar = now
+            )
+        )
     }
 
     @Test
