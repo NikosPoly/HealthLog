@@ -10,6 +10,7 @@ import com.example.healthlog.guidelines.BmiCategory
 import com.example.healthlog.guidelines.GuidelineEvaluation
 import com.example.healthlog.guidelines.PulseZone
 import com.example.healthlog.guidelines.evaluateMeasurement
+import com.example.healthlog.model.ScheduledDoseItem
 import com.example.healthlog.model.SymptomSeverity
 import java.time.LocalDate
 
@@ -32,12 +33,13 @@ data class CalendarDaySummary(
     val date: LocalDate,
     val measurements: List<Measurement> = emptyList(),
     val doseLogs: List<MedicationDoseLog> = emptyList(),
+    val scheduledDoses: List<ScheduledDoseItem> = emptyList(),
     val symptoms: List<SymptomEntry> = emptyList(),
     val highestVitalRank: VitalClinicalRank? = null,
     val maxSymptomSeverity: SymptomSeverity? = null
 ) {
     val hasMeasurements: Boolean get() = measurements.isNotEmpty()
-    val hasMedications: Boolean get() = doseLogs.isNotEmpty()
+    val hasMedications: Boolean get() = scheduledDoses.isNotEmpty() || doseLogs.isNotEmpty()
     val hasSymptoms: Boolean get() = symptoms.isNotEmpty()
     val hasAnyData: Boolean get() = hasMeasurements || hasMedications || hasSymptoms
 

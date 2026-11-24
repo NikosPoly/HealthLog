@@ -8,11 +8,15 @@ import android.os.Build
 import com.example.healthlog.MainActivity
 import com.example.healthlog.database.Medication
 import com.example.healthlog.database.MedicationReminder
+import com.example.healthlog.database.MedicationScheduleOverride
+import com.example.healthlog.model.MedicationScheduleResolver
+import java.time.LocalDate
 import java.util.Calendar
 
 object MedicationAlarmScheduler {
 
     const val SNOOZE_OFFSET = 100_000
+    const val OVERRIDE_OFFSET = 200_000
 
     /**
      * Calculates the next epoch millis for a given reminder (hour:minute and days of week).
@@ -23,7 +27,7 @@ object MedicationAlarmScheduler {
         daysOfWeekMask: Int,
         nowCalendar: Calendar = Calendar.getInstance()
     ): Long {
-        val target = Calendar.getInstance().apply {
+        val target = Calendar.getInstance(nowCalendar.timeZone).apply {
             timeInMillis = nowCalendar.timeInMillis
             set(Calendar.HOUR_OF_DAY, hour)
             set(Calendar.MINUTE, minute)
@@ -36,22 +40,10 @@ object MedicationAlarmScheduler {
             target.add(Calendar.DAY_OF_YEAR, 1)
         }
 
-        // Check daysOfWeekMask. Calendar.DAY_OF_WEEK: 1=Sun, 2=Mon, 3=Tue, 4=Wed, 5=Thu, 6=Fri, 7=Sat.
-        // Bitmask mapping: 1=Mon(2^0), 2=Tue(2^1), 4=Wed(2^2), 8=Thu(2^3), 16=Fri(2^4), 32=Sat(2^5), 64=Sun(2^6).
+        // Check daysOfWeekMask. Bitmask mapping: 1=Mon, 2=Tue, 4=Wed, 8=Thu, 16=Fri, 32=Sat, 64=Sun.
         for (dayOffset in 0..7) {
-            val dayOfWeek = target.get(Calendar.DAY_OF_WEEK)
-            val bit = when (dayOfWeek) {
-                Calendar.MONDAY -> 1
-                Calendar.TUESDAY -> 2
-                Calendar.WEDNESDAY -> 4
-                Calendar.THURSDAY -> 8
-                Calendar.FRIDAY -> 16
-                Calendar.SATURDAY -> 32
-                Calendar.SUNDAY -> 64
-                else -> 1
-            }
-
-            if ((daysOfWeekMask and bit) != 0) {
+            val date = calendarToLocalDate(target)
+            if (MedicationScheduleResolver.matchesDayOfWeek(date, daysOfWeekMask)) {
                 return target.timeInMillis
             }
             target.add(Calendar.DAY_OF_YEAR, 1)
@@ -60,25 +52,179 @@ object MedicationAlarmScheduler {
         return target.timeInMillis
     }
 
+    /**
+     * Calculates the next recurring trigger millis for [reminder], honoring optional `startDate`,
+     * `endDate`, `daysOfWeekMask`, and skipping any dates present in [overrides] (`CANCELLED` or
+     * `RESCHEDULED`, since rescheduled dates use their own one-off override alarm).
+     *
+     * Returns null if no future occurrence exists (e.g., reminder is disabled, mask is 0, or `endDate` passed).
+     */
+    fun calculateNextTriggerMillisForReminder(
+        reminder: MedicationReminder,
+        overrides: List<MedicationScheduleOverride> = emptyList(),
+        nowCalendar: Calendar = Calendar.getInstance()
+    ): Long? {
+        if (!reminder.isEnabled || reminder.daysOfWeekMask == 0) return null
+
+        val overridesByDate = overrides
+            .filter { it.reminderId == reminder.id }
+            .associateBy { it.originalDate }
+
+        val target = Calendar.getInstance(nowCalendar.timeZone).apply {
+            timeInMillis = nowCalendar.timeInMillis
+            set(Calendar.HOUR_OF_DAY, reminder.hour)
+            set(Calendar.MINUTE, reminder.minute)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+
+        if (target.timeInMillis <= nowCalendar.timeInMillis) {
+            target.add(Calendar.DAY_OF_YEAR, 1)
+        }
+
+        val startDate = MedicationScheduleResolver.parseIsoDateOrNull(reminder.startDate)
+        if (startDate != null && calendarToLocalDate(target).isBefore(startDate)) {
+            target.set(Calendar.YEAR, startDate.year)
+            target.set(Calendar.MONTH, startDate.monthValue - 1)
+            target.set(Calendar.DAY_OF_MONTH, startDate.dayOfMonth)
+            target.set(Calendar.HOUR_OF_DAY, reminder.hour)
+            target.set(Calendar.MINUTE, reminder.minute)
+            target.set(Calendar.SECOND, 0)
+            target.set(Calendar.MILLISECOND, 0)
+            if (target.timeInMillis <= nowCalendar.timeInMillis) {
+                target.add(Calendar.DAY_OF_YEAR, 1)
+            }
+        }
+
+        val endDate = MedicationScheduleResolver.parseIsoDateOrNull(reminder.endDate)
+
+        // Search up to 366 days ahead to skip cancelled/rescheduled dates and weekday gaps.
+        for (dayOffset in 0..366) {
+            val candidateDate = calendarToLocalDate(target)
+            if (endDate != null && candidateDate.isAfter(endDate)) {
+                return null
+            }
+
+            val isOverridden = overridesByDate.containsKey(candidateDate.toString())
+            if (!isOverridden && MedicationScheduleResolver.matchesDayOfWeek(candidateDate, reminder.daysOfWeekMask)) {
+                return target.timeInMillis
+            }
+
+            target.add(Calendar.DAY_OF_YEAR, 1)
+        }
+
+        return null
+    }
+
+    /**
+     * Calculates the exact one-off trigger millis for a `RESCHEDULED` single-day override.
+     * Returns null if the override is not `RESCHEDULED`, has invalid date/time, or is already in the past.
+     */
+    fun calculateOverrideTriggerMillis(
+        override: MedicationScheduleOverride,
+        nowCalendar: Calendar = Calendar.getInstance()
+    ): Long? {
+        if (override.overrideType != MedicationScheduleOverride.TYPE_RESCHEDULED) return null
+        val hour = override.newHour ?: return null
+        val minute = override.newMinute ?: return null
+        val date = MedicationScheduleResolver.parseIsoDateOrNull(override.originalDate) ?: return null
+
+        val target = Calendar.getInstance(nowCalendar.timeZone).apply {
+            set(Calendar.YEAR, date.year)
+            set(Calendar.MONTH, date.monthValue - 1)
+            set(Calendar.DAY_OF_MONTH, date.dayOfMonth)
+            set(Calendar.HOUR_OF_DAY, hour)
+            set(Calendar.MINUTE, minute)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+
+        return if (target.timeInMillis > nowCalendar.timeInMillis) {
+            target.timeInMillis
+        } else {
+            null
+        }
+    }
+
     fun scheduleReminder(
         context: Context,
         medication: Medication,
-        reminder: MedicationReminder
+        reminder: MedicationReminder,
+        overrides: List<MedicationScheduleOverride> = emptyList(),
+        nowCalendar: Calendar = Calendar.getInstance()
     ) {
         if (!reminder.isEnabled || !medication.isActive) {
-            cancelReminder(context, reminder.id)
+            cancelReminder(context, reminder.id, overrides)
             return
         }
 
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
-        val triggerAtMillis = calculateNextTriggerMillis(
-            hour = reminder.hour,
-            minute = reminder.minute,
-            daysOfWeekMask = reminder.daysOfWeekMask
+        val triggerAtMillis = calculateNextTriggerMillisForReminder(
+            reminder = reminder,
+            overrides = overrides,
+            nowCalendar = nowCalendar
         )
 
-        val scheduledTime = String.format(java.util.Locale.US, "%02d:%02d", reminder.hour, reminder.minute)
+        if (triggerAtMillis == null) {
+            cancelMainAndSnoozeAlarms(context, alarmManager, reminder.id.toInt())
+        } else {
+            val scheduledTime = MedicationScheduleResolver.formatTime(reminder.hour, reminder.minute)
+
+            val intent = Intent(context, MedicationAlarmReceiver::class.java).apply {
+                putExtra(MedicationNotificationHelper.EXTRA_MEDICATION_ID, medication.id)
+                putExtra(MedicationNotificationHelper.EXTRA_MEDICATION_NAME, medication.name)
+                putExtra(MedicationNotificationHelper.EXTRA_DOSAGE, medication.dosage)
+                putExtra(MedicationNotificationHelper.EXTRA_UNIT, medication.unit)
+                putExtra(MedicationNotificationHelper.EXTRA_INSTRUCTIONS, medication.instructions)
+                putExtra(MedicationNotificationHelper.EXTRA_SCHEDULED_TIME, scheduledTime)
+                putExtra(MedicationNotificationHelper.EXTRA_NOTIFICATION_ID, reminder.id.toInt())
+                putExtra(MedicationNotificationHelper.EXTRA_REMINDER_ID, reminder.id)
+                putExtra(MedicationNotificationHelper.EXTRA_ALARM_TYPE, MedicationNotificationHelper.ALARM_TYPE_MAIN)
+            }
+
+            val pendingIntent = PendingIntent.getBroadcast(
+                context,
+                reminder.id.toInt(),
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            scheduleReliableAlarm(context, alarmManager, triggerAtMillis, pendingIntent)
+        }
+
+        // Sync any per-day overrides belonging to this reminder
+        overrides
+            .filter { it.reminderId == reminder.id }
+            .forEach { override ->
+                if (override.overrideType == MedicationScheduleOverride.TYPE_RESCHEDULED) {
+                    scheduleOverrideAlarm(context, medication, override, nowCalendar)
+                } else {
+                    cancelOverrideAlarm(context, override.id)
+                }
+            }
+    }
+
+    fun scheduleOverrideAlarm(
+        context: Context,
+        medication: Medication,
+        override: MedicationScheduleOverride,
+        nowCalendar: Calendar = Calendar.getInstance()
+    ) {
+        if (!medication.isActive) {
+            cancelOverrideAlarm(context, override.id)
+            return
+        }
+
+        val triggerAtMillis = calculateOverrideTriggerMillis(override, nowCalendar)
+        if (triggerAtMillis == null) {
+            cancelOverrideAlarm(context, override.id)
+            return
+        }
+
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val requestCode = overrideRequestCode(override.id)
+        val scheduledTime = MedicationScheduleResolver.formatTime(override.newHour!!, override.newMinute!!)
 
         val intent = Intent(context, MedicationAlarmReceiver::class.java).apply {
             putExtra(MedicationNotificationHelper.EXTRA_MEDICATION_ID, medication.id)
@@ -87,14 +233,16 @@ object MedicationAlarmScheduler {
             putExtra(MedicationNotificationHelper.EXTRA_UNIT, medication.unit)
             putExtra(MedicationNotificationHelper.EXTRA_INSTRUCTIONS, medication.instructions)
             putExtra(MedicationNotificationHelper.EXTRA_SCHEDULED_TIME, scheduledTime)
-            putExtra(MedicationNotificationHelper.EXTRA_NOTIFICATION_ID, reminder.id.toInt())
-            putExtra(MedicationNotificationHelper.EXTRA_REMINDER_ID, reminder.id)
-            putExtra(MedicationNotificationHelper.EXTRA_ALARM_TYPE, MedicationNotificationHelper.ALARM_TYPE_MAIN)
+            putExtra(MedicationNotificationHelper.EXTRA_SCHEDULED_DATE, override.originalDate)
+            putExtra(MedicationNotificationHelper.EXTRA_NOTIFICATION_ID, requestCode)
+            putExtra(MedicationNotificationHelper.EXTRA_REMINDER_ID, override.reminderId)
+            putExtra(MedicationNotificationHelper.EXTRA_OVERRIDE_ID, override.id)
+            putExtra(MedicationNotificationHelper.EXTRA_ALARM_TYPE, MedicationNotificationHelper.ALARM_TYPE_OVERRIDE)
         }
 
         val pendingIntent = PendingIntent.getBroadcast(
             context,
-            reminder.id.toInt(),
+            requestCode,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -102,14 +250,36 @@ object MedicationAlarmScheduler {
         scheduleReliableAlarm(context, alarmManager, triggerAtMillis, pendingIntent)
     }
 
-    fun cancelReminder(context: Context, reminderId: Long) {
+    fun cancelOverrideAlarm(context: Context, overrideId: Long) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        cancelMainAndSnoozeAlarms(context, alarmManager, overrideRequestCode(overrideId))
+    }
+
+    fun cancelReminder(
+        context: Context,
+        reminderId: Long,
+        overrides: List<MedicationScheduleOverride> = emptyList()
+    ) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        cancelMainAndSnoozeAlarms(context, alarmManager, reminderId.toInt())
+
+        overrides
+            .filter { it.reminderId == reminderId }
+            .forEach { override ->
+                cancelOverrideAlarm(context, override.id)
+            }
+    }
+
+    private fun cancelMainAndSnoozeAlarms(
+        context: Context,
+        alarmManager: AlarmManager,
+        notificationId: Int
+    ) {
         val intent = Intent(context, MedicationAlarmReceiver::class.java)
 
-        // 1. Cancel main reminder alarm
         val mainPendingIntent = PendingIntent.getBroadcast(
             context,
-            reminderId.toInt(),
+            notificationId,
             intent,
             PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
         )
@@ -118,8 +288,7 @@ object MedicationAlarmScheduler {
             mainPendingIntent.cancel()
         }
 
-        // 2. Cancel any pending snooze alarm for this reminder
-        val snoozeRequestCode = reminderId.toInt() + SNOOZE_OFFSET
+        val snoozeRequestCode = notificationId + SNOOZE_OFFSET
         val snoozePendingIntent = PendingIntent.getBroadcast(
             context,
             snoozeRequestCode,
@@ -131,8 +300,7 @@ object MedicationAlarmScheduler {
             snoozePendingIntent.cancel()
         }
 
-        // 3. Clear active notification in status bar if still showing
-        MedicationNotificationHelper.cancelNotification(context, reminderId.toInt())
+        MedicationNotificationHelper.cancelNotification(context, notificationId)
     }
 
     fun scheduleSnooze(
@@ -145,6 +313,7 @@ object MedicationAlarmScheduler {
         scheduledTime: String,
         notificationId: Int,
         reminderId: Long = notificationId.toLong(),
+        scheduledDate: String? = null,
         snoozeMinutes: Int = 30
     ) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
@@ -157,6 +326,9 @@ object MedicationAlarmScheduler {
             putExtra(MedicationNotificationHelper.EXTRA_UNIT, unit)
             putExtra(MedicationNotificationHelper.EXTRA_INSTRUCTIONS, instructions)
             putExtra(MedicationNotificationHelper.EXTRA_SCHEDULED_TIME, scheduledTime)
+            if (scheduledDate != null) {
+                putExtra(MedicationNotificationHelper.EXTRA_SCHEDULED_DATE, scheduledDate)
+            }
             putExtra(MedicationNotificationHelper.EXTRA_NOTIFICATION_ID, notificationId)
             putExtra(MedicationNotificationHelper.EXTRA_REMINDER_ID, reminderId)
             putExtra(MedicationNotificationHelper.EXTRA_ALARM_TYPE, MedicationNotificationHelper.ALARM_TYPE_SNOOZE)
@@ -172,6 +344,16 @@ object MedicationAlarmScheduler {
         )
 
         scheduleReliableAlarm(context, alarmManager, triggerAtMillis, pendingIntent)
+    }
+
+    private fun overrideRequestCode(overrideId: Long): Int = overrideId.toInt() + OVERRIDE_OFFSET
+
+    private fun calendarToLocalDate(calendar: Calendar): LocalDate {
+        return LocalDate.of(
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH) + 1,
+            calendar.get(Calendar.DAY_OF_MONTH)
+        )
     }
 
     private fun scheduleReliableAlarm(
@@ -195,7 +377,6 @@ object MedicationAlarmScheduler {
         try {
             alarmManager.setAlarmClock(clockInfo, pendingIntent)
         } catch (_: SecurityException) {
-            // If setAlarmClock throws SecurityException on restricted devices, fall back safely
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 if (alarmManager.canScheduleExactAlarms()) {
                     alarmManager.setExactAndAllowWhileIdle(

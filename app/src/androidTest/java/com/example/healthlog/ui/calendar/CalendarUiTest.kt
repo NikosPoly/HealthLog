@@ -18,9 +18,10 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
-import com.example.healthlog.database.MedicationDoseLog
 import com.example.healthlog.database.SymptomEntry
 import com.example.healthlog.model.MeasurementType
+import com.example.healthlog.model.ScheduledDoseItem
+import com.example.healthlog.model.ScheduledDoseStatus
 import com.example.healthlog.model.SymptomSeverity
 import com.example.healthlog.model.SymptomType
 import com.example.healthlog.ui.theme.HealthLogTheme
@@ -191,18 +192,26 @@ class CalendarUiTest {
             tertiaryValue = 72.0,
             timestamp = dayTimestamp
         )
-        val dose = MedicationDoseLog(
-            id = 7L,
+        val dose = ScheduledDoseItem(
             medicationId = 1L,
+            medicationName = "Amlodipine",
+            dosage = "5",
+            unit = "mg",
+            instructions = "With breakfast",
             scheduledDate = "2026-11-10",
             scheduledTime = "08:00",
-            status = "TAKEN"
+            hour = 8,
+            minute = 0,
+            status = ScheduledDoseStatus.TAKEN,
+            isRecurring = true,
+            reminderId = 10L,
+            doseLogId = 7L
         )
 
         val summary = CalendarDaySummary(
             date = selectedDate,
             measurements = listOf(measurement),
-            doseLogs = listOf(dose),
+            scheduledDoses = listOf(dose),
             symptoms = listOf(symptom),
             highestVitalRank = VitalClinicalRank.NORMAL,
             maxSymptomSeverity = SymptomSeverity.SEVERE
@@ -212,6 +221,7 @@ class CalendarUiTest {
         var openedMeasurementId: Long? = null
         var editedSymptom: SymptomEntry? = null
         var deletedSymptomRequest: SymptomEntry? = null
+        var undoneDose: ScheduledDoseItem? = null
 
         composeRule.setContent {
             HealthLogTheme {
@@ -233,7 +243,9 @@ class CalendarUiTest {
                     onRequestDeleteSymptom = { deletedSymptomRequest = it },
                     onConfirmDeleteSymptom = {},
                     onDismissDeleteDialog = {},
-                    onOpenMeasurementDetails = { openedMeasurementId = it }
+                    onOpenMeasurementDetails = { openedMeasurementId = it },
+                    onUndoDoseAction = { undoneDose = it },
+                    today = selectedDate
                 )
             }
         }
@@ -262,11 +274,129 @@ class CalendarUiTest {
         composeRule.onNodeWithText(bpValue).assertIsDisplayed().performClick()
         assertEquals(42L, openedMeasurementId)
 
-        // Verify Medications section
-        val medTitle = "${context.getString(R.string.nav_medications)} (08:00)"
-        composeRule.onNodeWithTag("calendar_list").performScrollToNode(hasText(medTitle))
-        composeRule.onNodeWithText(medTitle).assertIsDisplayed()
+        // Verify Medications section shows real medication name, status badge, and Undo button.
+        // Scroll all the way to the bottom spacer so the FloatingActionButton does not obscure the Undo button.
+        composeRule.onNodeWithTag("calendar_list").performScrollToNode(androidx.compose.ui.test.hasTestTag("calendar_bottom_spacing"))
+        composeRule.onNodeWithText("Amlodipine").assertIsDisplayed()
         composeRule.onNodeWithText(context.getString(R.string.dose_status_taken)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.dose_action_undo)).performClick()
+        assertEquals(dose, undoneDose)
+    }
+
+    @Test
+    fun calendarContent_pendingDoseOnToday_showsTakeAndSkipAndMovedHint() {
+        val today = LocalDate.of(2026, 11, 10)
+        val month = YearMonth.from(today)
+        val pendingDose = ScheduledDoseItem(
+            medicationId = 2L,
+            medicationName = "Metformin",
+            dosage = "500",
+            unit = "mg",
+            instructions = "After lunch",
+            scheduledDate = today.toString(),
+            scheduledTime = "13:30",
+            hour = 13,
+            minute = 30,
+            status = ScheduledDoseStatus.PENDING,
+            isRecurring = true,
+            reminderId = 20L,
+            overrideId = 3L,
+            originalTime = "12:00"
+        )
+
+        var takenDose: ScheduledDoseItem? = null
+        var skippedDose: ScheduledDoseItem? = null
+
+        composeRule.setContent {
+            HealthLogTheme {
+                CalendarContent(
+                    uiState = CalendarUiState(
+                        displayedMonth = month,
+                        selectedDate = today,
+                        daySummaries = mapOf(today to CalendarDaySummary(date = today, scheduledDoses = listOf(pendingDose)))
+                    ),
+                    onPreviousMonth = {},
+                    onNextMonth = {},
+                    onJumpToToday = {},
+                    onSelectMonthYear = {},
+                    onSelectDate = {},
+                    onOpenAddSymptom = {},
+                    onOpenEditSymptom = {},
+                    onDismissAddEditSheet = {},
+                    onSaveSymptom = { _, _, _, _, _ -> },
+                    onRequestDeleteSymptom = {},
+                    onConfirmDeleteSymptom = {},
+                    onDismissDeleteDialog = {},
+                    onOpenMeasurementDetails = {},
+                    onMarkDoseTaken = { takenDose = it },
+                    onMarkDoseSkipped = { skippedDose = it },
+                    today = today
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag("calendar_list").performScrollToNode(hasText("Metformin"))
+        composeRule.onNodeWithText("Metformin").assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.dose_moved_from, "12:00")).assertIsDisplayed()
+
+        composeRule.onNodeWithText(context.getString(R.string.dose_action_mark_taken)).performClick()
+        assertEquals(pendingDose, takenDose)
+
+        composeRule.onNodeWithText(context.getString(R.string.dose_action_mark_skipped)).performClick()
+        assertEquals(pendingDose, skippedDose)
+    }
+
+    @Test
+    fun calendarContent_pendingDoseOnFutureDate_showsScheduledBadgeWithoutTakeOrSkip() {
+        val today = LocalDate.of(2026, 11, 10)
+        val futureDate = LocalDate.of(2026, 11, 15)
+        val month = YearMonth.from(today)
+        val futureDose = ScheduledDoseItem(
+            medicationId = 3L,
+            medicationName = "Vitamin D",
+            dosage = "1000",
+            unit = "mg",
+            instructions = null,
+            scheduledDate = futureDate.toString(),
+            scheduledTime = "09:00",
+            hour = 9,
+            minute = 0,
+            status = ScheduledDoseStatus.PENDING,
+            isRecurring = true,
+            reminderId = 30L
+        )
+
+        composeRule.setContent {
+            HealthLogTheme {
+                CalendarContent(
+                    uiState = CalendarUiState(
+                        displayedMonth = month,
+                        selectedDate = futureDate,
+                        daySummaries = mapOf(futureDate to CalendarDaySummary(date = futureDate, scheduledDoses = listOf(futureDose)))
+                    ),
+                    onPreviousMonth = {},
+                    onNextMonth = {},
+                    onJumpToToday = {},
+                    onSelectMonthYear = {},
+                    onSelectDate = {},
+                    onOpenAddSymptom = {},
+                    onOpenEditSymptom = {},
+                    onDismissAddEditSheet = {},
+                    onSaveSymptom = { _, _, _, _, _ -> },
+                    onRequestDeleteSymptom = {},
+                    onConfirmDeleteSymptom = {},
+                    onDismissDeleteDialog = {},
+                    onOpenMeasurementDetails = {},
+                    today = today
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag("calendar_list").performScrollToNode(hasText("Vitamin D"))
+        composeRule.onNodeWithText("Vitamin D").assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.dose_status_scheduled)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.dose_action_mark_taken)).assertDoesNotExist()
+        composeRule.onNodeWithText(context.getString(R.string.dose_action_mark_skipped)).assertDoesNotExist()
     }
 
     @Test
@@ -454,5 +584,128 @@ class CalendarUiTest {
         assertEquals(SymptomType.FATIGUE.name, savedType)
         assertEquals(5, savedSeverity)
         assertEquals("Improved after rest", savedNotes)
+    }
+
+    @Test
+    fun calendarContent_scheduledDose_moveAndDeleteButtonsTriggerCallbacks() {
+        val today = LocalDate.of(2026, 11, 10)
+        val month = YearMonth.from(today)
+        val dose = ScheduledDoseItem(
+            medicationId = 5L,
+            medicationName = "Lipitor",
+            dosage = "20",
+            unit = "mg",
+            instructions = "At bedtime",
+            scheduledDate = today.toString(),
+            scheduledTime = "21:00",
+            hour = 21,
+            minute = 0,
+            status = ScheduledDoseStatus.PENDING,
+            isRecurring = true,
+            reminderId = 50L
+        )
+
+        var movedDose: ScheduledDoseItem? = null
+        var deletedDose: ScheduledDoseItem? = null
+
+        composeRule.setContent {
+            HealthLogTheme {
+                CalendarContent(
+                    uiState = CalendarUiState(
+                        displayedMonth = month,
+                        selectedDate = today,
+                        daySummaries = mapOf(today to CalendarDaySummary(date = today, scheduledDoses = listOf(dose)))
+                    ),
+                    onPreviousMonth = {},
+                    onNextMonth = {},
+                    onJumpToToday = {},
+                    onSelectMonthYear = {},
+                    onSelectDate = {},
+                    onOpenAddSymptom = {},
+                    onOpenEditSymptom = {},
+                    onDismissAddEditSheet = {},
+                    onSaveSymptom = { _, _, _, _, _ -> },
+                    onRequestDeleteSymptom = {},
+                    onConfirmDeleteSymptom = {},
+                    onDismissDeleteDialog = {},
+                    onOpenMeasurementDetails = {},
+                    onRequestMoveDose = { movedDose = it },
+                    onRequestDeleteDose = { deletedDose = it },
+                    today = today
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag("calendar_list").performScrollToNode(hasText("Lipitor"))
+        composeRule.onNodeWithText("Lipitor").assertIsDisplayed()
+
+        // Move time button
+        composeRule.onNodeWithContentDescription(context.getString(R.string.dose_action_move_time))
+            .assertIsDisplayed()
+            .performClick()
+        assertEquals(dose, movedDose)
+
+        // Delete dose button
+        composeRule.onNodeWithContentDescription(context.getString(R.string.dose_action_delete))
+            .assertIsDisplayed()
+            .performClick()
+        assertEquals(dose, deletedDose)
+    }
+
+    @Test
+    fun calendarContent_oneTimeDose_showsDeleteButtonWithoutUndoButton() {
+        val today = LocalDate.of(2026, 11, 10)
+        val month = YearMonth.from(today)
+        val oneTimeDose = ScheduledDoseItem(
+            medicationId = 6L,
+            medicationName = "Paracetamol",
+            dosage = "500",
+            unit = "mg",
+            instructions = "As needed",
+            scheduledDate = today.toString(),
+            scheduledTime = "14:00",
+            hour = 14,
+            minute = 0,
+            status = ScheduledDoseStatus.TAKEN,
+            isRecurring = false,
+            reminderId = null,
+            doseLogId = 123L
+        )
+
+        composeRule.setContent {
+            HealthLogTheme {
+                CalendarContent(
+                    uiState = CalendarUiState(
+                        displayedMonth = month,
+                        selectedDate = today,
+                        daySummaries = mapOf(today to CalendarDaySummary(date = today, scheduledDoses = listOf(oneTimeDose)))
+                    ),
+                    onPreviousMonth = {},
+                    onNextMonth = {},
+                    onJumpToToday = {},
+                    onSelectMonthYear = {},
+                    onSelectDate = {},
+                    onOpenAddSymptom = {},
+                    onOpenEditSymptom = {},
+                    onDismissAddEditSheet = {},
+                    onSaveSymptom = { _, _, _, _, _ -> },
+                    onRequestDeleteSymptom = {},
+                    onConfirmDeleteSymptom = {},
+                    onDismissDeleteDialog = {},
+                    onOpenMeasurementDetails = {},
+                    today = today
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag("calendar_list").performScrollToNode(hasText("Paracetamol"))
+        composeRule.onNodeWithText("Paracetamol").assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.dose_status_taken)).assertIsDisplayed()
+
+        // Delete button is present
+        composeRule.onNodeWithContentDescription(context.getString(R.string.dose_action_delete)).assertIsDisplayed()
+
+        // Undo button does NOT exist for one-time medicine
+        composeRule.onNodeWithText(context.getString(R.string.dose_action_undo)).assertDoesNotExist()
     }
 }

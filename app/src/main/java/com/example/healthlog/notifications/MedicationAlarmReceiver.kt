@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.PowerManager
 import com.example.healthlog.database.HealthDatabase
+import com.example.healthlog.database.MedicationScheduleOverride
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -20,6 +21,7 @@ class MedicationAlarmReceiver : BroadcastReceiver() {
         if (medicationId == -1L) return
 
         val reminderId = intent.getLongExtra(MedicationNotificationHelper.EXTRA_REMINDER_ID, -1L)
+        val overrideId = intent.getLongExtra(MedicationNotificationHelper.EXTRA_OVERRIDE_ID, -1L)
         val alarmType = intent.getStringExtra(MedicationNotificationHelper.EXTRA_ALARM_TYPE)
             ?: MedicationNotificationHelper.ALARM_TYPE_MAIN
 
@@ -28,6 +30,7 @@ class MedicationAlarmReceiver : BroadcastReceiver() {
         val unit = intent.getStringExtra(MedicationNotificationHelper.EXTRA_UNIT) ?: ""
         val instructions = intent.getStringExtra(MedicationNotificationHelper.EXTRA_INSTRUCTIONS)
         val scheduledTime = intent.getStringExtra(MedicationNotificationHelper.EXTRA_SCHEDULED_TIME) ?: ""
+        val scheduledDateExtra = intent.getStringExtra(MedicationNotificationHelper.EXTRA_SCHEDULED_DATE)
         val notificationId = intent.getIntExtra(
             MedicationNotificationHelper.EXTRA_NOTIFICATION_ID,
             if (reminderId != -1L) reminderId.toInt() else medicationId.toInt()
@@ -35,8 +38,6 @@ class MedicationAlarmReceiver : BroadcastReceiver() {
 
         val pendingResult = goAsync()
 
-        // Acquire a partial wake lock for up to 10 seconds to ensure Room queries and alarm
-        // rescheduling complete before the CPU goes back to sleep.
         val powerManager = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
         val wakeLock = powerManager?.newWakeLock(
             PowerManager.PARTIAL_WAKE_LOCK,
@@ -50,25 +51,31 @@ class MedicationAlarmReceiver : BroadcastReceiver() {
             try {
                 // 0. Permission check: if notification permission was revoked, cancel and do NOT ring!
                 if (!MedicationNotificationHelper.areNotificationsEnabled(context)) {
-                    if (reminderId != -1L) {
+                    if (alarmType == MedicationNotificationHelper.ALARM_TYPE_OVERRIDE && overrideId != -1L) {
+                        MedicationAlarmScheduler.cancelOverrideAlarm(context, overrideId)
+                    } else if (reminderId != -1L) {
                         MedicationAlarmScheduler.cancelReminder(context, reminderId)
                     }
                     return@launch
                 }
 
                 val db = HealthDatabase.getDatabase(context)
-                val medication = db.medicationDao().getMedicationById(medicationId)
+                val dao = db.medicationDao()
+                val medication = dao.getMedicationById(medicationId)
 
                 // 1. Guard check: if medication was deleted or paused, cancel and do NOT ring!
-                if (medication == null || !medication.isActive) {
-                    if (reminderId != -1L) {
-                        MedicationAlarmScheduler.cancelReminder(context, reminderId)
+                if (medication == null || !medication.isActive || medication.isDeleted) {
+                    if (alarmType == MedicationNotificationHelper.ALARM_TYPE_OVERRIDE && overrideId != -1L) {
+                        MedicationAlarmScheduler.cancelOverrideAlarm(context, overrideId)
+                    } else if (reminderId != -1L) {
+                        val overrides = dao.getOverridesForReminder(reminderId)
+                        MedicationAlarmScheduler.cancelReminder(context, reminderId, overrides)
                     }
                     return@launch
                 }
 
                 // 2. Reminder check: if reminder was deleted or disabled, cancel and do NOT ring!
-                val reminders = db.medicationDao().getRemindersForMedication(medicationId)
+                val reminders = dao.getRemindersForMedication(medicationId)
                 val matchingReminder = if (reminderId != -1L) {
                     reminders.find { it.id == reminderId }
                 } else {
@@ -76,20 +83,39 @@ class MedicationAlarmReceiver : BroadcastReceiver() {
                 }
 
                 if (matchingReminder == null || !matchingReminder.isEnabled) {
-                    if (reminderId != -1L) {
+                    if (alarmType == MedicationNotificationHelper.ALARM_TYPE_OVERRIDE && overrideId != -1L) {
+                        MedicationAlarmScheduler.cancelOverrideAlarm(context, overrideId)
+                    } else if (reminderId != -1L) {
                         MedicationAlarmScheduler.cancelReminder(context, reminderId)
                     }
                     return@launch
                 }
 
-                // 3. Dose log check: if today's dose was already marked TAKEN or SKIPPED in the app,
-                // do NOT ring for this scheduled dose!
                 val todayDate = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
-                val existingLog = db.medicationDao().getDoseLog(medicationId, todayDate, scheduledTime)
-                val isAlreadyLogged = existingLog != null && (existingLog.status == "TAKEN" || existingLog.status == "SKIPPED")
+                val effectiveDate = scheduledDateExtra ?: todayDate
+                val overrides = dao.getOverridesForReminder(matchingReminder.id)
 
-                if (!isAlreadyLogged) {
-                    // Show the notification only if pending
+                // 3. Validate override state for MAIN vs OVERRIDE alarms
+                val shouldRingForSchedule = when (alarmType) {
+                    MedicationNotificationHelper.ALARM_TYPE_OVERRIDE -> {
+                        val override = if (overrideId != -1L) dao.getOverrideById(overrideId) else null
+                        override != null &&
+                            override.overrideType == MedicationScheduleOverride.TYPE_RESCHEDULED &&
+                            override.originalDate == effectiveDate
+                    }
+                    MedicationNotificationHelper.ALARM_TYPE_MAIN -> {
+                        // Do not ring on dates overridden (CANCELLED or RESCHEDULED to another time)
+                        overrides.none { it.originalDate == effectiveDate }
+                    }
+                    else -> true // ALARM_TYPE_SNOOZE
+                }
+
+                // 4. Dose log check: if this slot was already marked TAKEN or SKIPPED, do NOT ring!
+                val existingLog = dao.getDoseLog(medicationId, effectiveDate, scheduledTime)
+                val isAlreadyLogged = existingLog != null &&
+                    (existingLog.status == "TAKEN" || existingLog.status == "SKIPPED")
+
+                if (shouldRingForSchedule && !isAlreadyLogged) {
                     MedicationNotificationHelper.showMedicationNotification(
                         context = context,
                         medicationId = medicationId,
@@ -99,69 +125,22 @@ class MedicationAlarmReceiver : BroadcastReceiver() {
                         instructions = instructions,
                         scheduledTime = scheduledTime,
                         notificationId = notificationId,
-                        scheduledDate = todayDate
+                        scheduledDate = effectiveDate
                     )
                 }
 
-                // 4. Reschedule recurring alarm for next occurrence only for MAIN alarms (not snoozes)
+                // 5. Reschedule next recurring occurrence only for MAIN alarms (never for snoozes or one-off overrides)
                 if (alarmType == MedicationNotificationHelper.ALARM_TYPE_MAIN) {
-                    // Add a 60-second forward buffer to guarantee we advance past current minute
-                    // even if the alarm was delivered a fraction of a second early by the system.
                     val forwardCalendar = Calendar.getInstance().apply {
                         add(Calendar.SECOND, 60)
                     }
-                    val nextTrigger = MedicationAlarmScheduler.calculateNextTriggerMillis(
-                        hour = matchingReminder.hour,
-                        minute = matchingReminder.minute,
-                        daysOfWeekMask = matchingReminder.daysOfWeekMask,
+                    MedicationAlarmScheduler.scheduleReminder(
+                        context = context,
+                        medication = medication,
+                        reminder = matchingReminder,
+                        overrides = overrides,
                         nowCalendar = forwardCalendar
                     )
-                    val nextScheduledTime = String.format(
-                        Locale.US,
-                        "%02d:%02d",
-                        matchingReminder.hour,
-                        matchingReminder.minute
-                    )
-
-                    val nextIntent = Intent(context, MedicationAlarmReceiver::class.java).apply {
-                        putExtra(MedicationNotificationHelper.EXTRA_MEDICATION_ID, medication.id)
-                        putExtra(MedicationNotificationHelper.EXTRA_MEDICATION_NAME, medication.name)
-                        putExtra(MedicationNotificationHelper.EXTRA_DOSAGE, medication.dosage)
-                        putExtra(MedicationNotificationHelper.EXTRA_UNIT, medication.unit)
-                        putExtra(MedicationNotificationHelper.EXTRA_INSTRUCTIONS, medication.instructions)
-                        putExtra(MedicationNotificationHelper.EXTRA_SCHEDULED_TIME, nextScheduledTime)
-                        putExtra(MedicationNotificationHelper.EXTRA_NOTIFICATION_ID, matchingReminder.id.toInt())
-                        putExtra(MedicationNotificationHelper.EXTRA_REMINDER_ID, matchingReminder.id)
-                        putExtra(MedicationNotificationHelper.EXTRA_ALARM_TYPE, MedicationNotificationHelper.ALARM_TYPE_MAIN)
-                    }
-
-                    val pendingIntent = android.app.PendingIntent.getBroadcast(
-                        context,
-                        matchingReminder.id.toInt(),
-                        nextIntent,
-                        android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
-                    )
-
-                    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
-                    val showIntent = Intent(context, com.example.healthlog.MainActivity::class.java).apply {
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                    }
-                    val showPendingIntent = android.app.PendingIntent.getActivity(
-                        context,
-                        0,
-                        showIntent,
-                        android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
-                    )
-                    val clockInfo = android.app.AlarmManager.AlarmClockInfo(nextTrigger, showPendingIntent)
-                    try {
-                        alarmManager.setAlarmClock(clockInfo, pendingIntent)
-                    } catch (_: SecurityException) {
-                        alarmManager.setAndAllowWhileIdle(
-                            android.app.AlarmManager.RTC_WAKEUP,
-                            nextTrigger,
-                            pendingIntent
-                        )
-                    }
                 }
             } catch (_: Exception) {
             } finally {

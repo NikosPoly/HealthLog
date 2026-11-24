@@ -4,14 +4,22 @@ import com.example.healthlog.database.Medication
 import com.example.healthlog.database.MedicationDao
 import com.example.healthlog.database.MedicationDoseLog
 import com.example.healthlog.database.MedicationReminder
+import com.example.healthlog.database.MedicationScheduleOverride
 import com.example.healthlog.database.MedicationWithReminders
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import java.time.LocalDate
 
 class MedicationRepository(
     private val dao: MedicationDao
 ) {
     val allMedications: Flow<List<MedicationWithReminders>> =
         dao.getAllMedicationsWithReminders()
+
+    val visibleMedications: Flow<List<MedicationWithReminders>> =
+        dao.getAllMedicationsWithReminders().map { list ->
+            list.filter { !it.medication.isDeleted }
+        }
 
     val activeMedications: Flow<List<MedicationWithReminders>> =
         dao.getActiveMedicationsWithReminders()
@@ -27,6 +35,9 @@ class MedicationRepository(
 
     suspend fun getRemindersForMedication(medicationId: Long): List<MedicationReminder> =
         dao.getRemindersForMedication(medicationId)
+
+    suspend fun getReminderById(id: Long): MedicationReminder? =
+        dao.getReminderById(id)
 
     suspend fun saveMedication(
         medication: Medication,
@@ -57,8 +68,23 @@ class MedicationRepository(
         dao.updateMedication(medication.copy(isActive = isActive))
     }
 
+    /**
+     * Removes a medication from the Medications cabinet and clears all its reminder schedules
+     * (and any associated per-day overrides).
+     *
+     * - If the medication has any recorded dose logs (TAKEN or SKIPPED — whether from recurring
+     *   reminders or as-needed/one-time intakes), it is soft-deleted (`isActive = false`,
+     *   `isDeleted = true`) so past dose history remains intact on the Calendar and Day Timeline.
+     * - If it has no recorded dose logs, the row is hard-deleted from the database.
+     */
     suspend fun deleteMedication(medication: Medication) {
-        dao.deleteMedication(medication)
+        dao.deleteRemindersForMedication(medication.id)
+        val doseLogCount = dao.getDoseLogCountForMedication(medication.id)
+        if (doseLogCount > 0) {
+            dao.updateMedication(medication.copy(isActive = false, isDeleted = true))
+        } else {
+            dao.deleteMedication(medication)
+        }
     }
 
     fun getDoseLogsForDate(date: String): Flow<List<MedicationDoseLog>> =
@@ -115,5 +141,153 @@ class MedicationRepository(
 
     suspend fun deleteDoseById(id: Long) {
         dao.deleteDoseLog(id)
+    }
+
+    // --- Single-day & all-future schedule overrides ---
+
+    fun getOverridesForDate(date: String): Flow<List<MedicationScheduleOverride>> =
+        dao.getOverridesForDate(date)
+
+    fun getOverridesInDateRange(startDate: String, endDate: String): Flow<List<MedicationScheduleOverride>> =
+        dao.getOverridesInDateRange(startDate, endDate)
+
+    suspend fun getOverridesForReminder(reminderId: Long): List<MedicationScheduleOverride> =
+        dao.getOverridesForReminder(reminderId)
+
+    suspend fun getOverridesFromDate(fromDate: String): List<MedicationScheduleOverride> =
+        dao.getOverridesFromDate(fromDate)
+
+    suspend fun getOverrideById(id: Long): MedicationScheduleOverride? =
+        dao.getOverrideById(id)
+
+    /**
+     * Moves a recurring reminder's occurrence on [date] ("This day only") to [newHour]:[newMinute].
+     * If the new time matches the reminder's base time, any existing override for [date] is cleared
+     * and null is returned. Otherwise returns the persisted [MedicationScheduleOverride].
+     */
+    suspend fun rescheduleDoseForDate(
+        reminderId: Long,
+        date: String,
+        newHour: Int,
+        newMinute: Int
+    ): MedicationScheduleOverride? {
+        val reminder = dao.getReminderById(reminderId) ?: return null
+        if (reminder.hour == newHour && reminder.minute == newMinute) {
+            dao.deleteOverride(reminderId, date)
+            return null
+        }
+
+        val override = MedicationScheduleOverride(
+            reminderId = reminderId,
+            medicationId = reminder.medicationId,
+            originalDate = date,
+            overrideType = MedicationScheduleOverride.TYPE_RESCHEDULED,
+            newHour = newHour,
+            newMinute = newMinute
+        )
+        val savedId = dao.upsertOverride(override)
+        return override.copy(id = savedId)
+    }
+
+    /**
+     * Cancels a recurring reminder's occurrence on [date] ("This day only").
+     * Returns the persisted [MedicationScheduleOverride], or null if the reminder does not exist.
+     */
+    suspend fun cancelDoseForDate(
+        reminderId: Long,
+        date: String
+    ): MedicationScheduleOverride? {
+        val reminder = dao.getReminderById(reminderId) ?: return null
+        val override = MedicationScheduleOverride(
+            reminderId = reminderId,
+            medicationId = reminder.medicationId,
+            originalDate = date,
+            overrideType = MedicationScheduleOverride.TYPE_CANCELLED,
+            newHour = null,
+            newMinute = null
+        )
+        val savedId = dao.upsertOverride(override)
+        return override.copy(id = savedId)
+    }
+
+    suspend fun clearOverrideForDate(reminderId: Long, date: String) {
+        dao.deleteOverride(reminderId, date)
+    }
+
+    /**
+     * Reschedules a recurring reminder for [fromDate] and all future dates ("This & all future days").
+     *
+     * - If [fromDate] is on or before [today] (or on/before the reminder's startDate), updates the
+     *   reminder in place and clears overrides from [fromDate] onward.
+     * - If [fromDate] is strictly in the future, caps the existing reminder at `fromDate - 1 day`
+     *   and inserts a new reminder starting on [fromDate] at [newHour]:[newMinute].
+     *
+     * Returns `(updatedOriginalReminder, newlySplitReminder)`.
+     */
+    suspend fun rescheduleReminderFromDate(
+        reminderId: Long,
+        fromDate: LocalDate,
+        newHour: Int,
+        newMinute: Int,
+        today: LocalDate = LocalDate.now()
+    ): Pair<MedicationReminder?, MedicationReminder?> {
+        val reminder = dao.getReminderById(reminderId) ?: return null to null
+        val fromIso = fromDate.toString()
+        val effectiveStart = reminder.startDate?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+
+        dao.deleteOverridesForReminderFromDate(reminderId, fromIso)
+
+        val updateInPlace = !fromDate.isAfter(today) ||
+            (effectiveStart != null && !fromDate.isAfter(effectiveStart))
+
+        return if (updateInPlace) {
+            val updated = reminder.copy(hour = newHour, minute = newMinute)
+            dao.updateReminder(updated)
+            updated to null
+        } else {
+            val cappedOriginal = reminder.copy(endDate = fromDate.minusDays(1).toString())
+            dao.updateReminder(cappedOriginal)
+
+            val splitReminder = reminder.copy(
+                id = 0,
+                hour = newHour,
+                minute = newMinute,
+                startDate = fromIso,
+                endDate = reminder.endDate
+            )
+            val newId = dao.insertReminder(splitReminder)
+            cappedOriginal to splitReminder.copy(id = newId)
+        }
+    }
+
+    /**
+     * Deletes a recurring reminder from [fromDate] onward ("This & all future days").
+     *
+     * - If [fromDate] is on or before [today] (or on/before the reminder's startDate), removes the
+     *   reminder completely (preserving past dose logs on the parent medication) and returns null.
+     * - If [fromDate] is strictly in the future, caps the reminder with `endDate = fromDate - 1 day`,
+     *   clears overrides from [fromDate] onward, and returns the updated reminder.
+     */
+    suspend fun deleteReminderFromDate(
+        reminderId: Long,
+        fromDate: LocalDate,
+        today: LocalDate = LocalDate.now()
+    ): MedicationReminder? {
+        val reminder = dao.getReminderById(reminderId) ?: return null
+        val fromIso = fromDate.toString()
+        val effectiveStart = reminder.startDate?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+
+        val deleteCompletely = !fromDate.isAfter(today) ||
+            (effectiveStart != null && !fromDate.isAfter(effectiveStart))
+
+        return if (deleteCompletely) {
+            dao.deleteReminderById(reminderId)
+            null
+        } else {
+            dao.deleteOverridesForReminderFromDate(reminderId, fromIso)
+            val capped = reminder.copy(endDate = fromDate.minusDays(1).toString())
+            dao.updateReminder(capped)
+            capped
+        }
     }
 }

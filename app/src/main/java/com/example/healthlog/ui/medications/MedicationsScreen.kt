@@ -11,9 +11,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
@@ -23,10 +21,6 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
-import androidx.compose.material3.TabRowDefaults
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -60,7 +54,6 @@ fun MedicationsScreen(
 ) {
     val context = LocalContext.current
     val resources = androidx.compose.ui.platform.LocalResources.current
-    val selectedTab by viewModel.selectedTab.collectAsState()
     val todayDoses by viewModel.todayDoses.collectAsState()
     val allMedications by viewModel.allMedications.collectAsState()
     val isAddSheetOpen by viewModel.isAddSheetOpen.collectAsState()
@@ -142,87 +135,40 @@ fun MedicationsScreen(
         },
         bottomBar = bottomBar
     ) { paddingValues ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Top Tab Row: Today's Schedule vs My Medicines
-            TabRow(
-                selectedTabIndex = selectedTab,
-                containerColor = MaterialTheme.colorScheme.surface,
-                indicator = { tabPositions ->
-                    TabRowDefaults.SecondaryIndicator(
-                        Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
-                        color = MaterialTheme.colorScheme.primary
-                    )
+            PrescriptionsView(
+                medications = allMedications,
+                todayDoses = todayDoses,
+                notificationsEnabled = notificationsEnabled,
+                onEdit = viewModel::openEditMedication,
+                onToggleActive = { medWithReminders ->
+                    viewModel.toggleMedicationActive(medWithReminders) {
+                        pendingToggleMedicationId = medWithReminders.medication.id
+                        val activity = context as? ComponentActivity
+                        val hasSystemPermissionPrompt = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                        val isPermanentlyDenied = activity != null && hasSystemPermissionPrompt &&
+                            !ActivityCompat.shouldShowRequestPermissionRationale(
+                                activity,
+                                Manifest.permission.POST_NOTIFICATIONS
+                            )
+                        val prefs = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
+                        val hasEverRequested = prefs.getBoolean("has_requested_notifications_startup", false)
+
+                        if (!hasSystemPermissionPrompt || (isPermanentlyDenied && hasEverRequested)) {
+                            showTogglePermissionDialog = true
+                        } else {
+                            togglePermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        }
+                    }
                 },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Tab(
-                    selected = selectedTab == 0,
-                    onClick = { viewModel.selectTab(0) },
-                    text = {
-                        Text(
-                            text = stringResource(R.string.medications_tab_today),
-                            fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Medium
-                        )
-                    }
-                )
-
-                Tab(
-                    selected = selectedTab == 1,
-                    onClick = { viewModel.selectTab(1) },
-                    text = {
-                        Text(
-                            text = stringResource(R.string.medications_tab_prescriptions),
-                            fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Medium
-                        )
-                    }
-                )
-            }
-
-            Box(modifier = Modifier.fillMaxSize()) {
-                if (selectedTab == 0) {
-                    TodayScheduleView(
-                        doses = todayDoses,
-                        onMarkTaken = viewModel::markDoseTaken,
-                        onMarkSkipped = viewModel::markDoseSkipped,
-                        onUndo = viewModel::undoDoseAction,
-                        onAddMedication = viewModel::openAddMedication
-                    )
-                } else {
-                    PrescriptionsView(
-                        medications = allMedications,
-                        todayDoses = todayDoses,
-                        notificationsEnabled = notificationsEnabled,
-                        onEdit = viewModel::openEditMedication,
-                        onToggleActive = { medWithReminders ->
-                            viewModel.toggleMedicationActive(medWithReminders) {
-                                pendingToggleMedicationId = medWithReminders.medication.id
-                                val activity = context as? ComponentActivity
-                                val hasSystemPermissionPrompt = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
-                                val isPermanentlyDenied = activity != null && hasSystemPermissionPrompt &&
-                                    !ActivityCompat.shouldShowRequestPermissionRationale(
-                                        activity,
-                                        Manifest.permission.POST_NOTIFICATIONS
-                                    )
-                                val prefs = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
-                                val hasEverRequested = prefs.getBoolean("has_requested_notifications_startup", false)
-
-                                if (!hasSystemPermissionPrompt || (isPermanentlyDenied && hasEverRequested)) {
-                                    showTogglePermissionDialog = true
-                                } else {
-                                    togglePermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                }
-                            }
-                        },
-                        onDelete = viewModel::openDeleteConfirmation,
-                        onAddMedication = viewModel::openAddMedication,
-                        onQuickLog = viewModel::quickLogAsNeeded
-                    )
-                }
-            }
+                onDelete = viewModel::openDeleteConfirmation,
+                onAddMedication = viewModel::openAddMedication,
+                onQuickLog = viewModel::quickLogAsNeeded
+            )
         }
     }
 
@@ -262,7 +208,7 @@ fun MedicationsScreen(
         AddEditMedicationSheet(
             editingItem = editingMedication,
             onDismiss = viewModel::closeAddEditSheet,
-            onSave = { name, dosage, unit, frequency, instructions, reminders, saveToPrescriptions, logDoseNow ->
+            onSave = { name, dosage, unit, frequency, instructions, reminders, saveToPrescriptions, logDoseNow, targetDate, oneTimeHourMinute ->
                 notificationsEnabled = MedicationNotificationHelper.areNotificationsEnabled(context)
                 viewModel.saveMedication(
                     name = name,
@@ -272,7 +218,9 @@ fun MedicationsScreen(
                     instructions = instructions,
                     reminderTimes = reminders,
                     saveToPrescriptions = saveToPrescriptions,
-                    logDoseNow = logDoseNow
+                    logDoseNow = logDoseNow,
+                    targetDate = targetDate,
+                    oneTimeHourMinute = oneTimeHourMinute
                 )
             }
         )

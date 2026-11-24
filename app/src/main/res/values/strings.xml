@@ -37,12 +37,14 @@
     <string name="medications_action_edit">Edit Medication</string>
     <string name="medications_action_delete">Delete</string>
     <string name="medications_delete_confirm_title">Delete Medication?</string>
-    <string name="medications_delete_confirm_desc">Are you sure you want to delete %1$s? All reminder schedules and dose history will be permanently deleted.</string>
+    <string name="medications_delete_confirm_desc">Are you sure you want to delete %1$s? Future reminders will be removed, while past dose history will remain in your calendar.</string>
 
     <!-- Dose items -->
     <string name="dose_status_taken">Taken</string>
     <string name="dose_status_skipped">Skipped</string>
     <string name="dose_status_pending">Pending</string>
+    <string name="dose_status_scheduled">Scheduled</string>
+    <string name="dose_moved_from">Moved from %1$s</string>
     <string name="dose_action_mark_taken">Take</string>
     <string name="dose_action_mark_skipped">Skip</string>
     <string name="dose_action_undo">Undo</string>
@@ -88,6 +90,8 @@
     <string name="med_form_log_now">Log dose for right now</string>
     <string name="med_form_log_now_desc">Record that you took this medicine right now</string>
     <string name="med_form_action_log_dose">Log Dose Now</string>
+    <string name="med_form_dose_time_label">Dose Time</string>
+    <string name="med_form_for_date">For %1$s</string>
 
     <!-- Medication Notifications -->
     <string name="notification_channel_medications_name">Medication Reminders</string>
@@ -130,7 +134,7 @@
     <string name="calendar_day_empty">No health events recorded for this date.</string>
     <string name="calendar_section_symptoms">Symptoms</string>
     <string name="calendar_section_vitals">Vital Signs</string>
-    <string name="calendar_section_medications">Medications Taken</string>
+    <string name="calendar_section_medications">Medications</string>
     <string name="calendar_jump_today">Today</string>
     <string name="calendar_legend_vitals">Vitals</string>
     <string name="calendar_legend_symptoms">Symptoms</string>
@@ -140,6 +144,28 @@
     <string name="calendar_next_month">Next month</string>
     <string name="calendar_prev_year">Previous year</string>
     <string name="calendar_next_year">Next year</string>
+    <string name="calendar_action_open_day">Open Day</string>
+
+    <!-- Day Timeline Screen -->
+    <string name="day_timeline_title">Day Timeline</string>
+    <string name="day_timeline_prev_day">Previous day</string>
+    <string name="day_timeline_next_day">Next day</string>
+    <string name="timeline_filter_all">All</string>
+    <string name="day_timeline_empty_slot">Empty • Tap to log</string>
+    <string name="day_timeline_action_add_to_slot">Add event to this hour</string>
+    <string name="day_timeline_slot_chooser_title">Add to %1$s</string>
+    <string name="day_timeline_slot_chooser_symptom">Log Symptom</string>
+    <string name="day_timeline_slot_chooser_medication">Add Medicine</string>
+    <string name="dose_action_move_time">Move time</string>
+    <string name="dose_action_delete">Delete dose</string>
+    <string name="dose_move_picker_title">Move %1$s</string>
+    <string name="dose_move_scope_title">Move to %1$s</string>
+    <string name="dose_move_scope_desc">Apply this time change for %1$s to:</string>
+    <string name="dose_delete_scope_title">Remove %1$s?</string>
+    <string name="dose_delete_scope_desc">Choose whether to remove this scheduled dose for this day only, or stop it from this day onward (past history stays intact).</string>
+    <string name="dose_delete_single_desc">Are you sure you want to remove this %1$s entry from your log?</string>
+    <string name="dose_scope_this_day">This day only</string>
+    <string name="dose_scope_this_and_future">This &amp; all future days</string>
 
     <!-- Symptom Form Sheet -->
     <string name="symptom_form_title_add">Log Symptom</string>

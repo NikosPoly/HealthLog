@@ -3,18 +3,16 @@ package com.example.healthlog.ui.medications
 import android.Manifest
 import android.app.TimePickerDialog
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -32,7 +30,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -47,13 +44,10 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -61,11 +55,16 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.healthlog.R
-import androidx.compose.runtime.saveable.listSaver
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.toMutableStateList
 import com.example.healthlog.database.MedicationWithReminders
+import com.example.healthlog.notifications.MedicationNotificationHelper
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -81,30 +80,46 @@ fun AddEditMedicationSheet(
         instructions: String?,
         reminderTimes: List<Pair<Int, Int>>,
         saveToPrescriptions: Boolean,
-        logDoseNow: Boolean
-    ) -> Unit
+        logDoseNow: Boolean,
+        targetDate: LocalDate,
+        oneTimeHourMinute: Pair<Int, Int>?
+    ) -> Unit,
+    initialDate: LocalDate = LocalDate.now(),
+    initialTime: Pair<Int, Int>? = null
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val context = LocalContext.current
+
+    val stateKey = "${editingItem?.medication?.id}_${initialDate}_${initialTime?.first}_${initialTime?.second}"
 
     val initialName = editingItem?.medication?.name ?: ""
     val initialDosage = editingItem?.medication?.dosage ?: ""
     val initialUnit = editingItem?.medication?.unit ?: "mg"
     val initialFrequency = editingItem?.medication?.frequency ?: "DAILY"
     val initialInstructions = editingItem?.medication?.instructions ?: ""
+    val defaultDailyTime = initialTime ?: (8 to 0)
     val initialReminders = editingItem?.reminders?.map { it.hour to it.minute }
-        ?: if (initialFrequency == "DAILY") listOf(8 to 0) else emptyList()
+        ?: if (initialFrequency == "DAILY") listOf(defaultDailyTime) else emptyList()
 
-    var name by rememberSaveable(editingItem?.medication?.id) { mutableStateOf(initialName) }
-    var dosage by rememberSaveable(editingItem?.medication?.id) { mutableStateOf(initialDosage) }
-    var selectedUnit by rememberSaveable(editingItem?.medication?.id) { mutableStateOf(initialUnit) }
-    var frequency by rememberSaveable(editingItem?.medication?.id) { mutableStateOf(initialFrequency) }
-    var instructions by rememberSaveable(editingItem?.medication?.id) { mutableStateOf(initialInstructions) }
-    var saveToPrescriptions by rememberSaveable(editingItem?.medication?.id) {
+    var name by rememberSaveable(stateKey) { mutableStateOf(initialName) }
+    var dosage by rememberSaveable(stateKey) { mutableStateOf(initialDosage) }
+    var selectedUnit by rememberSaveable(stateKey) { mutableStateOf(initialUnit) }
+    var frequency by rememberSaveable(stateKey) { mutableStateOf(initialFrequency) }
+    var instructions by rememberSaveable(stateKey) { mutableStateOf(initialInstructions) }
+    var saveToPrescriptions by rememberSaveable(stateKey) {
         mutableStateOf(editingItem != null)
     }
-    var logDoseNow by rememberSaveable(editingItem?.medication?.id) {
+    var logDoseNow by rememberSaveable(stateKey) {
         mutableStateOf(true)
+    }
+
+    var oneTimeHour by rememberSaveable(stateKey) { mutableStateOf(initialTime?.first ?: -1) }
+    var oneTimeMinute by rememberSaveable(stateKey) { mutableStateOf(initialTime?.second ?: -1) }
+
+    val selectedOneTimePair: Pair<Int, Int>? = if (oneTimeHour in 0..23 && oneTimeMinute in 0..59) {
+        oneTimeHour to oneTimeMinute
+    } else {
+        null
     }
 
     val reminderTimeListSaver = listSaver<List<Pair<Int, Int>>, String>(
@@ -121,30 +136,36 @@ fun AddEditMedicationSheet(
         }
     )
 
-    val reminderTimesList = rememberSaveable(editingItem?.medication?.id, stateSaver = reminderTimeListSaver) {
+    val reminderTimesList = rememberSaveable(stateKey, stateSaver = reminderTimeListSaver) {
         mutableStateOf(initialReminders)
     }
 
     var showPermissionPromptDialog by rememberSaveable { mutableStateOf(false) }
     var pendingSaveAfterPermission by rememberSaveable { mutableStateOf(false) }
 
+    val dispatchSave = {
+        onSave(
+            name,
+            dosage,
+            selectedUnit,
+            frequency,
+            instructions,
+            reminderTimesList.value,
+            saveToPrescriptions,
+            logDoseNow,
+            initialDate,
+            selectedOneTimePair
+        )
+    }
+
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME && pendingSaveAfterPermission) {
                 pendingSaveAfterPermission = false
-                val isNowGranted = com.example.healthlog.notifications.MedicationNotificationHelper.areNotificationsEnabled(context)
+                val isNowGranted = MedicationNotificationHelper.areNotificationsEnabled(context)
                 if (isNowGranted) {
-                    onSave(
-                        name,
-                        dosage,
-                        selectedUnit,
-                        frequency,
-                        instructions,
-                        reminderTimesList.value,
-                        saveToPrescriptions,
-                        logDoseNow
-                    )
+                    dispatchSave()
                 } else {
                     onDismiss()
                 }
@@ -160,18 +181,8 @@ fun AddEditMedicationSheet(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
-            onSave(
-                name,
-                dosage,
-                selectedUnit,
-                frequency,
-                instructions,
-                reminderTimesList.value,
-                saveToPrescriptions,
-                logDoseNow
-            )
+            dispatchSave()
         } else {
-            // User denied the permission on the system dialog -> close the saved medication window!
             onDismiss()
         }
     }
@@ -180,6 +191,7 @@ fun AddEditMedicationSheet(
     var dosageError by rememberSaveable { mutableStateOf(false) }
 
     val units = listOf("mg", "tablet", "capsule", "ml", "drops", "puff")
+    val showDateContextChip = editingItem == null && (initialTime != null || initialDate != LocalDate.now())
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -192,13 +204,38 @@ fun AddEditMedicationSheet(
                 .padding(horizontal = 24.dp)
                 .padding(bottom = 36.dp)
         ) {
-            Text(
-                text = stringResource(
-                    if (editingItem == null) R.string.med_form_title_add else R.string.med_form_title_edit
-                ),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(
+                        if (editingItem == null) R.string.med_form_title_add else R.string.med_form_title_edit
+                    ),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+
+                if (showDateContextChip) {
+                    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+                    val formattedDate = initialDate.format(
+                        DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale)
+                    )
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = MaterialTheme.colorScheme.secondaryContainer
+                    ) {
+                        Text(
+                            text = stringResource(R.string.med_form_for_date, formattedDate),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -249,29 +286,16 @@ fun AddEditMedicationSheet(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(4.dp))
-                    Row(
+                    FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        units.take(3).forEach { unit ->
+                        units.forEach { unit ->
                             FilterChip(
                                 selected = selectedUnit == unit,
                                 onClick = { selectedUnit = unit },
-                                label = { Text(unit, style = MaterialTheme.typography.labelSmall) },
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                    }
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        units.drop(3).forEach { unit ->
-                            FilterChip(
-                                selected = selectedUnit == unit,
-                                onClick = { selectedUnit = unit },
-                                label = { Text(unit, style = MaterialTheme.typography.labelSmall) },
-                                modifier = Modifier.weight(1f)
+                                label = { Text(unit, style = MaterialTheme.typography.labelSmall, maxLines = 1) }
                             )
                         }
                     }
@@ -297,7 +321,7 @@ fun AddEditMedicationSheet(
                     onClick = {
                         frequency = "DAILY"
                         if (reminderTimesList.value.isEmpty()) {
-                            reminderTimesList.value = listOf(8 to 0)
+                            reminderTimesList.value = listOf(defaultDailyTime)
                         }
                     },
                     label = { Text(stringResource(R.string.med_freq_daily)) },
@@ -308,7 +332,7 @@ fun AddEditMedicationSheet(
                     selected = frequency == "AS_NEEDED",
                     onClick = {
                         frequency = "AS_NEEDED"
-                        reminderTimesList.value = emptyList() // No default alarms for as-needed
+                        reminderTimesList.value = emptyList() // No alarms for one-timers / as-needed
                     },
                     label = { Text(stringResource(R.string.med_freq_as_needed)) },
                     modifier = Modifier.weight(1f)
@@ -317,7 +341,7 @@ fun AddEditMedicationSheet(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // As-Needed / One-Time Configuration Card
+            // As-Needed / One-Time Configuration Card (Alarm-Free)
             if (frequency == "AS_NEEDED") {
                 Card(
                     shape = RoundedCornerShape(12.dp),
@@ -327,6 +351,51 @@ fun AddEditMedicationSheet(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(14.dp)) {
+                        if (selectedOneTimePair != null && (!saveToPrescriptions || logDoseNow)) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        TimePickerDialog(
+                                            context,
+                                            { _, h, m ->
+                                                oneTimeHour = h
+                                                oneTimeMinute = m
+                                            },
+                                            selectedOneTimePair.first,
+                                            selectedOneTimePair.second,
+                                            true
+                                        ).show()
+                                    }
+                                    .padding(bottom = 10.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.med_form_dose_time_label),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = MaterialTheme.colorScheme.primaryContainer
+                                ) {
+                                    Text(
+                                        text = String.format(
+                                            Locale.US,
+                                            "%02d:%02d",
+                                            selectedOneTimePair.first,
+                                            selectedOneTimePair.second
+                                        ),
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                    )
+                                }
+                            }
+                        }
+
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -382,7 +451,7 @@ fun AddEditMedicationSheet(
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
-            // Reminder Timers Section (Optional)
+            // Reminder Timers Section (Daily Recurring)
             if (frequency == "DAILY") {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -402,7 +471,9 @@ fun AddEditMedicationSheet(
                                 { _, h, m ->
                                     reminderTimesList.value = reminderTimesList.value + (h to m)
                                 },
-                                12, 0, true
+                                defaultDailyTime.first,
+                                defaultDailyTime.second,
+                                true
                             )
                             timePicker.show()
                         },
@@ -512,7 +583,7 @@ fun AddEditMedicationSheet(
                     if (isNameValid && isDosageValid) {
                         val needsNotificationPermission = frequency == "DAILY" &&
                             reminderTimesList.value.isNotEmpty() &&
-                            !com.example.healthlog.notifications.MedicationNotificationHelper.areNotificationsEnabled(context)
+                            !MedicationNotificationHelper.areNotificationsEnabled(context)
 
                         if (needsNotificationPermission) {
                             val activity = context as? ComponentActivity
@@ -529,16 +600,7 @@ fun AddEditMedicationSheet(
                                 permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                             }
                         } else {
-                            onSave(
-                                name,
-                                dosage,
-                                selectedUnit,
-                                frequency,
-                                instructions,
-                                reminderTimesList.value,
-                                saveToPrescriptions,
-                                logDoseNow
-                            )
+                            dispatchSave()
                         }
                     }
                 },

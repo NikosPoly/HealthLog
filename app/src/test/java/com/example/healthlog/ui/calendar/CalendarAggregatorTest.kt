@@ -1,9 +1,14 @@
 package com.example.healthlog.ui.calendar
 
 import com.example.healthlog.database.Measurement
+import com.example.healthlog.database.Medication
 import com.example.healthlog.database.MedicationDoseLog
+import com.example.healthlog.database.MedicationReminder
+import com.example.healthlog.database.MedicationScheduleOverride
+import com.example.healthlog.database.MedicationWithReminders
 import com.example.healthlog.database.SymptomEntry
 import com.example.healthlog.model.MeasurementType
+import com.example.healthlog.model.ScheduledDoseStatus
 import com.example.healthlog.model.SymptomSeverity
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -111,6 +116,8 @@ class CalendarAggregatorTest {
         assertNotNull(day5)
         assertEquals(2, day5!!.measurements.size)
         assertEquals(1, day5.doseLogs.size)
+        assertEquals(1, day5.scheduledDoses.size)
+        assertEquals(ScheduledDoseStatus.TAKEN, day5.scheduledDoses.single().status)
         assertEquals(2, day5.symptoms.size)
 
         // Grade 2 should be the worst vital rank (ALERT_RED), while grid dots use fixed category colors
@@ -125,6 +132,7 @@ class CalendarAggregatorTest {
         assertNotNull(day10)
         assertTrue(day10!!.measurements.isEmpty())
         assertTrue(day10.doseLogs.isEmpty())
+        assertTrue(day10.scheduledDoses.isEmpty())
         assertEquals(1, day10.symptoms.size)
         assertNull(day10.highestVitalRank)
         assertEquals(SymptomSeverity.VERY_MILD, day10.maxSymptomSeverity)
@@ -139,6 +147,90 @@ class CalendarAggregatorTest {
         assertNull(day1.vitalDotColor)
         assertNull(day1.symptomDotColor)
         assertNull(day1.medicationDotColor)
+    }
+
+    @Test
+    fun aggregateMonth_projectsRecurringMedicationsAndAppliesOverrides() {
+        val today = LocalDate.of(2026, 11, 15)
+        val pastDay = LocalDate.of(2026, 11, 14)
+        val rescheduledDay = LocalDate.of(2026, 11, 16)
+        val cancelledDay = LocalDate.of(2026, 11, 17)
+
+        val med = Medication(
+            id = 5L,
+            name = "Amlodipine",
+            dosage = "5",
+            unit = "mg",
+            frequency = "DAILY",
+            instructions = "With breakfast",
+            isActive = true,
+            createdAt = LocalDate.of(2026, 11, 1).atStartOfDay(fixedZone).toInstant().toEpochMilli()
+        )
+        val reminder = MedicationReminder(
+            id = 50L,
+            medicationId = 5L,
+            hour = 8,
+            minute = 0,
+            daysOfWeekMask = 127,
+            isEnabled = true,
+            startDate = "2026-11-01"
+        )
+        val meds = listOf(MedicationWithReminders(med, listOf(reminder)))
+
+        val overrides = listOf(
+            MedicationScheduleOverride(
+                id = 1L,
+                reminderId = 50L,
+                medicationId = 5L,
+                originalDate = rescheduledDay.toString(),
+                overrideType = MedicationScheduleOverride.TYPE_RESCHEDULED,
+                newHour = 10,
+                newMinute = 30
+            ),
+            MedicationScheduleOverride(
+                id = 2L,
+                reminderId = 50L,
+                medicationId = 5L,
+                originalDate = cancelledDay.toString(),
+                overrideType = MedicationScheduleOverride.TYPE_CANCELLED
+            )
+        )
+
+        val summaries = CalendarAggregator.aggregateMonth(
+            yearMonth = testMonth,
+            measurements = emptyList(),
+            doseLogs = emptyList(),
+            symptoms = emptyList(),
+            medicationsWithReminders = meds,
+            overrides = overrides,
+            today = today,
+            zoneId = fixedZone
+        )
+
+        // Past day without logs should NOT get retroactive pending reminders
+        val pastSummary = summaries[pastDay]!!
+        assertFalse(pastSummary.hasMedications)
+        assertNull(pastSummary.medicationDotColor)
+
+        // Today gets projected PENDING dose with blue calendar dot
+        val todaySummary = summaries[today]!!
+        assertTrue(todaySummary.hasMedications)
+        assertTrue(todaySummary.medicationDotColor == CalendarMedicationDotColor)
+        assertEquals(1, todaySummary.scheduledDoses.size)
+        assertEquals("Amlodipine", todaySummary.scheduledDoses.single().medicationName)
+        assertEquals("08:00", todaySummary.scheduledDoses.single().scheduledTime)
+        assertEquals(ScheduledDoseStatus.PENDING, todaySummary.scheduledDoses.single().status)
+
+        // Rescheduled future day reflects new time and originalTime
+        val rescheduledSummary = summaries[rescheduledDay]!!
+        assertEquals(1, rescheduledSummary.scheduledDoses.size)
+        assertEquals("10:30", rescheduledSummary.scheduledDoses.single().scheduledTime)
+        assertEquals("08:00", rescheduledSummary.scheduledDoses.single().originalTime)
+
+        // Cancelled future day has no scheduled dose and no blue dot
+        val cancelledSummary = summaries[cancelledDay]!!
+        assertFalse(cancelledSummary.hasMedications)
+        assertNull(cancelledSummary.medicationDotColor)
     }
 
     @Test

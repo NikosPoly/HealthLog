@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -46,13 +47,14 @@ import androidx.compose.ui.unit.sp
 import com.example.healthlog.R
 import com.example.healthlog.database.Medication
 import com.example.healthlog.database.MedicationWithReminders
-import java.util.Calendar
+import com.example.healthlog.model.ScheduledDoseItem
+import com.example.healthlog.model.ScheduledDoseStatus
 import java.util.Locale
 
 @Composable
 fun PrescriptionsView(
     medications: List<MedicationWithReminders>,
-    todayDoses: List<TodayDoseItem> = emptyList(),
+    todayDoses: List<ScheduledDoseItem> = emptyList(),
     notificationsEnabled: Boolean = true,
     onEdit: (MedicationWithReminders) -> Unit,
     onToggleActive: (MedicationWithReminders) -> Unit,
@@ -61,7 +63,9 @@ fun PrescriptionsView(
     onQuickLog: (Medication) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val visibleMedications = medications.filter { it.medication.frequency != "ONE_TIME" }
+    val visibleMedications = medications.filter {
+        !it.medication.isDeleted && it.medication.frequency != "ONE_TIME"
+    }
 
     if (visibleMedications.isEmpty()) {
         Box(
@@ -127,7 +131,7 @@ fun PrescriptionsView(
 @Composable
 fun PrescriptionCard(
     item: MedicationWithReminders,
-    todayDoses: List<TodayDoseItem> = emptyList(),
+    todayDoses: List<ScheduledDoseItem> = emptyList(),
     notificationsEnabled: Boolean = true,
     onEdit: () -> Unit,
     onToggleActive: () -> Unit,
@@ -218,9 +222,10 @@ fun PrescriptionCard(
             Spacer(modifier = Modifier.height(10.dp))
 
             // Reminders / Frequency Chips
-            Row(
+            FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Surface(
                     shape = RoundedCornerShape(8.dp),
@@ -324,7 +329,7 @@ fun PrescriptionCard(
 @Composable
 fun getNextDoseText(
     item: MedicationWithReminders,
-    todayDoses: List<TodayDoseItem>
+    todayDoses: List<ScheduledDoseItem>
 ): String {
     val med = item.medication
     if (med.frequency != "DAILY" || item.reminders.none { it.isEnabled }) {
@@ -333,7 +338,7 @@ fun getNextDoseText(
 
     // Look for the earliest scheduled dose today for this medicine that is still PENDING
     val pendingToday = todayDoses.firstOrNull {
-        it.medication.id == med.id && it.status == DoseStatus.PENDING
+        it.medicationId == med.id && it.status == ScheduledDoseStatus.PENDING
     }
 
     return if (pendingToday != null) {

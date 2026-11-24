@@ -32,12 +32,14 @@
     <string name="medications_action_edit">Επεξεργασία Φαρμάκου</string>
     <string name="medications_action_delete">Διαγραφή</string>
     <string name="medications_delete_confirm_title">Διαγραφή Φαρμάκου;</string>
-    <string name="medications_delete_confirm_desc">Είστε βέβαιοι ότι θέλετε να διαγράψετε το φάρμακο %1$s; Όλα τα προγράμματα υπενθυμίσεων και το ιστορικό λήψεων θα διαγραφούν οριστικά.</string>
+    <string name="medications_delete_confirm_desc">Είστε βέβαιοι ότι θέλετε να διαγράψετε το φάρμακο %1$s; Οι μελλοντικές υπενθυμίσεις θα καταργηθούν, ενώ το ιστορικό προηγούμενων λήψεων θα παραμείνει στο ημερολόγιο.</string>
 
     <!-- Dose items -->
     <string name="dose_status_taken">Ελήφθη</string>
     <string name="dose_status_skipped">Παραλείφθηκε</string>
     <string name="dose_status_pending">Εκκρεμεί</string>
+    <string name="dose_status_scheduled">Προγραμματισμένο</string>
+    <string name="dose_moved_from">Μετακινήθηκε από %1$s</string>
     <string name="dose_action_mark_taken">Λήψη</string>
     <string name="dose_action_mark_skipped">Παράλειψη</string>
     <string name="dose_action_undo">Αναίρεση</string>
@@ -83,6 +85,8 @@
     <string name="med_form_log_now">Καταγραφή λήψης τώρα</string>
     <string name="med_form_log_now_desc">Καταγραφή ότι πήρατε αυτό το φάρμακο αυτή τη στιγμή</string>
     <string name="med_form_action_log_dose">Καταγραφή Έκτακτης Λήψης</string>
+    <string name="med_form_dose_time_label">Ώρα Δόσης</string>
+    <string name="med_form_for_date">Για %1$s</string>
 
     <!-- Medication Notifications -->
     <string name="notification_channel_medications_name">Υπενθυμίσεις Φαρμάκων</string>
@@ -125,7 +129,7 @@
     <string name="calendar_day_empty">Δεν καταγράφηκαν συμβάντα υγείας αυτή την ημέρα.</string>
     <string name="calendar_section_symptoms">Συμπτώματα</string>
     <string name="calendar_section_vitals">Ζωτικές Μετρήσεις</string>
-    <string name="calendar_section_medications">Ληφθέντα Φάρμακα</string>
+    <string name="calendar_section_medications">Φάρμακα</string>
     <string name="calendar_jump_today">Σήμερα</string>
     <string name="calendar_legend_vitals">Μετρήσεις</string>
     <string name="calendar_legend_symptoms">Συμπτώματα</string>
@@ -135,6 +139,28 @@
     <string name="calendar_next_month">Επόμενος μήνας</string>
     <string name="calendar_prev_year">Προηγούμενο έτος</string>
     <string name="calendar_next_year">Επόμενο έτος</string>
+    <string name="calendar_action_open_day">Άνοιγμα Ημέρας</string>
+
+    <!-- Day Timeline Screen -->
+    <string name="day_timeline_title">Χρονολόγιο Ημέρας</string>
+    <string name="day_timeline_prev_day">Προηγούμενη ημέρα</string>
+    <string name="day_timeline_next_day">Επόμενη ημέρα</string>
+    <string name="timeline_filter_all">Όλα</string>
+    <string name="day_timeline_empty_slot">Κενό • Πατήστε για καταγραφή</string>
+    <string name="day_timeline_action_add_to_slot">Προσθήκη συμβάντος σε αυτή την ώρα</string>
+    <string name="day_timeline_slot_chooser_title">Προσθήκη στις %1$s</string>
+    <string name="day_timeline_slot_chooser_symptom">Καταγραφή Συμπτώματος</string>
+    <string name="day_timeline_slot_chooser_medication">Προσθήκη Φαρμάκου</string>
+    <string name="dose_action_move_time">Αλλαγή ώρας</string>
+    <string name="dose_action_delete">Διαγραφή δόσης</string>
+    <string name="dose_move_picker_title">Μετακίνηση: %1$s</string>
+    <string name="dose_move_scope_title">Μετακίνηση στις %1$s</string>
+    <string name="dose_move_scope_desc">Εφαρμογή της αλλαγής ώρας για %1$s σε:</string>
+    <string name="dose_delete_scope_title">Αφαίρεση: %1$s;</string>
+    <string name="dose_delete_scope_desc">Επιλέξτε αν θέλετε να αφαιρέσετε τη δόση μόνο για αυτή την ημέρα ή από αυτή την ημέρα και στο εξής (το προηγούμενο ιστορικό παραμένει).</string>
+    <string name="dose_delete_single_desc">Είστε βέβαιοι ότι θέλετε να αφαιρέσετε αυτή την καταχώρηση (%1$s) από το ιστορικό;</string>
+    <string name="dose_scope_this_day">Μόνο για αυτή την ημέρα</string>
+    <string name="dose_scope_this_and_future">Αυτή και όλες οι μελλοντικές ημέρες</string>
 
     <!-- Symptom Form Sheet -->
     <string name="symptom_form_title_add">Καταγραφή Συμπτώματος</string>
