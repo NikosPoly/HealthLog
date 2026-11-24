@@ -100,6 +100,7 @@ class MedicationActionReceiver : BroadcastReceiver() {
             }
 
             MedicationNotificationHelper.ACTION_SNOOZE -> {
+                val overrideId = intent.getLongExtra(MedicationNotificationHelper.EXTRA_OVERRIDE_ID, -1L)
                 val medicationName = intent.getStringExtra(MedicationNotificationHelper.EXTRA_MEDICATION_NAME) ?: ""
                 val dosage = intent.getStringExtra(MedicationNotificationHelper.EXTRA_DOSAGE) ?: ""
                 val unit = intent.getStringExtra(MedicationNotificationHelper.EXTRA_UNIT) ?: ""
@@ -117,6 +118,7 @@ class MedicationActionReceiver : BroadcastReceiver() {
                     scheduledTime = scheduledTime,
                     notificationId = notificationId,
                     reminderId = reminderId,
+                    overrideId = overrideId,
                     scheduledDate = scheduledDate
                 )
             }

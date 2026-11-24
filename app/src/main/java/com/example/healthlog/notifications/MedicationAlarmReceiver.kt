@@ -125,7 +125,9 @@ class MedicationAlarmReceiver : BroadcastReceiver() {
                         instructions = instructions,
                         scheduledTime = scheduledTime,
                         notificationId = notificationId,
-                        scheduledDate = effectiveDate
+                        scheduledDate = effectiveDate,
+                        reminderId = reminderId,
+                        overrideId = overrideId
                     )
                 }
 

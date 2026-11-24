@@ -313,6 +313,7 @@ object MedicationAlarmScheduler {
         scheduledTime: String,
         notificationId: Int,
         reminderId: Long = notificationId.toLong(),
+        overrideId: Long = -1L,
         scheduledDate: String? = null,
         snoozeMinutes: Int = 30
     ) {
@@ -331,6 +332,9 @@ object MedicationAlarmScheduler {
             }
             putExtra(MedicationNotificationHelper.EXTRA_NOTIFICATION_ID, notificationId)
             putExtra(MedicationNotificationHelper.EXTRA_REMINDER_ID, reminderId)
+            if (overrideId != -1L) {
+                putExtra(MedicationNotificationHelper.EXTRA_OVERRIDE_ID, overrideId)
+            }
             putExtra(MedicationNotificationHelper.EXTRA_ALARM_TYPE, MedicationNotificationHelper.ALARM_TYPE_SNOOZE)
         }
 
