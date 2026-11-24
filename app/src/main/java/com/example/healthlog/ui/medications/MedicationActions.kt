@@ -204,6 +204,13 @@ object MedicationActions {
             val reminderId = doseItem.reminderId
             val oldOverrides = repository.getOverridesForReminder(reminderId)
 
+            if (appContext != null) {
+                val doseDate = MedicationScheduleResolver.parseIsoDateOrNull(doseItem.scheduledDate)
+                if (doseDate == null || !doseDate.isAfter(today)) {
+                    dismissNotificationAndSnooze(appContext, doseItem)
+                }
+            }
+
             when (scope) {
                 RecurringDoseScope.THIS_DAY_ONLY -> {
                     if (appContext != null) {

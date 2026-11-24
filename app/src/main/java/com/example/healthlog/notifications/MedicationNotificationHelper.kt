@@ -74,7 +74,9 @@ object MedicationNotificationHelper {
         instructions: String?,
         scheduledTime: String,
         notificationId: Int,
-        scheduledDate: String? = null
+        scheduledDate: String? = null,
+        reminderId: Long = notificationId.toLong(),
+        overrideId: Long = -1L
     ) {
         createNotificationChannel(context)
 
@@ -97,7 +99,10 @@ object MedicationNotificationHelper {
             putExtra(EXTRA_SCHEDULED_TIME, scheduledTime)
             putExtra(EXTRA_SCHEDULED_DATE, scheduledDate)
             putExtra(EXTRA_NOTIFICATION_ID, notificationId)
-            putExtra(EXTRA_REMINDER_ID, notificationId.toLong())
+            putExtra(EXTRA_REMINDER_ID, reminderId)
+            if (overrideId != -1L) {
+                putExtra(EXTRA_OVERRIDE_ID, overrideId)
+            }
         }
         val markTakenPendingIntent = PendingIntent.getBroadcast(
             context,
@@ -106,7 +111,7 @@ object MedicationNotificationHelper {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Action 2: Snooze 15 minutes
+        // Action 2: Snooze 30 minutes
         val snoozeIntent = Intent(context, MedicationActionReceiver::class.java).apply {
             action = ACTION_SNOOZE
             putExtra(EXTRA_MEDICATION_ID, medicationId)
@@ -117,7 +122,10 @@ object MedicationNotificationHelper {
             putExtra(EXTRA_SCHEDULED_TIME, scheduledTime)
             putExtra(EXTRA_SCHEDULED_DATE, scheduledDate)
             putExtra(EXTRA_NOTIFICATION_ID, notificationId)
-            putExtra(EXTRA_REMINDER_ID, notificationId.toLong())
+            putExtra(EXTRA_REMINDER_ID, reminderId)
+            if (overrideId != -1L) {
+                putExtra(EXTRA_OVERRIDE_ID, overrideId)
+            }
         }
         val snoozePendingIntent = PendingIntent.getBroadcast(
             context,

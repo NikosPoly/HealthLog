@@ -5,7 +5,9 @@ import android.content.Context
 import android.content.Intent
 import android.os.PowerManager
 import com.example.healthlog.database.HealthDatabase
+import com.example.healthlog.database.MedicationReminder
 import com.example.healthlog.database.MedicationScheduleOverride
+import com.example.healthlog.model.MedicationScheduleResolver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -25,10 +27,6 @@ class MedicationAlarmReceiver : BroadcastReceiver() {
         val alarmType = intent.getStringExtra(MedicationNotificationHelper.EXTRA_ALARM_TYPE)
             ?: MedicationNotificationHelper.ALARM_TYPE_MAIN
 
-        val medicationName = intent.getStringExtra(MedicationNotificationHelper.EXTRA_MEDICATION_NAME) ?: return
-        val dosage = intent.getStringExtra(MedicationNotificationHelper.EXTRA_DOSAGE) ?: ""
-        val unit = intent.getStringExtra(MedicationNotificationHelper.EXTRA_UNIT) ?: ""
-        val instructions = intent.getStringExtra(MedicationNotificationHelper.EXTRA_INSTRUCTIONS)
         val scheduledTime = intent.getStringExtra(MedicationNotificationHelper.EXTRA_SCHEDULED_TIME) ?: ""
         val scheduledDateExtra = intent.getStringExtra(MedicationNotificationHelper.EXTRA_SCHEDULED_DATE)
         val notificationId = intent.getIntExtra(
@@ -95,20 +93,15 @@ class MedicationAlarmReceiver : BroadcastReceiver() {
                 val effectiveDate = scheduledDateExtra ?: todayDate
                 val overrides = dao.getOverridesForReminder(matchingReminder.id)
 
-                // 3. Validate override state for MAIN vs OVERRIDE alarms
-                val shouldRingForSchedule = when (alarmType) {
-                    MedicationNotificationHelper.ALARM_TYPE_OVERRIDE -> {
-                        val override = if (overrideId != -1L) dao.getOverrideById(overrideId) else null
-                        override != null &&
-                            override.overrideType == MedicationScheduleOverride.TYPE_RESCHEDULED &&
-                            override.originalDate == effectiveDate
-                    }
-                    MedicationNotificationHelper.ALARM_TYPE_MAIN -> {
-                        // Do not ring on dates overridden (CANCELLED or RESCHEDULED to another time)
-                        overrides.none { it.originalDate == effectiveDate }
-                    }
-                    else -> true // ALARM_TYPE_SNOOZE
-                }
+                // 3. Validate override/schedule state for MAIN, OVERRIDE, and SNOOZE alarms
+                val shouldRingForSchedule = shouldRingForSchedule(
+                    alarmType = alarmType,
+                    matchingReminder = matchingReminder,
+                    overrides = overrides,
+                    overrideId = overrideId,
+                    effectiveDate = effectiveDate,
+                    scheduledTime = scheduledTime
+                )
 
                 // 4. Dose log check: if this slot was already marked TAKEN or SKIPPED, do NOT ring!
                 val existingLog = dao.getDoseLog(medicationId, effectiveDate, scheduledTime)
@@ -118,14 +111,16 @@ class MedicationAlarmReceiver : BroadcastReceiver() {
                 if (shouldRingForSchedule && !isAlreadyLogged) {
                     MedicationNotificationHelper.showMedicationNotification(
                         context = context,
-                        medicationId = medicationId,
-                        medicationName = medicationName,
-                        dosage = dosage,
-                        unit = unit,
-                        instructions = instructions,
+                        medicationId = medication.id,
+                        medicationName = medication.name,
+                        dosage = medication.dosage,
+                        unit = medication.unit,
+                        instructions = medication.instructions,
                         scheduledTime = scheduledTime,
                         notificationId = notificationId,
-                        scheduledDate = effectiveDate
+                        scheduledDate = effectiveDate,
+                        reminderId = reminderId,
+                        overrideId = overrideId
                     )
                 }
 
@@ -151,6 +146,58 @@ class MedicationAlarmReceiver : BroadcastReceiver() {
                 } catch (_: Exception) {
                 }
                 pendingResult.finish()
+            }
+        }
+    }
+
+    companion object {
+        internal fun shouldRingForSchedule(
+            alarmType: String,
+            matchingReminder: MedicationReminder,
+            overrides: List<MedicationScheduleOverride>,
+            overrideId: Long,
+            effectiveDate: String,
+            scheduledTime: String
+        ): Boolean {
+            return when (alarmType) {
+                MedicationNotificationHelper.ALARM_TYPE_OVERRIDE -> {
+                    val override = if (overrideId != -1L) {
+                        overrides.find { it.id == overrideId }
+                    } else {
+                        null
+                    }
+                    override != null &&
+                        override.overrideType == MedicationScheduleOverride.TYPE_RESCHEDULED &&
+                        override.originalDate == effectiveDate &&
+                        override.newHour != null &&
+                        override.newMinute != null &&
+                        MedicationScheduleResolver.formatTime(override.newHour, override.newMinute) == scheduledTime
+                }
+
+                MedicationNotificationHelper.ALARM_TYPE_MAIN -> {
+                    // Do not ring on dates overridden (CANCELLED or RESCHEDULED to another time)
+                    overrides.none { it.originalDate == effectiveDate }
+                }
+
+                MedicationNotificationHelper.ALARM_TYPE_SNOOZE -> {
+                    if (overrideId != -1L) {
+                        val override = overrides.find { it.id == overrideId }
+                        override != null &&
+                            override.overrideType == MedicationScheduleOverride.TYPE_RESCHEDULED &&
+                            override.originalDate == effectiveDate &&
+                            override.newHour != null &&
+                            override.newMinute != null &&
+                            MedicationScheduleResolver.formatTime(override.newHour, override.newMinute) == scheduledTime
+                    } else {
+                        overrides.none { it.originalDate == effectiveDate } &&
+                            MedicationScheduleResolver.formatTime(
+                                matchingReminder.hour,
+                                matchingReminder.minute
+                            ) == scheduledTime
+                    }
+                }
+
+                else -> false
             }
         }
     }

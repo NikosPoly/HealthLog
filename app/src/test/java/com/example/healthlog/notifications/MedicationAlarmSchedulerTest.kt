@@ -78,11 +78,29 @@ class MedicationAlarmSchedulerTest {
             nowCalendar = now
         )
 
-        val resultCalendar = Calendar.getInstance().apply { timeInMillis = trigger }
+        assertNotNull(trigger)
+        val resultCalendar = Calendar.getInstance().apply { timeInMillis = trigger!! }
         assertEquals(Calendar.FRIDAY, resultCalendar.get(Calendar.DAY_OF_WEEK))
         assertEquals(8, resultCalendar.get(Calendar.HOUR_OF_DAY))
         assertEquals(0, resultCalendar.get(Calendar.MINUTE))
-        assertTrue(trigger > now.timeInMillis)
+        assertTrue(trigger!! > now.timeInMillis)
+    }
+
+    @Test
+    fun calculateNextTriggerMillis_emptyMask_returnsNull() {
+        val now = Calendar.getInstance().apply {
+            set(2026, Calendar.NOVEMBER, 18, 10, 0, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+
+        assertNull(
+            MedicationAlarmScheduler.calculateNextTriggerMillis(
+                hour = 8,
+                minute = 0,
+                daysOfWeekMask = 0,
+                nowCalendar = now
+            )
+        )
     }
 
     @Test
@@ -202,5 +220,42 @@ class MedicationAlarmSchedulerTest {
             newMinute = null
         )
         assertNull(MedicationAlarmScheduler.calculateOverrideTriggerMillis(cancelledOverride, now))
+    }
+
+    @Test
+    fun formatTriggerDate_matchesScheduledDayAcrossMidnightBoundaries() {
+        val tz = java.util.TimeZone.getTimeZone("UTC")
+
+        // Bedtime dose at 23:55 on Nov 24
+        val bedtimeNow = Calendar.getInstance(tz).apply {
+            set(2026, Calendar.NOVEMBER, 24, 23, 0, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val bedtimeReminder = MedicationReminder(id = 20L, medicationId = 1L, hour = 23, minute = 55)
+        val bedtimeTrigger = MedicationAlarmScheduler.calculateNextTriggerMillisForReminder(
+            reminder = bedtimeReminder,
+            nowCalendar = bedtimeNow
+        )
+        assertNotNull(bedtimeTrigger)
+        assertEquals(
+            "2026-11-24",
+            MedicationAlarmScheduler.formatTriggerDate(bedtimeTrigger!!, tz)
+        )
+
+        // Midnight dose at 00:00 scheduled from 23:50 on Nov 24 -> belongs to Nov 25
+        val midnightNow = Calendar.getInstance(tz).apply {
+            set(2026, Calendar.NOVEMBER, 24, 23, 50, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val midnightReminder = MedicationReminder(id = 21L, medicationId = 1L, hour = 0, minute = 0)
+        val midnightTrigger = MedicationAlarmScheduler.calculateNextTriggerMillisForReminder(
+            reminder = midnightReminder,
+            nowCalendar = midnightNow
+        )
+        assertNotNull(midnightTrigger)
+        assertEquals(
+            "2026-11-25",
+            MedicationAlarmScheduler.formatTriggerDate(midnightTrigger!!, tz)
+        )
     }
 }

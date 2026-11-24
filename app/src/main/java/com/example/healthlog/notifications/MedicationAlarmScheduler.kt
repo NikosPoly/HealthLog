@@ -12,6 +12,7 @@ import com.example.healthlog.database.MedicationScheduleOverride
 import com.example.healthlog.model.MedicationScheduleResolver
 import java.time.LocalDate
 import java.util.Calendar
+import java.util.TimeZone
 
 object MedicationAlarmScheduler {
 
@@ -20,13 +21,16 @@ object MedicationAlarmScheduler {
 
     /**
      * Calculates the next epoch millis for a given reminder (hour:minute and days of week).
+     * Returns null if [daysOfWeekMask] has no valid weekday bit set.
      */
     fun calculateNextTriggerMillis(
         hour: Int,
         minute: Int,
         daysOfWeekMask: Int,
         nowCalendar: Calendar = Calendar.getInstance()
-    ): Long {
+    ): Long? {
+        if (daysOfWeekMask == 0) return null
+
         val target = Calendar.getInstance(nowCalendar.timeZone).apply {
             timeInMillis = nowCalendar.timeInMillis
             set(Calendar.HOUR_OF_DAY, hour)
@@ -41,7 +45,7 @@ object MedicationAlarmScheduler {
         }
 
         // Check daysOfWeekMask. Bitmask mapping: 1=Mon, 2=Tue, 4=Wed, 8=Thu, 16=Fri, 32=Sat, 64=Sun.
-        for (dayOffset in 0..7) {
+        for (dayOffset in 0..6) {
             val date = calendarToLocalDate(target)
             if (MedicationScheduleResolver.matchesDayOfWeek(date, daysOfWeekMask)) {
                 return target.timeInMillis
@@ -49,7 +53,7 @@ object MedicationAlarmScheduler {
             target.add(Calendar.DAY_OF_YEAR, 1)
         }
 
-        return target.timeInMillis
+        return null
     }
 
     /**
@@ -167,9 +171,12 @@ object MedicationAlarmScheduler {
         )
 
         if (triggerAtMillis == null) {
-            cancelMainAndSnoozeAlarms(context, alarmManager, reminder.id.toInt())
+            // No future recurring occurrence remains (e.g. final endDate dose already fired),
+            // so clear any pending main alarm without dismissing an active tray notification or snooze.
+            cancelMainAlarmOnly(context, alarmManager, reminder.id.toInt())
         } else {
             val scheduledTime = MedicationScheduleResolver.formatTime(reminder.hour, reminder.minute)
+            val scheduledDate = formatTriggerDate(triggerAtMillis, nowCalendar.timeZone)
 
             val intent = Intent(context, MedicationAlarmReceiver::class.java).apply {
                 putExtra(MedicationNotificationHelper.EXTRA_MEDICATION_ID, medication.id)
@@ -178,6 +185,7 @@ object MedicationAlarmScheduler {
                 putExtra(MedicationNotificationHelper.EXTRA_UNIT, medication.unit)
                 putExtra(MedicationNotificationHelper.EXTRA_INSTRUCTIONS, medication.instructions)
                 putExtra(MedicationNotificationHelper.EXTRA_SCHEDULED_TIME, scheduledTime)
+                putExtra(MedicationNotificationHelper.EXTRA_SCHEDULED_DATE, scheduledDate)
                 putExtra(MedicationNotificationHelper.EXTRA_NOTIFICATION_ID, reminder.id.toInt())
                 putExtra(MedicationNotificationHelper.EXTRA_REMINDER_ID, reminder.id)
                 putExtra(MedicationNotificationHelper.EXTRA_ALARM_TYPE, MedicationNotificationHelper.ALARM_TYPE_MAIN)
@@ -211,14 +219,16 @@ object MedicationAlarmScheduler {
         override: MedicationScheduleOverride,
         nowCalendar: Calendar = Calendar.getInstance()
     ) {
-        if (!medication.isActive) {
+        if (!medication.isActive || override.overrideType != MedicationScheduleOverride.TYPE_RESCHEDULED) {
             cancelOverrideAlarm(context, override.id)
             return
         }
 
         val triggerAtMillis = calculateOverrideTriggerMillis(override, nowCalendar)
         if (triggerAtMillis == null) {
-            cancelOverrideAlarm(context, override.id)
+            // Override time has already passed; keep any active notification or snooze intact.
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            cancelMainAlarmOnly(context, alarmManager, overrideRequestCode(override.id))
             return
         }
 
@@ -270,16 +280,15 @@ object MedicationAlarmScheduler {
             }
     }
 
-    private fun cancelMainAndSnoozeAlarms(
+    private fun cancelMainAlarmOnly(
         context: Context,
         alarmManager: AlarmManager,
-        notificationId: Int
+        requestCode: Int
     ) {
         val intent = Intent(context, MedicationAlarmReceiver::class.java)
-
         val mainPendingIntent = PendingIntent.getBroadcast(
             context,
-            notificationId,
+            requestCode,
             intent,
             PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
         )
@@ -287,7 +296,16 @@ object MedicationAlarmScheduler {
             alarmManager.cancel(mainPendingIntent)
             mainPendingIntent.cancel()
         }
+    }
 
+    private fun cancelMainAndSnoozeAlarms(
+        context: Context,
+        alarmManager: AlarmManager,
+        notificationId: Int
+    ) {
+        cancelMainAlarmOnly(context, alarmManager, notificationId)
+
+        val intent = Intent(context, MedicationAlarmReceiver::class.java)
         val snoozeRequestCode = notificationId + SNOOZE_OFFSET
         val snoozePendingIntent = PendingIntent.getBroadcast(
             context,
@@ -313,6 +331,7 @@ object MedicationAlarmScheduler {
         scheduledTime: String,
         notificationId: Int,
         reminderId: Long = notificationId.toLong(),
+        overrideId: Long = -1L,
         scheduledDate: String? = null,
         snoozeMinutes: Int = 30
     ) {
@@ -331,6 +350,9 @@ object MedicationAlarmScheduler {
             }
             putExtra(MedicationNotificationHelper.EXTRA_NOTIFICATION_ID, notificationId)
             putExtra(MedicationNotificationHelper.EXTRA_REMINDER_ID, reminderId)
+            if (overrideId != -1L) {
+                putExtra(MedicationNotificationHelper.EXTRA_OVERRIDE_ID, overrideId)
+            }
             putExtra(MedicationNotificationHelper.EXTRA_ALARM_TYPE, MedicationNotificationHelper.ALARM_TYPE_SNOOZE)
         }
 
@@ -344,6 +366,16 @@ object MedicationAlarmScheduler {
         )
 
         scheduleReliableAlarm(context, alarmManager, triggerAtMillis, pendingIntent)
+    }
+
+    internal fun formatTriggerDate(
+        triggerAtMillis: Long,
+        timeZone: TimeZone = TimeZone.getDefault()
+    ): String {
+        val triggerCal = Calendar.getInstance(timeZone).apply {
+            timeInMillis = triggerAtMillis
+        }
+        return calendarToLocalDate(triggerCal).toString()
     }
 
     private fun overrideRequestCode(overrideId: Long): Int = overrideId.toInt() + OVERRIDE_OFFSET
