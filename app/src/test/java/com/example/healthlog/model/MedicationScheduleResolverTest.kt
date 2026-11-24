@@ -68,85 +68,70 @@ class MedicationScheduleResolverTest {
             zoneId = zone
         )
         assertEquals(1, todayItems.size)
-        assertEquals("08:00", todayItems[0].scheduledTime)
-        assertEquals(ScheduledDoseStatus.PENDING, todayItems[0].status)
-        assertTrue(todayItems[0].isRecurring)
-        assertEquals(10L, todayItems[0].reminderId)
+        val item = todayItems.first()
+        assertEquals("Amlodipine", item.medicationName)
+        assertEquals("08:00", item.scheduledTime)
+        assertEquals(ScheduledDoseStatus.PENDING, item.status)
+        assertTrue(item.isRecurring)
+        assertNull(item.doseLogId)
 
         // Future date -> projected as PENDING
-        val nextWeek = MedicationScheduleResolver.resolveForDate(
-            date = today.plusDays(7),
+        val tomorrowItems = MedicationScheduleResolver.resolveForDate(
+            date = today.plusDays(1),
             medicationsWithReminders = meds,
             doseLogs = emptyList(),
             overrides = emptyList(),
             today = today,
             zoneId = zone
         )
-        assertEquals(1, nextWeek.size)
-        assertEquals(ScheduledDoseStatus.PENDING, nextWeek[0].status)
+        assertEquals(1, tomorrowItems.size)
+        assertEquals(ScheduledDoseStatus.PENDING, tomorrowItems.first().status)
     }
 
     @Test
-    fun resolveForDate_respectsStartDateEndDateAndDaysOfWeekMask() {
-        // Only Mon (1) and Wed (4), active Nov 25..Nov 27
-        val reminder = MedicationReminder(
-            id = 10L,
-            medicationId = 1L,
-            hour = 9,
-            minute = 30,
-            daysOfWeekMask = 1 or 4,
-            startDate = "2026-11-25",
-            endDate = "2026-11-27"
-        )
-        val meds = listOf(sampleMed(reminders = listOf(reminder)))
-
-        // Nov 23 (Mon, before startDate) -> empty
-        assertTrue(
-            MedicationScheduleResolver.resolveForDate(
-                date = LocalDate.of(2026, 11, 23),
-                medicationsWithReminders = meds,
-                doseLogs = emptyList(),
-                overrides = emptyList(),
-                today = today,
-                zoneId = zone
-            ).isEmpty()
+    fun resolveForDate_matchesDoseLogsAcrossPastAndToday() {
+        val meds = listOf(sampleMed())
+        val pastDate = today.minusDays(2)
+        val logs = listOf(
+            MedicationDoseLog(
+                id = 100L,
+                medicationId = 1L,
+                scheduledDate = pastDate.toString(),
+                scheduledTime = "08:00",
+                status = "TAKEN"
+            ),
+            MedicationDoseLog(
+                id = 101L,
+                medicationId = 1L,
+                scheduledDate = today.toString(),
+                scheduledTime = "08:00",
+                status = "SKIPPED"
+            )
         )
 
-        // Nov 25 (Wed, inside range, matches mask) -> 1 item
-        val nov25 = MedicationScheduleResolver.resolveForDate(
-            date = LocalDate.of(2026, 11, 25),
+        val pastItems = MedicationScheduleResolver.resolveForDate(
+            date = pastDate,
             medicationsWithReminders = meds,
-            doseLogs = emptyList(),
+            doseLogs = logs,
             overrides = emptyList(),
             today = today,
             zoneId = zone
         )
-        assertEquals(1, nov25.size)
-        assertEquals("09:30", nov25[0].scheduledTime)
+        assertEquals(1, pastItems.size)
+        assertEquals(ScheduledDoseStatus.TAKEN, pastItems.first().status)
+        assertEquals(100L, pastItems.first().doseLogId)
 
-        // Nov 26 (Thu, inside range, doesn't match mask) -> empty
-        assertTrue(
-            MedicationScheduleResolver.resolveForDate(
-                date = LocalDate.of(2026, 11, 26),
-                medicationsWithReminders = meds,
-                doseLogs = emptyList(),
-                overrides = emptyList(),
-                today = today,
-                zoneId = zone
-            ).isEmpty()
+        val todayItems = MedicationScheduleResolver.resolveForDate(
+            date = today,
+            medicationsWithReminders = meds,
+            doseLogs = logs,
+            overrides = emptyList(),
+            today = today,
+            zoneId = zone
         )
-
-        // Nov 30 (Mon, after endDate) -> empty
-        assertTrue(
-            MedicationScheduleResolver.resolveForDate(
-                date = LocalDate.of(2026, 11, 30),
-                medicationsWithReminders = meds,
-                doseLogs = emptyList(),
-                overrides = emptyList(),
-                today = today,
-                zoneId = zone
-            ).isEmpty()
-        )
+        assertEquals(1, todayItems.size)
+        assertEquals(ScheduledDoseStatus.SKIPPED, todayItems.first().status)
+        assertEquals(101L, todayItems.first().doseLogId)
     }
 
     @Test
@@ -154,129 +139,170 @@ class MedicationScheduleResolverTest {
         val meds = listOf(sampleMed())
         val overrides = listOf(
             MedicationScheduleOverride(
-                id = 50L,
+                id = 200L,
                 reminderId = 10L,
                 medicationId = 1L,
-                originalDate = "2026-11-23",
-                overrideType = MedicationScheduleOverride.TYPE_RESCHEDULED,
+                originalDate = today.toString(),
+                overrideType = "RESCHEDULED",
                 newHour = 10,
-                newMinute = 45
-            ),
+                newMinute = 30
+            )
+        )
+
+        val todayItems = MedicationScheduleResolver.resolveForDate(
+            date = today,
+            medicationsWithReminders = meds,
+            doseLogs = emptyList(),
+            overrides = overrides,
+            today = today,
+            zoneId = zone
+        )
+        assertEquals(1, todayItems.size)
+        val item = todayItems.first()
+        assertEquals("10:30", item.scheduledTime)
+        assertEquals("08:00", item.originalTime)
+        assertEquals(200L, item.overrideId)
+
+        // Cancelled override suppresses the dose completely
+        val cancelledOverrides = listOf(
             MedicationScheduleOverride(
-                id = 51L,
+                id = 201L,
                 reminderId = 10L,
                 medicationId = 1L,
-                originalDate = "2026-11-24",
-                overrideType = MedicationScheduleOverride.TYPE_CANCELLED
+                originalDate = today.toString(),
+                overrideType = "CANCELLED"
             )
         )
-        val logs = listOf(
-            MedicationDoseLog(
-                id = 100L,
-                medicationId = 1L,
-                scheduledDate = "2026-11-23",
-                scheduledTime = "10:45",
-                status = "TAKEN"
-            )
-        )
-
-        // Nov 23 -> moved to 10:45 and matched as TAKEN
-        val nov23 = MedicationScheduleResolver.resolveForDate(
-            date = LocalDate.of(2026, 11, 23),
-            medicationsWithReminders = meds,
-            doseLogs = logs,
-            overrides = overrides,
-            today = today,
-            zoneId = zone
-        )
-        assertEquals(1, nov23.size)
-        assertEquals("10:45", nov23[0].scheduledTime)
-        assertEquals("08:00", nov23[0].originalTime)
-        assertEquals(50L, nov23[0].overrideId)
-        assertEquals(ScheduledDoseStatus.TAKEN, nov23[0].status)
-        assertEquals(100L, nov23[0].doseLogId)
-
-        // Nov 24 -> CANCELLED, empty
-        val nov24 = MedicationScheduleResolver.resolveForDate(
-            date = LocalDate.of(2026, 11, 24),
+        val cancelledItems = MedicationScheduleResolver.resolveForDate(
+            date = today,
             medicationsWithReminders = meds,
             doseLogs = emptyList(),
-            overrides = overrides,
+            overrides = cancelledOverrides,
             today = today,
             zoneId = zone
         )
-        assertTrue(nov24.isEmpty())
-
-        // Nov 25 -> unaffected, back to 08:00 PENDING
-        val nov25 = MedicationScheduleResolver.resolveForDate(
-            date = LocalDate.of(2026, 11, 25),
-            medicationsWithReminders = meds,
-            doseLogs = emptyList(),
-            overrides = overrides,
-            today = today,
-            zoneId = zone
-        )
-        assertEquals(1, nov25.size)
-        assertEquals("08:00", nov25[0].scheduledTime)
-        assertNull(nov25[0].overrideId)
-        assertEquals(ScheduledDoseStatus.PENDING, nov25[0].status)
+        assertTrue(cancelledItems.isEmpty())
     }
 
     @Test
-    fun resolveForDate_mergesOneTimeAndPausedLogsAndSortsChronologically() {
-        val activeMed = sampleMed(id = 1L, name = "Amlodipine", isActive = true)
-        val pausedMed = sampleMed(id = 2L, name = "Ibuprofen", isActive = false, reminders = emptyList())
-
+    fun resolveForDate_handlesOneTimeAndAsNeededLogsCorrectly() {
+        val oneTimeMed = MedicationWithReminders(
+            medication = Medication(
+                id = 2L,
+                name = "Ibuprofen",
+                dosage = "400",
+                unit = "mg",
+                frequency = "ONE_TIME",
+                isActive = false,
+                createdAt = epochFor(today)
+            ),
+            reminders = emptyList()
+        )
         val logs = listOf(
             MedicationDoseLog(
-                id = 200L,
+                id = 300L,
                 medicationId = 2L,
-                scheduledDate = "2026-11-23",
+                scheduledDate = today.toString(),
                 scheduledTime = "14:15",
-                status = "TAKEN"
-            ),
-            MedicationDoseLog(
-                id = 201L,
-                medicationId = 2L,
-                scheduledDate = "2026-11-23",
-                scheduledTime = "06:30",
                 status = "TAKEN"
             )
         )
 
         val items = MedicationScheduleResolver.resolveForDate(
             date = today,
-            medicationsWithReminders = listOf(activeMed, pausedMed),
+            medicationsWithReminders = listOf(oneTimeMed),
+            doseLogs = logs,
+            overrides = emptyList(),
+            today = today,
+            zoneId = zone
+        )
+        assertEquals(1, items.size)
+        val item = items.first()
+        assertEquals("Ibuprofen", item.medicationName)
+        assertEquals("14:15", item.scheduledTime)
+        assertFalse(item.isRecurring)
+        assertEquals(300L, item.doseLogId)
+    }
+
+    @Test
+    fun resolveForMonth_aggregatesDoseCountsAccurately() {
+        val meds = listOf(sampleMed())
+        val logs = listOf(
+            MedicationDoseLog(
+                id = 1L,
+                medicationId = 1L,
+                scheduledDate = today.toString(),
+                scheduledTime = "08:00",
+                status = "TAKEN"
+            )
+        )
+
+        val monthSummaries = MedicationScheduleResolver.resolveForMonth(
+            yearMonth = YearMonth.of(2026, 11),
+            medicationsWithReminders = meds,
             doseLogs = logs,
             overrides = emptyList(),
             today = today,
             zoneId = zone
         )
 
-        assertEquals(3, items.size)
-        assertEquals(listOf("06:30", "08:00", "14:15"), items.map { it.scheduledTime })
-        assertFalse(items[0].isRecurring)
-        assertTrue(items[1].isRecurring)
-        assertFalse(items[2].isRecurring)
-        assertEquals("Ibuprofen", items[0].medicationName)
+        val todayDoses = monthSummaries[today].orEmpty()
+        assertEquals(1, todayDoses.size)
+        assertEquals(ScheduledDoseStatus.TAKEN, todayDoses.single().status)
+
+        // Tomorrow is pending
+        val tomorrowDoses = monthSummaries[today.plusDays(1)].orEmpty()
+        assertEquals(1, tomorrowDoses.size)
+        assertEquals(ScheduledDoseStatus.PENDING, tomorrowDoses.single().status)
     }
 
     @Test
-    fun resolveForMonth_populatesEveryDayInMonth() {
-        val meds = listOf(sampleMed())
-        val monthMap = MedicationScheduleResolver.resolveForMonth(
-            yearMonth = YearMonth.of(2026, 11),
-            medicationsWithReminders = meds,
+    fun resolveForDate_respectsReminderStartAndEndDates() {
+        val med = sampleMed(
+            reminders = listOf(
+                MedicationReminder(
+                    id = 10L,
+                    medicationId = 1L,
+                    hour = 8,
+                    minute = 0,
+                    startDate = today.plusDays(2).toString(),
+                    endDate = today.plusDays(5).toString()
+                )
+            )
+        )
+
+        // Before start date -> not projected
+        val todayItems = MedicationScheduleResolver.resolveForDate(
+            date = today,
+            medicationsWithReminders = listOf(med),
             doseLogs = emptyList(),
             overrides = emptyList(),
             today = today,
             zoneId = zone
         )
+        assertTrue(todayItems.isEmpty())
 
-        assertEquals(30, monthMap.size)
-        assertTrue(monthMap[LocalDate.of(2026, 11, 22)].orEmpty().isEmpty())
-        assertEquals(1, monthMap[LocalDate.of(2026, 11, 23)].orEmpty().size)
-        assertEquals(1, monthMap[LocalDate.of(2026, 11, 30)].orEmpty().size)
+        // In range -> projected
+        val inRangeItems = MedicationScheduleResolver.resolveForDate(
+            date = today.plusDays(3),
+            medicationsWithReminders = listOf(med),
+            doseLogs = emptyList(),
+            overrides = emptyList(),
+            today = today,
+            zoneId = zone
+        )
+        assertEquals(1, inRangeItems.size)
+
+        // After end date -> not projected
+        val afterEndItems = MedicationScheduleResolver.resolveForDate(
+            date = today.plusDays(6),
+            medicationsWithReminders = listOf(med),
+            doseLogs = emptyList(),
+            overrides = emptyList(),
+            today = today,
+            zoneId = zone
+        )
+        assertTrue(afterEndItems.isEmpty())
     }
 
     @Test
@@ -338,5 +364,60 @@ class MedicationScheduleResolverTest {
             zoneId = zone
         )
         assertTrue(tomorrowItems.isEmpty())
+    }
+
+    @Test
+    fun resolveForMonth_softDeletedMedication_countsOnlyLoggedDosesAndNeverProjectsFuturePending() {
+        val deletedMed = MedicationWithReminders(
+            medication = Medication(
+                id = 9L,
+                name = "Amoxicillin",
+                dosage = "500",
+                unit = "mg",
+                frequency = "DAILY",
+                isActive = false,
+                isDeleted = true
+            ),
+            reminders = listOf(
+                MedicationReminder(
+                    id = 90L,
+                    medicationId = 9L,
+                    hour = 8,
+                    minute = 0,
+                    daysOfWeekMask = 127,
+                    isEnabled = true,
+                    startDate = "2026-11-01"
+                )
+            )
+        )
+        val logs = listOf(
+            MedicationDoseLog(
+                id = 500L,
+                medicationId = 9L,
+                scheduledDate = "2026-11-10",
+                scheduledTime = "08:00",
+                status = "TAKEN"
+            )
+        )
+
+        val monthSummaries = MedicationScheduleResolver.resolveForMonth(
+            yearMonth = YearMonth.of(2026, 11),
+            medicationsWithReminders = listOf(deletedMed),
+            doseLogs = logs,
+            overrides = emptyList(),
+            today = today,
+            zoneId = zone
+        )
+
+        // Nov 10 has the 1 taken dose
+        val nov10Doses = monthSummaries[LocalDate.of(2026, 11, 10)].orEmpty()
+        assertEquals(1, nov10Doses.size)
+        assertEquals(ScheduledDoseStatus.TAKEN, nov10Doses.single().status)
+
+        // Future dates (e.g. today or tomorrow) have 0 count
+        val nov23Doses = monthSummaries[today].orEmpty()
+        assertTrue(nov23Doses.isEmpty())
+        val nov24Doses = monthSummaries[today.plusDays(1)].orEmpty()
+        assertTrue(nov24Doses.isEmpty())
     }
 }

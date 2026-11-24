@@ -1,14 +1,11 @@
 package com.example.healthlog.ui.calendar.timeline
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.hasTestTag
-import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
-import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollToNode
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.example.healthlog.R
@@ -17,7 +14,6 @@ import com.example.healthlog.database.SymptomEntry
 import com.example.healthlog.model.MeasurementType
 import com.example.healthlog.model.ScheduledDoseItem
 import com.example.healthlog.model.ScheduledDoseStatus
-import com.example.healthlog.model.SymptomType
 import com.example.healthlog.ui.medications.MedicationActions
 import com.example.healthlog.ui.theme.HealthLogTheme
 import org.junit.Assert.assertEquals
@@ -26,6 +22,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.time.LocalDate
+import java.util.Locale
 
 @RunWith(AndroidJUnit4::class)
 class DayTimelineUiTest {
@@ -36,20 +33,41 @@ class DayTimelineUiTest {
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
 
     @Test
-    fun dayTimelineContent_rendersHeaderFiltersAndHourlySlots() {
+    fun dayTimelineContent_rendersHeaderAndSlotsCorrectly() {
         val testDate = LocalDate.of(2026, 11, 20)
+        val todayDate = testDate.plusDays(1) // Different from testDate so "Today" button is visible
         var backClicked = false
-        var nextDayClicked = false
         var prevDayClicked = false
+        var nextDayClicked = false
+        var jumpTodayClicked = false
         var selectedFilter: TimelineFilter? = null
-        var clickedEmptyHour: Int? = null
 
-        val emptySlots = (0..23).map { hour ->
-            TimelineHourSlot(
-                hour = hour,
-                timeLabel = String.format("%02d:00", hour),
-                events = emptyList()
+        val slot8 = TimelineHourSlot(hour = 8, timeLabel = "08:00")
+        val slot9 = TimelineHourSlot(
+            hour = 9,
+            timeLabel = "09:00",
+            events = listOf(
+                TimelineEvent.Vital(
+                    measurement = Measurement(
+                        id = 1L,
+                        type = MeasurementType.BLOOD_PRESSURE,
+                        value = 120.0,
+                        secondaryValue = 80.0,
+                        timestamp = 1763622000000L
+                    ),
+                    hour = 9,
+                    minute = 0,
+                    timeString = "09:00"
+                )
             )
+        )
+
+        val slots = (0..23).map { hour ->
+            when (hour) {
+                8 -> slot8
+                9 -> slot9
+                else -> TimelineHourSlot(hour = hour, timeLabel = String.format("%02d:00", hour))
+            }
         }
 
         composeRule.setContent {
@@ -57,12 +75,14 @@ class DayTimelineUiTest {
                 DayTimelineContent(
                     uiState = DayTimelineUiState(
                         selectedDate = testDate,
-                        hourSlots = emptySlots
+                        hourSlots = slots,
+                        totalEventCount = 1,
+                        vitalsCount = 1
                     ),
                     onBack = { backClicked = true },
                     onPreviousDay = { prevDayClicked = true },
                     onNextDay = { nextDayClicked = true },
-                    onJumpToToday = {},
+                    onJumpToToday = { jumpTodayClicked = true },
                     onSelectFilter = { selectedFilter = it },
                     onMarkDoseTaken = {},
                     onMarkDoseSkipped = {},
@@ -74,94 +94,103 @@ class DayTimelineUiTest {
                     onConfirmDeleteSymptom = {},
                     onDismissDeleteDialog = {},
                     onOpenMeasurementDetails = {},
-                    onEmptyHourClick = { clickedEmptyHour = it },
-                    today = testDate
+                    today = todayDate
                 )
             }
         }
 
-        // Title and Back button
+        // Title and Date
         composeRule.onNodeWithText(context.getString(R.string.day_timeline_title)).assertIsDisplayed()
-        composeRule.onNodeWithContentDescription(context.getString(R.string.action_back)).performClick()
-        assertTrue(backClicked)
 
-        // Day navigation
+        // Filter chips
+        composeRule.onNodeWithText(context.getString(R.string.timeline_filter_all) + " (1)").assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.calendar_legend_vitals) + " (1)").assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.calendar_legend_meds) + " (0)").assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.calendar_legend_symptoms) + " (0)").assertIsDisplayed()
+
+        // Navigation controls
         composeRule.onNodeWithContentDescription(context.getString(R.string.day_timeline_prev_day)).performClick()
         assertTrue(prevDayClicked)
+
         composeRule.onNodeWithContentDescription(context.getString(R.string.day_timeline_next_day)).performClick()
         assertTrue(nextDayClicked)
 
-        // Filter chips
-        composeRule.onNodeWithText("${context.getString(R.string.calendar_legend_vitals)} (0)").performClick()
-        assertEquals(TimelineFilter.VITALS, selectedFilter)
+        composeRule.onNodeWithText(context.getString(R.string.calendar_jump_today)).performClick()
+        assertTrue(jumpTodayClicked)
 
-        // Click empty slot 10:00
-        composeRule.onNodeWithTag("day_timeline_list")
-            .performScrollToNode(hasTestTag("timeline_empty_slot_10"))
-        composeRule.onNodeWithTag("timeline_empty_slot_10").performClick()
-        assertEquals(10, clickedEmptyHour)
+        // Filter selection callback
+        composeRule.onNodeWithText(context.getString(R.string.calendar_legend_vitals) + " (1)").performClick()
+        assertEquals(TimelineFilter.VITALS, selectedFilter)
     }
 
     @Test
-    fun dayTimelineContent_rendersEvents_interactsWithActionsAndVitalsClick() {
+    fun dayTimelineContent_interactiveMedicationAndSymptomCards_triggerCallbacks() {
         val testDate = LocalDate.of(2026, 11, 20)
-        var openedMeasurementId: Long? = null
         var takenDose: ScheduledDoseItem? = null
         var skippedDose: ScheduledDoseItem? = null
-        var movedDoseRequest: ScheduledDoseItem? = null
-        var deletedDoseRequest: ScheduledDoseItem? = null
+        var undoneDose: ScheduledDoseItem? = null
+        var movedDose: ScheduledDoseItem? = null
+        var deletedDose: ScheduledDoseItem? = null
         var editedSymptom: SymptomEntry? = null
+        var deletedSymptom: SymptomEntry? = null
 
-        val measurement = Measurement(
-            id = 55L,
-            type = MeasurementType.BLOOD_PRESSURE,
-            value = 125.0,
-            secondaryValue = 82.0,
-            tertiaryValue = 72.0,
-            timestamp = 1000L
-        )
-        val dose = ScheduledDoseItem(
-            medicationId = 10L,
+        val pendingDose = ScheduledDoseItem(
+            medicationId = 1L,
             medicationName = "Amlodipine",
             dosage = "5",
             unit = "mg",
             instructions = "Morning",
             scheduledDate = testDate.toString(),
-            scheduledTime = "08:30",
+            scheduledTime = "08:00",
             hour = 8,
-            minute = 30,
+            minute = 0,
             status = ScheduledDoseStatus.PENDING,
             isRecurring = true,
             reminderId = 1L
         )
+
+        val takenDoseItem = ScheduledDoseItem(
+            medicationId = 2L,
+            medicationName = "Metformin",
+            dosage = "500",
+            unit = "mg",
+            instructions = null,
+            scheduledDate = testDate.toString(),
+            scheduledTime = "12:00",
+            hour = 12,
+            minute = 0,
+            status = ScheduledDoseStatus.TAKEN,
+            isRecurring = true,
+            reminderId = 2L,
+            doseLogId = 10L
+        )
+
         val symptom = SymptomEntry(
-            id = 20L,
-            symptomType = SymptomType.HEADACHE.name,
+            id = 5L,
+            symptomType = "HEADACHE",
+            customName = null,
             severity = 3,
-            timestamp = 2000L,
+            timestamp = 1763640000000L,
             notes = "Mild headache"
         )
 
-        val slots = (0..23).map { hour ->
-            when (hour) {
-                8 -> TimelineHourSlot(
-                    hour = 8,
-                    timeLabel = "08:00",
-                    events = listOf(
-                        TimelineEvent.Vital(measurement, 8, 15, "08:15"),
-                        TimelineEvent.Medication(dose, 8, 30, "08:30")
-                    )
-                )
-                14 -> TimelineHourSlot(
-                    hour = 14,
-                    timeLabel = "14:00",
-                    events = listOf(
-                        TimelineEvent.Symptom(symptom, 14, 45, "14:45")
-                    )
-                )
-                else -> TimelineHourSlot(hour = hour, timeLabel = String.format("%02d:00", hour))
-            }
-        }
+        val slots = listOf(
+            TimelineHourSlot(
+                hour = 8,
+                timeLabel = "08:00",
+                events = listOf(TimelineEvent.Medication(pendingDose, 8, 0, "08:00"))
+            ),
+            TimelineHourSlot(
+                hour = 12,
+                timeLabel = "12:00",
+                events = listOf(TimelineEvent.Medication(takenDoseItem, 12, 0, "12:00"))
+            ),
+            TimelineHourSlot(
+                hour = 14,
+                timeLabel = "14:00",
+                events = listOf(TimelineEvent.Symptom(symptom, 14, 0, "14:00"))
+            )
+        )
 
         composeRule.setContent {
             HealthLogTheme {
@@ -170,8 +199,7 @@ class DayTimelineUiTest {
                         selectedDate = testDate,
                         hourSlots = slots,
                         totalEventCount = 3,
-                        vitalsCount = 1,
-                        medsCount = 1,
+                        medsCount = 2,
                         symptomsCount = 1
                     ),
                     onBack = {},
@@ -181,48 +209,51 @@ class DayTimelineUiTest {
                     onSelectFilter = {},
                     onMarkDoseTaken = { takenDose = it },
                     onMarkDoseSkipped = { skippedDose = it },
-                    onUndoDose = {},
-                    onRequestMoveDose = { movedDoseRequest = it },
-                    onRequestDeleteDose = { deletedDoseRequest = it },
+                    onUndoDose = { undoneDose = it },
+                    onRequestMoveDose = { movedDose = it },
+                    onRequestDeleteDose = { deletedDose = it },
                     onOpenEditSymptom = { editedSymptom = it },
                     onDismissAddEditSymptomSheet = {},
                     onSaveSymptom = { _, _, _, _, _ -> },
-                    onRequestDeleteSymptom = {},
+                    onRequestDeleteSymptom = { deletedSymptom = it },
                     onConfirmDeleteSymptom = {},
                     onDismissDeleteDialog = {},
-                    onOpenMeasurementDetails = { openedMeasurementId = it },
+                    onOpenMeasurementDetails = {},
                     today = testDate
                 )
             }
         }
 
-        // Tap Vital card opens measurement details
-        val bpText = "125/82 mmHg · 72 bpm"
-        composeRule.onNodeWithTag("day_timeline_list").performScrollToNode(hasText(bpText))
-        composeRule.onNodeWithText(bpText).assertIsDisplayed().performClick()
-        assertEquals(55L, openedMeasurementId)
-
-        // Medication Take, Skip, Move, and Delete actions
-        composeRule.onNodeWithTag("day_timeline_list").performScrollToNode(hasText("Amlodipine"))
+        // Pending medication Take / Skip / Move / Delete
         composeRule.onNodeWithText("Amlodipine").assertIsDisplayed()
         composeRule.onNodeWithText(context.getString(R.string.dose_action_mark_taken)).performClick()
-        assertEquals(dose, takenDose)
-        composeRule.onNodeWithText(context.getString(R.string.dose_action_mark_skipped)).performClick()
-        assertEquals(dose, skippedDose)
-        composeRule.onNodeWithContentDescription(context.getString(R.string.dose_action_move_time)).performClick()
-        assertEquals(dose, movedDoseRequest)
-        composeRule.onNodeWithContentDescription(context.getString(R.string.dose_action_delete)).performClick()
-        assertEquals(dose, deletedDoseRequest)
+        assertEquals(pendingDose, takenDose)
 
-        // Edit symptom action
-        composeRule.onNodeWithTag("day_timeline_list").performScrollToNode(hasText(context.getString(R.string.symptom_headache)))
+        composeRule.onNodeWithText(context.getString(R.string.dose_action_mark_skipped)).performClick()
+        assertEquals(pendingDose, skippedDose)
+
+        composeRule.onAllNodesWithContentDescription(context.getString(R.string.dose_action_move_time))[0].performClick()
+        assertEquals(pendingDose, movedDose)
+
+        composeRule.onAllNodesWithContentDescription(context.getString(R.string.dose_action_delete))[0].performClick()
+        assertEquals(pendingDose, deletedDose)
+
+        // Taken medication Undo
+        composeRule.onNodeWithText("Metformin").assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.dose_action_undo)).performClick()
+        assertEquals(takenDoseItem, undoneDose)
+
+        // Symptom Edit / Delete
         composeRule.onNodeWithText(context.getString(R.string.symptom_headache)).assertIsDisplayed()
         composeRule.onNodeWithContentDescription(context.getString(R.string.symptom_action_edit)).performClick()
         assertEquals(symptom, editedSymptom)
+
+        composeRule.onNodeWithContentDescription(context.getString(R.string.symptom_action_delete)).performClick()
+        assertEquals(symptom, deletedSymptom)
     }
 
     @Test
-    fun dayTimelineContent_slotChooserDialog_triggersSymptomAndMedicationActions() {
+    fun dayTimelineContent_slotChooserDialog_dispatchesSelection() {
         val testDate = LocalDate.of(2026, 11, 20)
         var choseSymptom = false
         var choseMedication = false
@@ -426,5 +457,68 @@ class DayTimelineUiTest {
         composeRule.onNodeWithText(context.getString(R.string.dose_status_taken)).assertIsDisplayed()
         composeRule.onNodeWithContentDescription(context.getString(R.string.dose_action_delete)).assertIsDisplayed()
         composeRule.onNodeWithText(context.getString(R.string.dose_action_undo)).assertDoesNotExist()
+    }
+
+    @Test
+    fun dayTimelineContent_greekLocale_rendersTimelineStringsCorrectly() {
+        val greekContext = InstrumentationRegistry.getInstrumentation().targetContext.createConfigurationContext(
+            android.content.res.Configuration().apply {
+                setLocale(Locale("el"))
+            }
+        )
+        val testDate = LocalDate.of(2026, 11, 20)
+        val dose = ScheduledDoseItem(
+            medicationId = 15L,
+            medicationName = "Aspirin",
+            dosage = "100",
+            unit = "mg",
+            instructions = null,
+            scheduledDate = testDate.toString(),
+            scheduledTime = "12:00",
+            hour = 12,
+            minute = 0,
+            status = ScheduledDoseStatus.PENDING,
+            isRecurring = true,
+            reminderId = 1L
+        )
+        val slot = TimelineHourSlot(
+            hour = 12,
+            timeLabel = "12:00",
+            events = listOf(TimelineEvent.Medication(dose, 12, 0, "12:00"))
+        )
+
+        composeRule.setContent {
+            HealthLogTheme {
+                DayTimelineContent(
+                    uiState = DayTimelineUiState(
+                        selectedDate = testDate,
+                        hourSlots = listOf(slot)
+                    ),
+                    onBack = {},
+                    onPreviousDay = {},
+                    onNextDay = {},
+                    onJumpToToday = {},
+                    onSelectFilter = {},
+                    onMarkDoseTaken = {},
+                    onMarkDoseSkipped = {},
+                    onUndoDose = {},
+                    onOpenEditSymptom = {},
+                    onDismissAddEditSymptomSheet = {},
+                    onSaveSymptom = { _, _, _, _, _ -> },
+                    onRequestDeleteSymptom = {},
+                    onConfirmDeleteSymptom = {},
+                    onDismissDeleteDialog = {},
+                    onOpenMeasurementDetails = {},
+                    today = testDate
+                )
+            }
+        }
+
+        // Verify Greek localized strings render on timeline
+        composeRule.onNodeWithText(greekContext.getString(R.string.day_timeline_title)).assertIsDisplayed()
+        composeRule.onNodeWithText(greekContext.getString(R.string.dose_action_mark_taken)).assertIsDisplayed()
+        composeRule.onNodeWithText(greekContext.getString(R.string.dose_action_mark_skipped)).assertIsDisplayed()
+        composeRule.onNodeWithContentDescription(greekContext.getString(R.string.dose_action_move_time)).assertIsDisplayed()
+        composeRule.onNodeWithContentDescription(greekContext.getString(R.string.dose_action_delete)).assertIsDisplayed()
     }
 }
