@@ -121,6 +121,8 @@
     <string name="reminder_alerts_keep_ringing_desc">Επαναλαμβάνει τον ήχο και τη δόνηση μέχρι να πατήσετε ή να κλείσετε την ειδοποίηση</string>
     <string name="reminder_alerts_system_sound_title">Ήχος, δόνηση &amp; Μην ενοχλείτε</string>
     <string name="reminder_alerts_system_sound_desc">Αλλάξτε τον ήχο ή επιτρέψτε παράκαμψη του «Μην ενοχλείτε» στις ρυθμίσεις Android</string>
+    <string name="dose_alerts_disabled_badge">Σε σίγαση</string>
+    <string name="dose_alerts_disabled_desc">Οι ειδοποιήσεις είναι απενεργοποιημένες. Η συσκευή δεν θα χτυπήσει για αυτή τη δόση.</string>
 
     <string name="calendar_title">Ημερολόγιο Υγείας</string>
     <string name="calendar_placeholder_title">Συμπτώματα &amp; Κλινικό Ημερολόγιο</string>

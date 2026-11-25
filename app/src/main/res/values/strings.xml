@@ -126,6 +126,8 @@
     <string name="reminder_alerts_keep_ringing_desc">Loop the alert sound and vibration until you interact with the notification</string>
     <string name="reminder_alerts_system_sound_title">Sound, vibration &amp; Do Not Disturb</string>
     <string name="reminder_alerts_system_sound_desc">Change the alert tone or allow overriding Do Not Disturb in Android settings</string>
+    <string name="dose_alerts_disabled_badge">Alerts muted</string>
+    <string name="dose_alerts_disabled_desc">Notifications are disabled. Your phone will not ring for this dose.</string>
 
     <string name="calendar_title">Health Calendar</string>
     <string name="calendar_placeholder_title">Symptoms &amp; Clinical Calendar</string>
