@@ -39,10 +39,12 @@ object MedicationNotificationHelper {
     const val EXTRA_REMINDER_ID = "extra_reminder_id"
     const val EXTRA_OVERRIDE_ID = "extra_override_id"
     const val EXTRA_ALARM_TYPE = "extra_alarm_type"
+    const val EXTRA_FOLLOW_UP_COUNT = "extra_follow_up_count"
 
     const val ALARM_TYPE_MAIN = "MAIN"
     const val ALARM_TYPE_SNOOZE = "SNOOZE"
     const val ALARM_TYPE_OVERRIDE = "OVERRIDE"
+    const val ALARM_TYPE_FOLLOW_UP = "FOLLOW_UP"
 
     const val ACTION_MARK_TAKEN = "com.example.healthlog.ACTION_MEDICATION_MARK_TAKEN"
     const val ACTION_SNOOZE = "com.example.healthlog.ACTION_MEDICATION_SNOOZE"
@@ -161,7 +163,8 @@ object MedicationNotificationHelper {
         notificationId: Int,
         scheduledDate: String? = null,
         reminderId: Long = notificationId.toLong(),
-        overrideId: Long = -1L
+        overrideId: Long = -1L,
+        isFollowUp: Boolean = false
     ) {
         createNotificationChannel(context)
 
@@ -219,7 +222,11 @@ object MedicationNotificationHelper {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val contentTitle = context.getString(R.string.notification_medication_title, medicationName)
+        val contentTitle = if (isFollowUp) {
+            context.getString(R.string.notification_medication_follow_up_title, medicationName)
+        } else {
+            context.getString(R.string.notification_medication_title, medicationName)
+        }
         val contentText = if (!instructions.isNullOrBlank()) {
             context.getString(R.string.notification_medication_text, dosage, unit, instructions)
         } else {

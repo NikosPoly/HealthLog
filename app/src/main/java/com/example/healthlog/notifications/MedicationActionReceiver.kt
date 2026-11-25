@@ -40,21 +40,10 @@ class MedicationActionReceiver : BroadcastReceiver() {
                 val scheduledDate = intent.getStringExtra(MedicationNotificationHelper.EXTRA_SCHEDULED_DATE)
                     ?: SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
 
-                // Cancel any pending snooze for this notification since it is now taken
-                val snoozeKey = if (notificationId != -1) notificationId else reminderId.toInt()
-                if (snoozeKey != -1) {
-                    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
-                    val snoozeIntent = Intent(context, MedicationAlarmReceiver::class.java)
-                    val snoozePendingIntent = android.app.PendingIntent.getBroadcast(
-                        context,
-                        snoozeKey + MedicationAlarmScheduler.SNOOZE_OFFSET,
-                        snoozeIntent,
-                        android.app.PendingIntent.FLAG_NO_CREATE or android.app.PendingIntent.FLAG_IMMUTABLE
-                    )
-                    if (snoozePendingIntent != null) {
-                        alarmManager.cancel(snoozePendingIntent)
-                        snoozePendingIntent.cancel()
-                    }
+                // Cancel any pending snooze or follow-up for this notification since it is now taken
+                val alertKey = if (notificationId != -1) notificationId else reminderId.toInt()
+                if (alertKey != -1) {
+                    MedicationAlarmScheduler.cancelActiveAlertsForNotification(context, alertKey)
                 }
 
                 val pendingResult = goAsync()

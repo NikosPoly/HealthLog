@@ -100,6 +100,7 @@
     <string name="notification_channel_medications_name">Υπενθυμίσεις Φαρμάκων</string>
     <string name="notification_channel_medications_desc">Ειδοποιήσεις και υπενθυμίσεις για τη λήψη των προγραμματισμένων φαρμάκων.</string>
     <string name="notification_medication_title">Ώρα για %1$s</string>
+    <string name="notification_medication_follow_up_title">Εκκρεμεί: %1$s</string>
     <string name="notification_medication_text">%1$s %2$s • %3$s</string>
     <string name="notification_medication_text_no_instructions">%1$s %2$s</string>
     <string name="notification_action_mark_taken">Ελήφθη</string>
