@@ -31,17 +31,25 @@
     <string name="medications_action_add">Προσθήκη Φαρμάκου</string>
     <string name="medications_action_edit">Επεξεργασία Φαρμάκου</string>
     <string name="medications_action_delete">Διαγραφή</string>
+    <string name="medications_action_delete_anyway">Διαγραφή ούτως ή άλλως</string>
     <string name="medications_delete_confirm_title">Διαγραφή Φαρμάκου;</string>
     <string name="medications_delete_confirm_desc">Είστε βέβαιοι ότι θέλετε να διαγράψετε το φάρμακο %1$s; Οι μελλοντικές υπενθυμίσεις θα καταργηθούν, ενώ το ιστορικό προηγούμενων λήψεων θα παραμείνει στο ημερολόγιο.</string>
+    <plurals name="medications_delete_unlogged_warning">
+        <item quantity="one">Αυτό το φάρμακο έχει επίσης %1$d προηγούμενη δόση χωρίς καταγραφή που θα διαγραφεί.</item>
+        <item quantity="other">Αυτό το φάρμακο έχει επίσης %1$d προηγούμενες δόσεις χωρίς καταγραφή που θα διαγραφούν.</item>
+    </plurals>
 
     <!-- Dose items -->
     <string name="dose_status_taken">Ελήφθη</string>
     <string name="dose_status_skipped">Παραλείφθηκε</string>
     <string name="dose_status_pending">Εκκρεμεί</string>
     <string name="dose_status_scheduled">Προγραμματισμένο</string>
+    <string name="dose_status_unlogged">Χωρίς καταγραφή</string>
     <string name="dose_moved_from">Μετακινήθηκε από %1$s</string>
     <string name="dose_action_mark_taken">Λήψη</string>
     <string name="dose_action_mark_skipped">Παράλειψη</string>
+    <string name="dose_action_switch_to_taken">Ως λήψη</string>
+    <string name="dose_action_switch_to_skipped">Ως παράλειψη</string>
     <string name="dose_action_undo">Αναίρεση</string>
     <string name="dose_quick_log">Γρήγορη Καταγραφή</string>
     <string name="dose_quick_log_desc">Καταγράψτε ένα φάρμακο που μόλις πήρατε εκτάκτως:</string>

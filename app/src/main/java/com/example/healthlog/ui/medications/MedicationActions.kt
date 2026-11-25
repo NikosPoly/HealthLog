@@ -142,6 +142,9 @@ object MedicationActions {
         doseItem: ScheduledDoseItem,
         status: String
     ) {
+        if (doseItem.doseLogId != null) {
+            repository.deleteDoseById(doseItem.doseLogId)
+        }
         repository.recordDose(
             medicationId = doseItem.medicationId,
             scheduledDate = doseItem.scheduledDate,

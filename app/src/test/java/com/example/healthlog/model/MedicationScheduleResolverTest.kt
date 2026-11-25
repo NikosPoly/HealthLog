@@ -420,4 +420,231 @@ class MedicationScheduleResolverTest {
         val nov24Doses = monthSummaries[today.plusDays(1)].orEmpty()
         assertTrue(nov24Doses.isEmpty())
     }
+
+    @Test
+    fun resolveForDate_unloggedPastLog_mapsToUnloggedAndSetsCanToggleStatus() {
+        val dailyMed = sampleMed(id = 1L, name = "Amlodipine")
+        val deletedDailyMed = MedicationWithReminders(
+            medication = Medication(
+                id = 2L,
+                name = "OldMed",
+                dosage = "10",
+                unit = "mg",
+                frequency = "DAILY",
+                isActive = false,
+                isDeleted = true
+            ),
+            reminders = emptyList()
+        )
+        val asNeededMed = MedicationWithReminders(
+            medication = Medication(
+                id = 3L,
+                name = "Ibuprofen",
+                dosage = "400",
+                unit = "mg",
+                frequency = "AS_NEEDED",
+                isActive = true
+            ),
+            reminders = emptyList()
+        )
+
+        val pastDate = today.minusDays(2)
+        val logs = listOf(
+            MedicationDoseLog(
+                id = 10L,
+                medicationId = 1L,
+                scheduledDate = pastDate.toString(),
+                scheduledTime = "08:00",
+                status = MedicationDoseLog.STATUS_UNLOGGED
+            ),
+            MedicationDoseLog(
+                id = 11L,
+                medicationId = 2L,
+                scheduledDate = pastDate.toString(),
+                scheduledTime = "09:00",
+                status = MedicationDoseLog.STATUS_TAKEN
+            ),
+            MedicationDoseLog(
+                id = 12L,
+                medicationId = 3L,
+                scheduledDate = pastDate.toString(),
+                scheduledTime = "14:00",
+                status = MedicationDoseLog.STATUS_TAKEN
+            )
+        )
+
+        val items = MedicationScheduleResolver.resolveForDate(
+            date = pastDate,
+            medicationsWithReminders = listOf(dailyMed, deletedDailyMed, asNeededMed),
+            doseLogs = logs,
+            overrides = emptyList(),
+            today = today,
+            zoneId = zone
+        )
+
+        assertEquals(3, items.size)
+
+        val unlogged = items.first { it.medicationId == 1L }
+        assertEquals(ScheduledDoseStatus.UNLOGGED, unlogged.status)
+        assertFalse(unlogged.isRecurring)
+        assertTrue(unlogged.canToggleStatus)
+        assertEquals(10L, unlogged.doseLogId)
+
+        val deletedDaily = items.first { it.medicationId == 2L }
+        assertEquals(ScheduledDoseStatus.TAKEN, deletedDaily.status)
+        assertTrue(deletedDaily.canToggleStatus)
+
+        val adHoc = items.first { it.medicationId == 3L }
+        assertEquals(ScheduledDoseStatus.TAKEN, adHoc.status)
+        assertFalse(adHoc.canToggleStatus)
+    }
+
+    @Test
+    fun findUnloggedPastDoses_sweepsMissingDays_respectsLogsOverridesAndPausedMeds() {
+        val activeMed = sampleMed(
+            id = 1L,
+            name = "Amlodipine",
+            createdDate = LocalDate.of(2026, 11, 20),
+            reminders = listOf(
+                MedicationReminder(
+                    id = 10L,
+                    medicationId = 1L,
+                    hour = 8,
+                    minute = 0,
+                    daysOfWeekMask = 127,
+                    isEnabled = true,
+                    startDate = "2026-11-20"
+                )
+            )
+        )
+        val pausedMed = sampleMed(
+            id = 2L,
+            name = "PausedMed",
+            isActive = false,
+            createdDate = LocalDate.of(2026, 11, 20),
+            reminders = listOf(
+                MedicationReminder(
+                    id = 20L,
+                    medicationId = 2L,
+                    hour = 9,
+                    minute = 0,
+                    daysOfWeekMask = 127,
+                    isEnabled = true,
+                    startDate = "2026-11-20"
+                )
+            )
+        )
+
+        // Nov 20: already TAKEN; Nov 21: CANCELLED override; Nov 22: RESCHEDULED to 10:30 (unlogged)
+        val existingLogs = listOf(
+            MedicationDoseLog(
+                id = 100L,
+                medicationId = 1L,
+                scheduledDate = "2026-11-20",
+                scheduledTime = "08:00",
+                status = MedicationDoseLog.STATUS_TAKEN
+            )
+        )
+        val overrides = listOf(
+            MedicationScheduleOverride(
+                id = 1L,
+                reminderId = 10L,
+                medicationId = 1L,
+                originalDate = "2026-11-21",
+                overrideType = MedicationScheduleOverride.TYPE_CANCELLED
+            ),
+            MedicationScheduleOverride(
+                id = 2L,
+                reminderId = 10L,
+                medicationId = 1L,
+                originalDate = "2026-11-22",
+                overrideType = MedicationScheduleOverride.TYPE_RESCHEDULED,
+                newHour = 10,
+                newMinute = 30
+            )
+        )
+
+        val result = MedicationScheduleResolver.findUnloggedPastDoses(
+            medicationsWithReminders = listOf(activeMed, pausedMed),
+            existingDoseLogs = existingLogs,
+            overrides = overrides,
+            today = today, // Nov 23
+            lastSweptDate = null,
+            zoneId = zone,
+            nowMillis = 999L
+        )
+
+        // Only Nov 22 at rescheduled 10:30 should be materialized; pausedMed emits nothing
+        assertEquals(1, result.size)
+        assertEquals(1L, result.single().medicationId)
+        assertEquals("2026-11-22", result.single().scheduledDate)
+        assertEquals("10:30", result.single().scheduledTime)
+        assertEquals(MedicationDoseLog.STATUS_UNLOGGED, result.single().status)
+
+        // Already swept through yesterday -> returns empty
+        val reswept = MedicationScheduleResolver.findUnloggedPastDoses(
+            medicationsWithReminders = listOf(activeMed, pausedMed),
+            existingDoseLogs = existingLogs,
+            overrides = overrides,
+            today = today,
+            lastSweptDate = today.minusDays(1),
+            zoneId = zone
+        )
+        assertTrue(reswept.isEmpty())
+    }
+
+    @Test
+    fun findUnloggedPastDoses_creationDayGuard_skipsEarlierSlotsAndKeepsLaterSlots() {
+        val createdDate = LocalDate.of(2026, 11, 21)
+        val createdAt1400 = createdDate.atTime(14, 0).atZone(zone).toInstant().toEpochMilli()
+
+        val med = MedicationWithReminders(
+            medication = Medication(
+                id = 5L,
+                name = "Metformin",
+                dosage = "500",
+                unit = "mg",
+                frequency = "DAILY",
+                isActive = true,
+                createdAt = createdAt1400
+            ),
+            reminders = listOf(
+                MedicationReminder(
+                    id = 50L,
+                    medicationId = 5L,
+                    hour = 8,
+                    minute = 0,
+                    daysOfWeekMask = 127,
+                    isEnabled = true,
+                    startDate = "2026-11-21"
+                ),
+                MedicationReminder(
+                    id = 51L,
+                    medicationId = 5L,
+                    hour = 22,
+                    minute = 0,
+                    daysOfWeekMask = 127,
+                    isEnabled = true,
+                    startDate = "2026-11-21"
+                )
+            )
+        )
+
+        val result = MedicationScheduleResolver.findUnloggedPastDoses(
+            medicationsWithReminders = listOf(med),
+            existingDoseLogs = emptyList(),
+            overrides = emptyList(),
+            today = today, // Nov 23 -> sweeps Nov 21 & Nov 22
+            lastSweptDate = null,
+            zoneId = zone
+        )
+
+        // Nov 21: 08:00 skipped (< 14:00 creation time), 22:00 swept
+        // Nov 22: both 08:00 and 22:00 swept
+        assertEquals(3, result.size)
+        assertFalse(result.any { it.scheduledDate == "2026-11-21" && it.scheduledTime == "08:00" })
+        assertTrue(result.any { it.scheduledDate == "2026-11-21" && it.scheduledTime == "22:00" })
+        assertTrue(result.any { it.scheduledDate == "2026-11-22" && it.scheduledTime == "08:00" })
+        assertTrue(result.any { it.scheduledDate == "2026-11-22" && it.scheduledTime == "22:00" })
+    }
 }

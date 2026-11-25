@@ -7,6 +7,8 @@ import com.example.healthlog.database.MedicationReminder
 import com.example.healthlog.database.MedicationScheduleOverride
 import com.example.healthlog.database.MedicationWithReminders
 import com.example.healthlog.repository.MedicationRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
@@ -150,6 +152,11 @@ class MedicationsViewModelTest {
             notifyChanges()
         }
 
+        override suspend fun deleteUnloggedDoseLogsForMedication(medicationId: Long) {
+            doseLogs.removeAll { it.medicationId == medicationId && it.status == MedicationDoseLog.STATUS_UNLOGGED }
+            notifyChanges()
+        }
+
         override fun getDoseLogsForDate(date: String): Flow<List<MedicationDoseLog>> {
             return doseLogsFlow.map { list -> list.filter { it.scheduledDate == date } }
         }
@@ -160,6 +167,10 @@ class MedicationsViewModelTest {
 
         override suspend fun getDoseLogCountForMedication(medicationId: Long): Int {
             return doseLogs.count { it.medicationId == medicationId }
+        }
+
+        override suspend fun getUnloggedDoseLogCountForMedication(medicationId: Long): Int {
+            return doseLogs.count { it.medicationId == medicationId && it.status == MedicationDoseLog.STATUS_UNLOGGED }
         }
 
         override fun getDoseLogsInDateRange(startDate: String, endDate: String): Flow<List<MedicationDoseLog>> {
@@ -200,7 +211,7 @@ class MedicationsViewModelTest {
         val fakeDao = FakeMedicationDao()
         val repository = MedicationRepository(fakeDao)
         val context = android.app.Application()
-        val viewModel = MedicationsViewModel(repository, context)
+        val viewModel = MedicationsViewModel(repository, context, CoroutineScope(Dispatchers.Unconfined))
 
         val med = MedicationWithReminders(
             medication = Medication(id = 1, name = "Aspirin", dosage = "100", unit = "mg", frequency = "DAILY"),
@@ -213,5 +224,52 @@ class MedicationsViewModelTest {
 
         viewModel.closeDeleteConfirmation()
         assertEquals(null, viewModel.deletingMedication.value)
+    }
+
+    @Test
+    fun openDeleteConfirmation_loadsUnloggedDoseCount_andResetsOnClose() {
+        val fakeDao = FakeMedicationDao()
+        fakeDao.doseLogs.add(
+            MedicationDoseLog(
+                id = 1,
+                medicationId = 1,
+                scheduledDate = "2026-11-20",
+                scheduledTime = "08:00",
+                status = MedicationDoseLog.STATUS_TAKEN
+            )
+        )
+        fakeDao.doseLogs.add(
+            MedicationDoseLog(
+                id = 2,
+                medicationId = 1,
+                scheduledDate = "2026-11-21",
+                scheduledTime = "08:00",
+                status = MedicationDoseLog.STATUS_UNLOGGED
+            )
+        )
+        fakeDao.doseLogs.add(
+            MedicationDoseLog(
+                id = 3,
+                medicationId = 1,
+                scheduledDate = "2026-11-22",
+                scheduledTime = "08:00",
+                status = MedicationDoseLog.STATUS_UNLOGGED
+            )
+        )
+
+        val repository = MedicationRepository(fakeDao)
+        val context = android.app.Application()
+        val viewModel = MedicationsViewModel(repository, context, CoroutineScope(Dispatchers.Unconfined))
+
+        val med = MedicationWithReminders(
+            medication = Medication(id = 1, name = "Aspirin", dosage = "100", unit = "mg", frequency = "DAILY"),
+            reminders = emptyList()
+        )
+
+        viewModel.openDeleteConfirmation(med)
+        assertEquals(2, viewModel.deletingMedicationUnloggedCount.value)
+
+        viewModel.closeDeleteConfirmation()
+        assertEquals(0, viewModel.deletingMedicationUnloggedCount.value)
     }
 }

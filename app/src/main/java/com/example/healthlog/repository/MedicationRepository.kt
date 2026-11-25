@@ -6,9 +6,14 @@ import com.example.healthlog.database.MedicationDoseLog
 import com.example.healthlog.database.MedicationReminder
 import com.example.healthlog.database.MedicationScheduleOverride
 import com.example.healthlog.database.MedicationWithReminders
+import com.example.healthlog.model.MedicationScheduleResolver
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.time.LocalDate
+import java.time.ZoneId
 
 class MedicationRepository(
     private val dao: MedicationDao
@@ -69,22 +74,76 @@ class MedicationRepository(
     }
 
     /**
-     * Removes a medication from the Medications cabinet and clears all its reminder schedules
-     * (and any associated per-day overrides).
+     * Removes a medication from the Medications cabinet, clears all its reminder schedules
+     * (and any associated per-day overrides), and deletes any unresolved `UNLOGGED` past rows.
      *
-     * - If the medication has any recorded dose logs (TAKEN or SKIPPED — whether from recurring
-     *   reminders or as-needed/one-time intakes), it is soft-deleted (`isActive = false`,
+     * - If the medication has any explicitly recorded dose logs (`TAKEN` or `SKIPPED` — whether
+     *   from recurring reminders or as-needed/one-time intakes), it is soft-deleted (`isActive = false`,
      *   `isDeleted = true`) so past dose history remains intact on the Calendar and Day Timeline.
-     * - If it has no recorded dose logs, the row is hard-deleted from the database.
+     * - If it has no remaining recorded dose logs, the row is hard-deleted from the database.
      */
     suspend fun deleteMedication(medication: Medication) {
         dao.deleteRemindersForMedication(medication.id)
+        dao.deleteUnloggedDoseLogsForMedication(medication.id)
         val doseLogCount = dao.getDoseLogCountForMedication(medication.id)
         if (doseLogCount > 0) {
             dao.updateMedication(medication.copy(isActive = false, isDeleted = true))
         } else {
             dao.deleteMedication(medication)
         }
+    }
+
+    suspend fun getUnloggedDoseLogCount(medicationId: Long): Int =
+        dao.getUnloggedDoseLogCountForMedication(medicationId)
+
+    /**
+     * Sweeps any un-swept past days up through `today - 1` and persists
+     * [MedicationDoseLog.STATUS_UNLOGGED] rows for active, non-deleted recurring reminders
+     * that were neither logged nor cancelled.
+     *
+     * Returns the new `lastSweptDate` (`today - 1` when swept, or [lastSweptDate] if already
+     * up to date) so callers can store it and avoid re-sweeping the same dates.
+     */
+    suspend fun sweepUnloggedPastDoses(
+        today: LocalDate = LocalDate.now(),
+        lastSweptDate: LocalDate? = null,
+        zoneId: ZoneId = ZoneId.systemDefault(),
+        nowMillis: Long = System.currentTimeMillis()
+    ): LocalDate = sweepMutex.withLock {
+        val yesterday = today.minusDays(1)
+        if (lastSweptDate != null && !lastSweptDate.isBefore(yesterday)) {
+            return@withLock lastSweptDate
+        }
+
+        val activeMeds = dao.getActiveMedicationsWithReminders().first()
+        val sweepStart = lastSweptDate?.plusDays(1)
+            ?: MedicationScheduleResolver.earliestActiveReminderStartDate(activeMeds, today, zoneId)
+            ?: return@withLock yesterday
+
+        if (sweepStart.isAfter(yesterday)) {
+            return@withLock yesterday
+        }
+
+        val startIso = sweepStart.toString()
+        val endIso = yesterday.toString()
+        val existingLogs = dao.getDoseLogsInDateRange(startIso, endIso).first()
+        val overrides = dao.getOverridesInDateRange(startIso, endIso).first()
+
+        val unloggedDoses = MedicationScheduleResolver.findUnloggedPastDoses(
+            medicationsWithReminders = activeMeds,
+            existingDoseLogs = existingLogs,
+            overrides = overrides,
+            today = today,
+            lastSweptDate = lastSweptDate,
+            zoneId = zoneId,
+            nowMillis = nowMillis
+        )
+
+        unloggedDoses.forEach { log ->
+            dao.insertDoseLog(log)
+        }
+
+        yesterday
     }
 
     fun getDoseLogsForDate(date: String): Flow<List<MedicationDoseLog>> =
@@ -289,5 +348,9 @@ class MedicationRepository(
             dao.updateReminder(capped)
             capped
         }
+    }
+
+    companion object {
+        private val sweepMutex = Mutex()
     }
 }

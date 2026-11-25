@@ -998,6 +998,7 @@ private fun ScheduledDoseDayItemCard(
         ScheduledDoseStatus.TAKEN -> takenGreen
         ScheduledDoseStatus.SKIPPED -> MaterialTheme.colorScheme.error
         ScheduledDoseStatus.PENDING -> MaterialTheme.colorScheme.primary
+        ScheduledDoseStatus.UNLOGGED -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     Card(
@@ -1156,6 +1157,59 @@ private fun ScheduledDoseDayItemCard(
                     }
                 }
 
+                ScheduledDoseStatus.UNLOGGED -> {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant
+                        ) {
+                            Text(
+                                text = stringResource(R.string.dose_status_unlogged),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            OutlinedButton(
+                                onClick = onMarkSkipped,
+                                shape = RoundedCornerShape(10.dp),
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
+                                modifier = Modifier.height(34.dp)
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.dose_action_mark_skipped),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Button(
+                                onClick = onMarkTaken,
+                                shape = RoundedCornerShape(10.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = takenGreen,
+                                    contentColor = Color.White
+                                ),
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                                modifier = Modifier.height(34.dp)
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.dose_action_mark_taken),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        }
+                    }
+                }
+
                 ScheduledDoseStatus.TAKEN, ScheduledDoseStatus.SKIPPED -> {
                     val isTaken = dose.status == ScheduledDoseStatus.TAKEN
                     val statusText = stringResource(
@@ -1198,6 +1252,24 @@ private fun ScheduledDoseDayItemCard(
                             ) {
                                 Text(
                                     text = stringResource(R.string.dose_action_undo),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        } else if (dose.canToggleStatus) {
+                            TextButton(
+                                onClick = if (isTaken) onMarkSkipped else onMarkTaken,
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                                modifier = Modifier.height(32.dp)
+                            ) {
+                                Text(
+                                    text = stringResource(
+                                        if (isTaken) {
+                                            R.string.dose_action_switch_to_skipped
+                                        } else {
+                                            R.string.dose_action_switch_to_taken
+                                        }
+                                    ),
                                     style = MaterialTheme.typography.labelMedium,
                                     fontWeight = FontWeight.SemiBold
                                 )

@@ -125,11 +125,11 @@ The app is available in Greek and English.
 - **Health Calendar & 24-Hour Day Timeline:**
   - **Interactive monthly grid:** month overview with weekday headers, previous/next chevron navigation, and a clickable month/year header with a 4×3 grid dialog to jump to any month and year.
   - **Today quick-jump:** one-tap top bar action returning instantly to the current month and today's date.
-  - **Category indicator dots:** distinct dots under each calendar day matching the legend (🟢 Vitals, 🟠 Symptoms, 🔵 Medications taken), preserved with high contrast on selected days.
+  - **Category indicator dots:** distinct dots under each calendar day matching the legend (🟢 Vitals, 🟠 Symptoms, 🔵 Medications), preserved with high contrast on selected days.
   - **Day summary card:** selecting a calendar day displays its quick event summary with scheduled medication doses, allowing instant Take, Skip, Move Time, and Delete actions, plus a "Full Day" button to open the detailed timeline.
   - **24-Hour Day Timeline Screen (`DayTimelineScreen`):**
     - **Hour-by-hour view (00:00 to 23:00):** chronologically groups all daily events (vitals, symptoms, medication doses) into hour slots. Empty slots can be collapsed or expanded, with a `+` action on any slot to log a symptom or medication directly at that specific hour.
-    - **Interactive medication dose cards:** displays medication name, dosage, scheduled time, and status badge (Pending, Taken, Skipped). Users can mark as Taken or Skipped directly. Recurring doses support Undo (reverting status to Pending). One-time doses hide the Undo button and show a direct Delete (trash bin) action.
+    - **Interactive medication dose cards:** displays medication name, dosage, scheduled time, and status badge (Pending, Taken, Skipped, Unlogged). Users can mark as Taken or Skipped directly. Today's recurring doses support Undo (reverting status to Pending). Past Unlogged doses show Take and Skip buttons, and past Taken/Skipped doses of scheduled medications show a one-tap **Mark taken** / **Mark skipped** switch instead of Undo. One-time and as-needed doses hide Undo and show a direct Delete (trash bin) action.
     - **Move Time dialog:** reschedule a dose to a new hour and minute, with a scope dialog for recurring medications ("This day only" vs. "This and all future days").
     - **Delete Dose dialog:** remove a scheduled dose, with scope selection for recurring medications ("This day only" vs. "This and all future days").
     - **Read-only vital cards:** formatted measurement values, timestamps, and multi-colored metric icons (`MeasurementType.icon`), filtering out companion pulse records from blood pressure measurements. Tapping navigates to full measurement details.
@@ -139,7 +139,8 @@ The app is available in Greek and English.
   - **Symptom logging modal sheet:** quick-access sheet to log symptoms with predefined chips (Headache, Dizziness, Palpitations, Chest Discomfort, Shortness of Breath, Fatigue, Nausea) or custom symptom input, live 1–5 severity slider with descriptive badges, Material date/time picker, and optional notes.
 - **Medication tracking & offline local reminders:**
   - **My Medicines:** unified single-screen management of active recurring prescriptions and as-needed / one-time medications.
-  - **Soft-delete history preservation:** deleting a prescription removes it from future schedules and stops alarms, but preserves all past intake logs (`isDeleted = true`) in the calendar and timeline history.
+  - **Soft-delete history preservation:** deleting a prescription removes it from future schedules, stops alarms, and removes its Unlogged past doses, while preserving all Taken and Skipped intake logs (`isDeleted = true`) in the calendar and timeline history. If the medicine has unlogged past doses, the delete dialog warns with their exact count and the confirm button reads **Delete anyway**.
+  - **Unlogged past doses:** whenever the app opens, recurring reminder slots from past days that were never marked Taken or Skipped are saved as **Unlogged** dose logs (each past day is checked only once). The check respects paused medicines, per-day moves and cancellations, start/end dates, and skips slots that had already passed when the medicine was created. Unlogged doses stay on the calendar and timeline, ready to be marked Taken or Skipped (or deleted individually), for as long as the medicine exists.
   - **Medication Schedule Resolver:** computes daily scheduled doses based on start/end date bounds, recurrence frequency, and per-day overrides.
   - **As-needed & one-time medication logging:** dedicated quick-entry flow for symptomatic or ad-hoc medication intake directly from prescriptions or the form sheet.
   - **Offline AlarmManager notifications:** scheduled via Android `AlarmManager` (`SCHEDULE_EXACT_ALARM`) with high-priority heads-up notifications and instant *Mark as Taken* actions, requiring zero cloud services or battery-draining polling.
@@ -288,14 +289,14 @@ There are two kinds of tests:
 - `ExportConfigPdfTest`: PDF export configuration defaults and date range filtering
 - `CsvReportGeneratorTest`: RFC 4180 CSV escaping (commas, quotes, newlines) and multi-metric filtering
 - `TimeAgoTest`: the "time ago" of the last measurement (hours, yesterday, days, months, years)
-- `MedicationScheduleResolverTest`: daily schedule resolution, interval calculations, start/end date bounds, per-day move/delete overrides, and soft-delete dose history preservation
-- `MedicationsViewModelTest`: active prescriptions list, add/edit sheet open/close state, one-time medications, and delete confirmation modal state
+- `MedicationScheduleResolverTest`: daily schedule resolution, interval calculations, start/end date bounds, per-day move/delete overrides, soft-delete dose history preservation, Unlogged status mapping and past Taken/Skipped switch eligibility, and the unlogged past dose sweep (logged slots, cancelled/moved overrides, paused medicines, already-swept days, creation-day guard)
+- `MedicationsViewModelTest`: active prescriptions list, add/edit sheet open/close state, one-time medications, and delete confirmation modal state with the unlogged past dose count
 - `MedicationAlarmSchedulerTest`: exact alarm computation, intent extras, reminder date bounds, and cancellation logic
-- `MedicationRepositoryTest`: database queries for medications, reminders, soft-delete dose history preservation, and dose logs
+- `MedicationRepositoryTest`: database queries for medications, reminders, soft-delete dose history preservation, dropping Unlogged doses on delete while keeping Taken/Skipped, the unlogged past dose sweep (no re-creation after manual deletion), and dose logs
 - `SymptomDomainTest`: symptom type enum matching and 1–5 severity level mapping with graceful fallbacks
 - `SymptomRepositoryTest`: symptom insertion, updates, range queries, and ID deletion
 - `CalendarAggregatorTest`: monthly event aggregation, ISO date string parsing, companion pulse deduplication from blood pressure, and multi-metric clinical rank evaluation
-- `CalendarViewModelTest`: month navigation, Month/Year dialog selection with day-clamping, jump to today, scheduled doses resolution, and symptom CRUD workflows
+- `CalendarViewModelTest`: month navigation, Month/Year dialog selection with day-clamping, jump to today, scheduled doses resolution, symptom CRUD workflows, and resolving a past Unlogged dose then switching it between Taken and Skipped
 - `DayTimelineViewModelTest`: 24-hour hour slot grouping, event filtering (All, Vitals, Medications, Symptoms), move/delete dose scoping, and slot-directed logging
 - `LocalizationParityTest`: programmatic verification of 100% string and plural parity between `values/strings.xml` and `values-el/strings.xml`
 
@@ -311,8 +312,8 @@ There are two kinds of tests:
 - `MeasurementDetailsScreenTest`: the details screen layout, clinical condition tags, back navigation and deletion
 - `MeasurementGuideScreenTest`: the educational guide screen, tabs, doctor speech bubble cards, and back navigation
 - `MedicationsUiTest`: medication management UI: My Prescriptions list, one-time medication chips, and add/edit medication sheet validation
-- `CalendarUiTest`: health calendar UI: month navigation, Month/Year picker grid dialog, Today quick-jump, day summary with scheduled doses (Take, Skip, Move, Delete), symptom creation sheet, custom name validation, and deletion dialog
-- `DayTimelineUiTest`: 24-hour day timeline UI: header navigation and Today jump, interactive medication take/skip actions, one-time dose delete action without undo, move/delete scope dialogs, symptom sheet integration, and Greek localization parity
+- `CalendarUiTest`: health calendar UI: month navigation, Month/Year picker grid dialog, Today quick-jump, day summary with scheduled doses (Take, Skip, Move, Delete), past Unlogged badge with Take/Skip, past Mark taken / Mark skipped switch without Undo, symptom creation sheet, custom name validation, and deletion dialog
+- `DayTimelineUiTest`: 24-hour day timeline UI: header navigation and Today jump, interactive medication take/skip actions, one-time dose delete action without undo, past Unlogged dose card actions, past Mark skipped switch without Undo, move/delete scope dialogs, symptom sheet integration, and Greek localization parity
 - `BottomNavigationUiTest`: bottom navigation bar tab switching (Vitals, Medications, Calendar) and placeholder screen verification
 
 To run them:
@@ -336,7 +337,7 @@ Measurements are stored locally with Room. The database is currently at **versio
 - **Version 4 → 5 (`MIGRATION_4_5`):** Added medication management and symptom tracking tables:
   - `medications`: stores active, archived, and soft-deleted prescriptions (`id`, `name`, `dosage`, `unit`, `frequency`, `instructions`, `isActive`, `isDeleted`, `createdAt`).
   - `medication_reminders`: stores recurring daily reminder alarms (`id`, `medicationId`, `hour`, `minute`, `daysOfWeekMask`, `isEnabled`, `startDate`, `endDate`) with cascading foreign key delete on `medicationId`.
-  - `medication_dose_logs`: stores intake history and overrides (`id`, `medicationId`, `reminderId`, `scheduledDate`, `scheduledTime`, `status`, `actionTimestamp`).
+  - `medication_dose_logs`: stores intake history (`id`, `medicationId`, `scheduledDate`, `scheduledTime`, `actionTimestamp`, `status`, `notes`). `status` is `TAKEN`, `SKIPPED`, or `UNLOGGED` (unresolved past recurring doses); `UNLOGGED` is a plain text value, so it was added without a schema change or migration.
   - `symptoms`: stores logged symptoms (`id`, `symptomType`, `customName`, `severity`, `timestamp`, `notes`) with an index on `timestamp` for fast date-range queries.
 
 Any change to what is stored needs a database migration in `HealthDatabase.kt`, for example:

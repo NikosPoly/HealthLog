@@ -69,6 +69,9 @@ interface MedicationDao {
     @Query("DELETE FROM medication_dose_logs WHERE medicationId = :medicationId AND scheduledDate = :date AND scheduledTime = :time")
     suspend fun deleteDoseLog(medicationId: Long, date: String, time: String)
 
+    @Query("DELETE FROM medication_dose_logs WHERE medicationId = :medicationId AND status = 'UNLOGGED'")
+    suspend fun deleteUnloggedDoseLogsForMedication(medicationId: Long)
+
     @Query("SELECT * FROM medication_dose_logs WHERE scheduledDate = :date")
     fun getDoseLogsForDate(date: String): Flow<List<MedicationDoseLog>>
 
@@ -77,6 +80,9 @@ interface MedicationDao {
 
     @Query("SELECT COUNT(*) FROM medication_dose_logs WHERE medicationId = :medicationId")
     suspend fun getDoseLogCountForMedication(medicationId: Long): Int
+
+    @Query("SELECT COUNT(*) FROM medication_dose_logs WHERE medicationId = :medicationId AND status = 'UNLOGGED'")
+    suspend fun getUnloggedDoseLogCountForMedication(medicationId: Long): Int
 
     // All dose logs within inclusive ISO-8601 calendar dates [startDate, endDate].
     @Query(

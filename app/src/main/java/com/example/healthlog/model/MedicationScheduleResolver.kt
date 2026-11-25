@@ -14,7 +14,8 @@ import java.util.Locale
 enum class ScheduledDoseStatus {
     PENDING,
     TAKEN,
-    SKIPPED
+    SKIPPED,
+    UNLOGGED
 }
 
 data class ScheduledDoseItem(
@@ -29,6 +30,7 @@ data class ScheduledDoseItem(
     val minute: Int,
     val status: ScheduledDoseStatus,
     val isRecurring: Boolean,
+    val canToggleStatus: Boolean = false,
     val reminderId: Long? = null,
     val overrideId: Long? = null,
     val originalTime: String? = null,
@@ -151,8 +153,9 @@ object MedicationScheduleResolver {
                         }
 
                         val status = when (matchingLog?.status) {
-                            "TAKEN" -> ScheduledDoseStatus.TAKEN
-                            "SKIPPED" -> ScheduledDoseStatus.SKIPPED
+                            MedicationDoseLog.STATUS_TAKEN -> ScheduledDoseStatus.TAKEN
+                            MedicationDoseLog.STATUS_SKIPPED -> ScheduledDoseStatus.SKIPPED
+                            MedicationDoseLog.STATUS_UNLOGGED -> ScheduledDoseStatus.UNLOGGED
                             else -> ScheduledDoseStatus.PENDING
                         }
 
@@ -169,6 +172,7 @@ object MedicationScheduleResolver {
                                 minute = effectiveMinute,
                                 status = status,
                                 isRecurring = true,
+                                canToggleStatus = true,
                                 reminderId = reminder.id,
                                 overrideId = if (isRescheduled) override?.id else null,
                                 originalTime = if (isRescheduled) baseTime else null,
@@ -179,16 +183,16 @@ object MedicationScheduleResolver {
                 }
         }
 
-        // Append any remaining dose logs (one-timers, as-needed doses, past records, or logs of paused meds)
+        // Append any remaining dose logs (one-timers, as-needed doses, past records, or logs of paused/deleted meds)
         dayLogs
             .filter { it.id !in consumedLogIds }
             .forEach { log ->
                 val med = medMap[log.medicationId]?.medication
                 val (hour, minute) = parseTimeOrNull(log.scheduledTime) ?: (0 to 0)
-                val status = if (log.status == "SKIPPED") {
-                    ScheduledDoseStatus.SKIPPED
-                } else {
-                    ScheduledDoseStatus.TAKEN
+                val status = when (log.status) {
+                    MedicationDoseLog.STATUS_SKIPPED -> ScheduledDoseStatus.SKIPPED
+                    MedicationDoseLog.STATUS_UNLOGGED -> ScheduledDoseStatus.UNLOGGED
+                    else -> ScheduledDoseStatus.TAKEN
                 }
                 result.add(
                     ScheduledDoseItem(
@@ -203,6 +207,7 @@ object MedicationScheduleResolver {
                         minute = minute,
                         status = status,
                         isRecurring = false,
+                        canToggleStatus = med?.frequency == "DAILY",
                         reminderId = null,
                         overrideId = null,
                         originalTime = null,
@@ -243,5 +248,133 @@ object MedicationScheduleResolver {
             )
         }
         return result
+    }
+
+    /**
+     * Returns the earliest calendar date from which active recurring reminders could have
+     * unlogged past slots, or `null` if there are no active enabled reminders with dates
+     * strictly before [today].
+     */
+    fun earliestActiveReminderStartDate(
+        medicationsWithReminders: List<MedicationWithReminders>,
+        today: LocalDate = LocalDate.now(),
+        zoneId: ZoneId = ZoneId.systemDefault()
+    ): LocalDate? {
+        val yesterday = today.minusDays(1)
+        return medicationsWithReminders
+            .asSequence()
+            .filter { it.medication.isActive && !it.medication.isDeleted }
+            .flatMap { medWithReminders ->
+                val createdDate = Instant.ofEpochMilli(medWithReminders.medication.createdAt)
+                    .atZone(zoneId)
+                    .toLocalDate()
+                medWithReminders.reminders
+                    .asSequence()
+                    .filter { it.isEnabled }
+                    .map { reminder -> parseIsoDateOrNull(reminder.startDate) ?: createdDate }
+            }
+            .filter { !it.isAfter(yesterday) }
+            .minOrNull()
+    }
+
+    /**
+     * Computes which past recurring reminder slots from `[sweepStart, today - 1]` have no
+     * persisted dose log and were not cancelled by a single-day override, returning
+     * [MedicationDoseLog.STATUS_UNLOGGED] rows ready to be inserted.
+     *
+     * - If [lastSweptDate] is on or after `today - 1`, returns an empty list.
+     * - If [lastSweptDate] is `null`, sweeps from [earliestActiveReminderStartDate] through `today - 1`.
+     * - Creation-day guard: if a slot falls on the medication's creation date (`createdAt` in [zoneId])
+     *   and its un-overridden scheduled time is strictly earlier than `createdAt`'s time of day,
+     *   it is skipped so adding a morning reminder in the evening never creates a false unlogged entry.
+     */
+    fun findUnloggedPastDoses(
+        medicationsWithReminders: List<MedicationWithReminders>,
+        existingDoseLogs: List<MedicationDoseLog>,
+        overrides: List<MedicationScheduleOverride>,
+        today: LocalDate = LocalDate.now(),
+        lastSweptDate: LocalDate? = null,
+        zoneId: ZoneId = ZoneId.systemDefault(),
+        nowMillis: Long = System.currentTimeMillis()
+    ): List<MedicationDoseLog> {
+        val yesterday = today.minusDays(1)
+        if (lastSweptDate != null && !lastSweptDate.isBefore(yesterday)) {
+            return emptyList()
+        }
+
+        val activeMeds = medicationsWithReminders.filter {
+            it.medication.isActive && !it.medication.isDeleted
+        }
+        if (activeMeds.isEmpty()) return emptyList()
+
+        val sweepStart = lastSweptDate?.plusDays(1)
+            ?: earliestActiveReminderStartDate(activeMeds, today, zoneId)
+            ?: return emptyList()
+
+        if (sweepStart.isAfter(yesterday)) return emptyList()
+
+        val existingKeys = existingDoseLogs
+            .map { Triple(it.medicationId, it.scheduledDate, it.scheduledTime) }
+            .toMutableSet()
+
+        val overridesByReminderAndDate = overrides.associateBy {
+            it.reminderId to it.originalDate
+        }
+
+        val toInsert = mutableListOf<MedicationDoseLog>()
+        var date = sweepStart
+        while (!date.isAfter(yesterday)) {
+            val dateIso = date.toString()
+
+            activeMeds.forEach { medWithReminders ->
+                val med = medWithReminders.medication
+                val createdZdt = Instant.ofEpochMilli(med.createdAt).atZone(zoneId)
+                val createdDate = createdZdt.toLocalDate()
+                val createdMinutes = createdZdt.hour * 60 + createdZdt.minute
+
+                medWithReminders.reminders.forEach { reminder ->
+                    if (!isReminderActiveOnDate(reminder, med.createdAt, date, zoneId)) {
+                        return@forEach
+                    }
+
+                    val override = overridesByReminderAndDate[reminder.id to dateIso]
+                    if (override?.overrideType == MedicationScheduleOverride.TYPE_CANCELLED) {
+                        return@forEach
+                    }
+
+                    val rescheduledHour = if (override?.overrideType == MedicationScheduleOverride.TYPE_RESCHEDULED) override.newHour else null
+                    val rescheduledMinute = if (override?.overrideType == MedicationScheduleOverride.TYPE_RESCHEDULED) override.newMinute else null
+                    val isRescheduled = rescheduledHour != null && rescheduledMinute != null
+                    val effectiveHour = rescheduledHour ?: reminder.hour
+                    val effectiveMinute = rescheduledMinute ?: reminder.minute
+
+                    // Skip creation-day slots whose scheduled time had already passed when the med was created
+                    if (!isRescheduled && date == createdDate) {
+                        val slotMinutes = effectiveHour * 60 + effectiveMinute
+                        if (slotMinutes < createdMinutes) {
+                            return@forEach
+                        }
+                    }
+
+                    val effectiveTime = formatTime(effectiveHour, effectiveMinute)
+                    val key = Triple(med.id, dateIso, effectiveTime)
+                    if (existingKeys.add(key)) {
+                        toInsert.add(
+                            MedicationDoseLog(
+                                medicationId = med.id,
+                                scheduledDate = dateIso,
+                                scheduledTime = effectiveTime,
+                                actionTimestamp = nowMillis,
+                                status = MedicationDoseLog.STATUS_UNLOGGED
+                            )
+                        )
+                    }
+                }
+            }
+
+            date = date.plusDays(1)
+        }
+
+        return toInsert
     }
 }

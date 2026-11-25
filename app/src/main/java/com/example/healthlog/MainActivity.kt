@@ -16,6 +16,7 @@ import com.example.healthlog.repository.MedicationRepository
 import com.example.healthlog.ui.HealthLogNavHost
 import com.example.healthlog.ui.theme.HealthLogTheme
 
+import com.example.healthlog.model.MedicationScheduleResolver
 import com.example.healthlog.notifications.MedicationAlarmScheduler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -72,9 +73,23 @@ class MainActivity : ComponentActivity() {
         // - If notifications are enabled: ensure all active medications have their alarms scheduled.
         val notificationsEnabled = MedicationNotificationHelper.areNotificationsEnabled(this)
         val db = HealthDatabase.getDatabase(applicationContext)
+        val prefs = getSharedPreferences("app_settings", MODE_PRIVATE)
 
         CoroutineScope(Dispatchers.IO).launch {
             val dao = db.medicationDao()
+            val medicationRepository = MedicationRepository(dao)
+
+            // Materialize any unlogged past recurring reminder slots up through yesterday
+            val lastSweptDate = MedicationScheduleResolver.parseIsoDateOrNull(
+                prefs.getString(KEY_LAST_UNLOGGED_DOSE_SWEEP_DATE, null)
+            )
+            val newSweptDate = medicationRepository.sweepUnloggedPastDoses(
+                lastSweptDate = lastSweptDate
+            )
+            if (newSweptDate != lastSweptDate) {
+                prefs.edit().putString(KEY_LAST_UNLOGGED_DOSE_SWEEP_DATE, newSweptDate.toString()).apply()
+            }
+
             val activeMeds = dao.getActiveMedicationsWithReminders().first()
             activeMeds.forEach { medWithReminders ->
                 if (medWithReminders.medication.frequency == "DAILY") {
@@ -98,5 +113,9 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    companion object {
+        private const val KEY_LAST_UNLOGGED_DOSE_SWEEP_DATE = "last_unlogged_dose_sweep_date"
     }
 }

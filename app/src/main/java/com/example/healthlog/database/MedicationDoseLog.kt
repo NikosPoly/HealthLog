@@ -35,9 +35,15 @@ data class MedicationDoseLog(
     // Timestamp when the action was recorded (taken or skipped).
     val actionTimestamp: Long = System.currentTimeMillis(),
 
-    // Status: "TAKEN" or "SKIPPED".
+    // Status: "TAKEN", "SKIPPED", or "UNLOGGED".
     val status: String,
 
     // Optional user note for this dose.
     val notes: String? = null
-)
+) {
+    companion object {
+        const val STATUS_TAKEN = "TAKEN"
+        const val STATUS_SKIPPED = "SKIPPED"
+        const val STATUS_UNLOGGED = "UNLOGGED"
+    }
+}

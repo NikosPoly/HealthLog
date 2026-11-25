@@ -11,6 +11,7 @@ import com.example.healthlog.model.ScheduledDoseItem
 import com.example.healthlog.notifications.MedicationAlarmScheduler
 import com.example.healthlog.notifications.MedicationNotificationHelper
 import com.example.healthlog.repository.MedicationRepository
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -29,14 +30,20 @@ import java.util.Locale
 
 class MedicationsViewModel(
     private val repository: MedicationRepository,
-    private val appContext: Context
+    private val appContext: Context,
+    private val coroutineScope: CoroutineScope? = null
 ) : ViewModel() {
+
+    private val scope: CoroutineScope get() = coroutineScope ?: viewModelScope
 
     private val _editingMedication = MutableStateFlow<MedicationWithReminders?>(null)
     val editingMedication: StateFlow<MedicationWithReminders?> = _editingMedication.asStateFlow()
 
     private val _deletingMedication = MutableStateFlow<MedicationWithReminders?>(null)
     val deletingMedication: StateFlow<MedicationWithReminders?> = _deletingMedication.asStateFlow()
+
+    private val _deletingMedicationUnloggedCount = MutableStateFlow(0)
+    val deletingMedicationUnloggedCount: StateFlow<Int> = _deletingMedicationUnloggedCount.asStateFlow()
 
     private val _isAddSheetOpen = MutableStateFlow(false)
     val isAddSheetOpen: StateFlow<Boolean> = _isAddSheetOpen.asStateFlow()
@@ -48,7 +55,7 @@ class MedicationsViewModel(
 
     val allMedications: StateFlow<List<MedicationWithReminders>> =
         repository.visibleMedications.stateIn(
-            scope = viewModelScope,
+            scope = scope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
@@ -68,7 +75,7 @@ class MedicationsViewModel(
                 today = today
             )
         }.stateIn(
-            scope = viewModelScope,
+            scope = scope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
@@ -189,17 +196,26 @@ class MedicationsViewModel(
     }
 
     fun openDeleteConfirmation(medicationWithReminders: MedicationWithReminders) {
+        _deletingMedicationUnloggedCount.value = 0
         _deletingMedication.value = medicationWithReminders
+        scope.launch {
+            val count = repository.getUnloggedDoseLogCount(medicationWithReminders.medication.id)
+            if (_deletingMedication.value?.medication?.id == medicationWithReminders.medication.id) {
+                _deletingMedicationUnloggedCount.value = count
+            }
+        }
     }
 
     fun closeDeleteConfirmation() {
         _deletingMedication.value = null
+        _deletingMedicationUnloggedCount.value = 0
     }
 
     fun confirmDelete() {
         val item = _deletingMedication.value ?: return
         deleteMedication(item)
         _deletingMedication.value = null
+        _deletingMedicationUnloggedCount.value = 0
     }
 
     fun deleteMedication(medicationWithReminders: MedicationWithReminders) {

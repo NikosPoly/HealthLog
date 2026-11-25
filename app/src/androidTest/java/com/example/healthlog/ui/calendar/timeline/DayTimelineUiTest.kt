@@ -521,4 +521,134 @@ class DayTimelineUiTest {
         composeRule.onNodeWithContentDescription(greekContext.getString(R.string.dose_action_move_time)).assertIsDisplayed()
         composeRule.onNodeWithContentDescription(greekContext.getString(R.string.dose_action_delete)).assertIsDisplayed()
     }
+
+    @Test
+    fun dayTimelineContent_pastUnloggedDose_rendersUnloggedBadgeAndActions() {
+        val today = LocalDate.of(2026, 11, 20)
+        val pastDate = LocalDate.of(2026, 11, 18)
+        val unloggedDose = ScheduledDoseItem(
+            medicationId = 20L,
+            medicationName = "Amlodipine",
+            dosage = "5",
+            unit = "mg",
+            instructions = null,
+            scheduledDate = pastDate.toString(),
+            scheduledTime = "08:00",
+            hour = 8,
+            minute = 0,
+            status = ScheduledDoseStatus.UNLOGGED,
+            isRecurring = false,
+            canToggleStatus = true,
+            doseLogId = 300L
+        )
+        val slot = TimelineHourSlot(
+            hour = 8,
+            timeLabel = "08:00",
+            events = listOf(TimelineEvent.Medication(unloggedDose, 8, 0, "08:00"))
+        )
+
+        var takenDose: ScheduledDoseItem? = null
+        var skippedDose: ScheduledDoseItem? = null
+
+        composeRule.setContent {
+            HealthLogTheme {
+                DayTimelineContent(
+                    uiState = DayTimelineUiState(
+                        selectedDate = pastDate,
+                        hourSlots = listOf(slot)
+                    ),
+                    onBack = {},
+                    onPreviousDay = {},
+                    onNextDay = {},
+                    onJumpToToday = {},
+                    onSelectFilter = {},
+                    onMarkDoseTaken = { takenDose = it },
+                    onMarkDoseSkipped = { skippedDose = it },
+                    onUndoDose = {},
+                    onOpenEditSymptom = {},
+                    onDismissAddEditSymptomSheet = {},
+                    onSaveSymptom = { _, _, _, _, _ -> },
+                    onRequestDeleteSymptom = {},
+                    onConfirmDeleteSymptom = {},
+                    onDismissDeleteDialog = {},
+                    onOpenMeasurementDetails = {},
+                    today = today
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("Amlodipine").assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.dose_status_unlogged)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.dose_action_mark_taken))
+            .assertIsDisplayed()
+            .performClick()
+        assertEquals(unloggedDose, takenDose)
+
+        composeRule.onNodeWithText(context.getString(R.string.dose_action_mark_skipped))
+            .assertIsDisplayed()
+            .performClick()
+        assertEquals(unloggedDose, skippedDose)
+    }
+
+    @Test
+    fun dayTimelineContent_pastScheduledTakenDose_rendersMarkSkippedSwitchWithoutUndo() {
+        val today = LocalDate.of(2026, 11, 20)
+        val pastDate = LocalDate.of(2026, 11, 18)
+        val takenDose = ScheduledDoseItem(
+            medicationId = 21L,
+            medicationName = "Metformin",
+            dosage = "500",
+            unit = "mg",
+            instructions = null,
+            scheduledDate = pastDate.toString(),
+            scheduledTime = "08:00",
+            hour = 8,
+            minute = 0,
+            status = ScheduledDoseStatus.TAKEN,
+            isRecurring = false,
+            canToggleStatus = true,
+            doseLogId = 301L
+        )
+        val slot = TimelineHourSlot(
+            hour = 8,
+            timeLabel = "08:00",
+            events = listOf(TimelineEvent.Medication(takenDose, 8, 0, "08:00"))
+        )
+
+        var switchedToSkipped: ScheduledDoseItem? = null
+
+        composeRule.setContent {
+            HealthLogTheme {
+                DayTimelineContent(
+                    uiState = DayTimelineUiState(
+                        selectedDate = pastDate,
+                        hourSlots = listOf(slot)
+                    ),
+                    onBack = {},
+                    onPreviousDay = {},
+                    onNextDay = {},
+                    onJumpToToday = {},
+                    onSelectFilter = {},
+                    onMarkDoseTaken = {},
+                    onMarkDoseSkipped = { switchedToSkipped = it },
+                    onUndoDose = {},
+                    onOpenEditSymptom = {},
+                    onDismissAddEditSymptomSheet = {},
+                    onSaveSymptom = { _, _, _, _, _ -> },
+                    onRequestDeleteSymptom = {},
+                    onConfirmDeleteSymptom = {},
+                    onDismissDeleteDialog = {},
+                    onOpenMeasurementDetails = {},
+                    today = today
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("Metformin").assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.dose_action_undo)).assertDoesNotExist()
+        composeRule.onNodeWithText(context.getString(R.string.dose_action_switch_to_skipped))
+            .assertIsDisplayed()
+            .performClick()
+        assertEquals(takenDose, switchedToSkipped)
+    }
 }

@@ -13,10 +13,11 @@ class TodayDoseScheduleTest {
 
     @Test
     fun scheduledDoseStatus_valuesAreCorrect() {
-        assertEquals(3, ScheduledDoseStatus.entries.size)
+        assertEquals(4, ScheduledDoseStatus.entries.size)
         assertTrue(ScheduledDoseStatus.entries.contains(ScheduledDoseStatus.PENDING))
         assertTrue(ScheduledDoseStatus.entries.contains(ScheduledDoseStatus.TAKEN))
         assertTrue(ScheduledDoseStatus.entries.contains(ScheduledDoseStatus.SKIPPED))
+        assertTrue(ScheduledDoseStatus.entries.contains(ScheduledDoseStatus.UNLOGGED))
     }
 
     @Test

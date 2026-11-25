@@ -708,4 +708,156 @@ class CalendarUiTest {
         // Undo button does NOT exist for one-time medicine
         composeRule.onNodeWithText(context.getString(R.string.dose_action_undo)).assertDoesNotExist()
     }
+
+    @Test
+    fun calendarContent_pastUnloggedDose_showsUnloggedBadgeAndTakeSkipButtons() {
+        val today = LocalDate.of(2026, 11, 10)
+        val pastDate = LocalDate.of(2026, 11, 8)
+        val month = YearMonth.from(today)
+        val unloggedDose = ScheduledDoseItem(
+            medicationId = 7L,
+            medicationName = "Amlodipine",
+            dosage = "5",
+            unit = "mg",
+            instructions = null,
+            scheduledDate = pastDate.toString(),
+            scheduledTime = "08:00",
+            hour = 8,
+            minute = 0,
+            status = ScheduledDoseStatus.UNLOGGED,
+            isRecurring = false,
+            canToggleStatus = true,
+            doseLogId = 200L
+        )
+
+        var takenClicked = false
+        var skippedClicked = false
+
+        composeRule.setContent {
+            HealthLogTheme {
+                CalendarContent(
+                    uiState = CalendarUiState(
+                        displayedMonth = month,
+                        selectedDate = pastDate,
+                        daySummaries = mapOf(pastDate to CalendarDaySummary(date = pastDate, scheduledDoses = listOf(unloggedDose)))
+                    ),
+                    onPreviousMonth = {},
+                    onNextMonth = {},
+                    onJumpToToday = {},
+                    onSelectMonthYear = {},
+                    onSelectDate = {},
+                    onOpenAddSymptom = {},
+                    onOpenEditSymptom = {},
+                    onDismissAddEditSheet = {},
+                    onSaveSymptom = { _, _, _, _, _ -> },
+                    onRequestDeleteSymptom = {},
+                    onConfirmDeleteSymptom = {},
+                    onDismissDeleteDialog = {},
+                    onOpenMeasurementDetails = {},
+                    onMarkDoseTaken = { takenClicked = true },
+                    onMarkDoseSkipped = { skippedClicked = true },
+                    today = today
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag("calendar_list").performScrollToNode(hasText("Amlodipine"))
+        composeRule.onNodeWithText("Amlodipine").assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.dose_status_unlogged)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.dose_action_mark_taken))
+            .assertIsDisplayed()
+            .performClick()
+        assertTrue(takenClicked)
+
+        composeRule.onNodeWithText(context.getString(R.string.dose_action_mark_skipped))
+            .assertIsDisplayed()
+            .performClick()
+        assertTrue(skippedClicked)
+    }
+
+    @Test
+    fun calendarContent_pastScheduledTakenAndSkipped_showsSwitchActionInsteadOfUndo() {
+        val today = LocalDate.of(2026, 11, 10)
+        val pastDate = LocalDate.of(2026, 11, 8)
+        val month = YearMonth.from(today)
+        val takenDose = ScheduledDoseItem(
+            medicationId = 8L,
+            medicationName = "Metformin",
+            dosage = "500",
+            unit = "mg",
+            instructions = null,
+            scheduledDate = pastDate.toString(),
+            scheduledTime = "08:00",
+            hour = 8,
+            minute = 0,
+            status = ScheduledDoseStatus.TAKEN,
+            isRecurring = false,
+            canToggleStatus = true,
+            doseLogId = 201L
+        )
+        val skippedDose = ScheduledDoseItem(
+            medicationId = 9L,
+            medicationName = "Losartan",
+            dosage = "50",
+            unit = "mg",
+            instructions = null,
+            scheduledDate = pastDate.toString(),
+            scheduledTime = "20:00",
+            hour = 20,
+            minute = 0,
+            status = ScheduledDoseStatus.SKIPPED,
+            isRecurring = false,
+            canToggleStatus = true,
+            doseLogId = 202L
+        )
+
+        var switchedToSkipped: ScheduledDoseItem? = null
+        var switchedToTaken: ScheduledDoseItem? = null
+
+        composeRule.setContent {
+            HealthLogTheme {
+                CalendarContent(
+                    uiState = CalendarUiState(
+                        displayedMonth = month,
+                        selectedDate = pastDate,
+                        daySummaries = mapOf(
+                            pastDate to CalendarDaySummary(
+                                date = pastDate,
+                                scheduledDoses = listOf(takenDose, skippedDose)
+                            )
+                        )
+                    ),
+                    onPreviousMonth = {},
+                    onNextMonth = {},
+                    onJumpToToday = {},
+                    onSelectMonthYear = {},
+                    onSelectDate = {},
+                    onOpenAddSymptom = {},
+                    onOpenEditSymptom = {},
+                    onDismissAddEditSheet = {},
+                    onSaveSymptom = { _, _, _, _, _ -> },
+                    onRequestDeleteSymptom = {},
+                    onConfirmDeleteSymptom = {},
+                    onDismissDeleteDialog = {},
+                    onOpenMeasurementDetails = {},
+                    onMarkDoseTaken = { switchedToTaken = it },
+                    onMarkDoseSkipped = { switchedToSkipped = it },
+                    today = today
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag("calendar_list").performScrollToNode(hasText("Metformin"))
+        composeRule.onNodeWithText(context.getString(R.string.dose_action_undo)).assertDoesNotExist()
+        composeRule.onNodeWithText(context.getString(R.string.dose_action_switch_to_skipped))
+            .assertIsDisplayed()
+            .performClick()
+        assertEquals(takenDose, switchedToSkipped)
+
+        composeRule.onNodeWithTag("calendar_list").performScrollToNode(hasText("Losartan"))
+        composeRule.onNodeWithText(context.getString(R.string.dose_action_switch_to_taken))
+            .assertIsDisplayed()
+            .performClick()
+        assertEquals(skippedDose, switchedToTaken)
+    }
 }
