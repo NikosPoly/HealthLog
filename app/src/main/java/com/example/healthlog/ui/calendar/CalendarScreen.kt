@@ -998,6 +998,7 @@ private fun ScheduledDoseDayItemCard(
         ScheduledDoseStatus.TAKEN -> takenGreen
         ScheduledDoseStatus.SKIPPED -> MaterialTheme.colorScheme.error
         ScheduledDoseStatus.PENDING -> MaterialTheme.colorScheme.primary
+        ScheduledDoseStatus.UNLOGGED -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     Card(
@@ -1097,7 +1098,7 @@ private fun ScheduledDoseDayItemCard(
             Spacer(modifier = Modifier.height(8.dp))
 
             when (dose.status) {
-                ScheduledDoseStatus.PENDING -> {
+                ScheduledDoseStatus.PENDING, ScheduledDoseStatus.UNLOGGED -> {
                     if (!isFutureDate) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),

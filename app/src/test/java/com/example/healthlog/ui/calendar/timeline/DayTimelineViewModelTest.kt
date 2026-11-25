@@ -162,12 +162,18 @@ class DayTimelineViewModelTest {
             }
             notifyDoseChanges()
         }
+        override suspend fun deleteUnloggedDoseLogsForMedication(medicationId: Long) {
+            doseLogs.removeAll { it.medicationId == medicationId && it.status == MedicationDoseLog.STATUS_UNLOGGED }
+            notifyDoseChanges()
+        }
         override fun getDoseLogsForDate(date: String): Flow<List<MedicationDoseLog>> =
             doseLogsFlow.map { list -> list.filter { it.scheduledDate == date } }
         override suspend fun getDoseLog(medicationId: Long, date: String, time: String): MedicationDoseLog? =
             doseLogs.find { it.medicationId == medicationId && it.scheduledDate == date && it.scheduledTime == time }
         override suspend fun getDoseLogCountForMedication(medicationId: Long): Int =
             doseLogs.count { it.medicationId == medicationId }
+        override suspend fun getUnloggedDoseLogCountForMedication(medicationId: Long): Int =
+            doseLogs.count { it.medicationId == medicationId && it.status == MedicationDoseLog.STATUS_UNLOGGED }
         override fun getDoseLogsInDateRange(startDate: String, endDate: String): Flow<List<MedicationDoseLog>> =
             doseLogsFlow.map { list -> list.filter { it.scheduledDate >= startDate && it.scheduledDate <= endDate } }
         override suspend fun upsertOverride(override: MedicationScheduleOverride): Long {

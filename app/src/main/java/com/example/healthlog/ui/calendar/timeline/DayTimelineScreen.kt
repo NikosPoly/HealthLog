@@ -725,6 +725,7 @@ private fun TimelineMedicationCard(
         ScheduledDoseStatus.TAKEN -> takenGreen
         ScheduledDoseStatus.SKIPPED -> MaterialTheme.colorScheme.error
         ScheduledDoseStatus.PENDING -> MaterialTheme.colorScheme.primary
+        ScheduledDoseStatus.UNLOGGED -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     Card(
@@ -824,7 +825,7 @@ private fun TimelineMedicationCard(
             Spacer(modifier = Modifier.height(6.dp))
 
             when (dose.status) {
-                ScheduledDoseStatus.PENDING -> {
+                ScheduledDoseStatus.PENDING, ScheduledDoseStatus.UNLOGGED -> {
                     if (!isFutureDate) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),

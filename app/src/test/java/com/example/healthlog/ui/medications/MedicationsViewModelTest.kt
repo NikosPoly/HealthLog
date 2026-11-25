@@ -150,6 +150,11 @@ class MedicationsViewModelTest {
             notifyChanges()
         }
 
+        override suspend fun deleteUnloggedDoseLogsForMedication(medicationId: Long) {
+            doseLogs.removeAll { it.medicationId == medicationId && it.status == MedicationDoseLog.STATUS_UNLOGGED }
+            notifyChanges()
+        }
+
         override fun getDoseLogsForDate(date: String): Flow<List<MedicationDoseLog>> {
             return doseLogsFlow.map { list -> list.filter { it.scheduledDate == date } }
         }
@@ -160,6 +165,10 @@ class MedicationsViewModelTest {
 
         override suspend fun getDoseLogCountForMedication(medicationId: Long): Int {
             return doseLogs.count { it.medicationId == medicationId }
+        }
+
+        override suspend fun getUnloggedDoseLogCountForMedication(medicationId: Long): Int {
+            return doseLogs.count { it.medicationId == medicationId && it.status == MedicationDoseLog.STATUS_UNLOGGED }
         }
 
         override fun getDoseLogsInDateRange(startDate: String, endDate: String): Flow<List<MedicationDoseLog>> {
