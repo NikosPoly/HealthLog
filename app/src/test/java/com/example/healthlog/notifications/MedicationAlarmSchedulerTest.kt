@@ -258,4 +258,120 @@ class MedicationAlarmSchedulerTest {
             MedicationAlarmScheduler.formatTriggerDate(midnightTrigger!!, tz)
         )
     }
+
+    @Test
+    fun followUpRequestCode_isDistinctFromMainAndSnooze() {
+        val baseId = 42
+        val snoozeCode = MedicationAlarmScheduler.snoozeRequestCode(baseId)
+        val followUpCode = MedicationAlarmScheduler.followUpRequestCode(baseId)
+
+        val expectedSnoozeCode = baseId + MedicationAlarmScheduler.SNOOZE_OFFSET
+        val expectedFollowUpCode = baseId + MedicationAlarmScheduler.FOLLOW_UP_OFFSET
+
+        assertEquals(expectedSnoozeCode, snoozeCode)
+        assertEquals(expectedFollowUpCode, followUpCode)
+        assertTrue(followUpCode != baseId)
+        assertTrue(followUpCode != snoozeCode)
+
+        // Also distinct for override-based notification IDs
+        val overrideNotificationId = 15 + MedicationAlarmScheduler.OVERRIDE_OFFSET
+        val overrideSnooze = MedicationAlarmScheduler.snoozeRequestCode(overrideNotificationId)
+        val overrideFollowUp = MedicationAlarmScheduler.followUpRequestCode(overrideNotificationId)
+        assertTrue(overrideFollowUp != overrideNotificationId)
+        assertTrue(overrideFollowUp != overrideSnooze)
+    }
+
+    @Test
+    fun calculateFollowUpTriggerMillis_addsDelayMinutes() {
+        val nowMillis = 1_700_000_000_000L
+
+        assertEquals(
+            nowMillis + MedicationAlarmScheduler.FOLLOW_UP_DELAY_MINUTES * 60 * 1000L,
+            MedicationAlarmScheduler.calculateFollowUpTriggerMillis(nowMillis = nowMillis)
+        )
+        assertEquals(
+            nowMillis + 15 * 60 * 1000L,
+            MedicationAlarmScheduler.calculateFollowUpTriggerMillis(nowMillis = nowMillis, delayMinutes = 15)
+        )
+    }
+
+    @Test
+    fun nextFollowUpCount_startsAtOneForMainOverrideAndSnooze_whenEnabled() {
+        assertEquals(
+            1,
+            MedicationAlarmScheduler.nextFollowUpCount(
+                alarmType = MedicationNotificationHelper.ALARM_TYPE_MAIN,
+                currentFollowUpCount = 0,
+                followUpEnabled = true
+            )
+        )
+        assertEquals(
+            1,
+            MedicationAlarmScheduler.nextFollowUpCount(
+                alarmType = MedicationNotificationHelper.ALARM_TYPE_OVERRIDE,
+                currentFollowUpCount = 0,
+                followUpEnabled = true
+            )
+        )
+        assertEquals(
+            1,
+            MedicationAlarmScheduler.nextFollowUpCount(
+                alarmType = MedicationNotificationHelper.ALARM_TYPE_SNOOZE,
+                currentFollowUpCount = 0,
+                followUpEnabled = true
+            )
+        )
+    }
+
+    @Test
+    fun nextFollowUpCount_chainsUpToMaxAndStops() {
+        assertEquals(
+            2,
+            MedicationAlarmScheduler.nextFollowUpCount(
+                alarmType = MedicationNotificationHelper.ALARM_TYPE_FOLLOW_UP,
+                currentFollowUpCount = 1,
+                followUpEnabled = true
+            )
+        )
+        assertNull(
+            MedicationAlarmScheduler.nextFollowUpCount(
+                alarmType = MedicationNotificationHelper.ALARM_TYPE_FOLLOW_UP,
+                currentFollowUpCount = MedicationAlarmScheduler.MAX_FOLLOW_UP_COUNT,
+                followUpEnabled = true
+            )
+        )
+        assertNull(
+            MedicationAlarmScheduler.nextFollowUpCount(
+                alarmType = MedicationNotificationHelper.ALARM_TYPE_FOLLOW_UP,
+                currentFollowUpCount = 0,
+                followUpEnabled = true
+            )
+        )
+    }
+
+    @Test
+    fun nextFollowUpCount_returnsNullWhenDisabledOrUnknownType() {
+        listOf(
+            MedicationNotificationHelper.ALARM_TYPE_MAIN,
+            MedicationNotificationHelper.ALARM_TYPE_OVERRIDE,
+            MedicationNotificationHelper.ALARM_TYPE_SNOOZE,
+            MedicationNotificationHelper.ALARM_TYPE_FOLLOW_UP
+        ).forEach { alarmType ->
+            assertNull(
+                MedicationAlarmScheduler.nextFollowUpCount(
+                    alarmType = alarmType,
+                    currentFollowUpCount = 1,
+                    followUpEnabled = false
+                )
+            )
+        }
+
+        assertNull(
+            MedicationAlarmScheduler.nextFollowUpCount(
+                alarmType = "UNKNOWN",
+                currentFollowUpCount = 0,
+                followUpEnabled = true
+            )
+        )
+    }
 }

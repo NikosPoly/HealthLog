@@ -230,4 +230,154 @@ class MedicationAlarmReceiverTest {
             )
         )
     }
+
+    @Test
+    fun mainFollowUp_ringsWhenScheduleUnchangedOrOtherDateOverridden() {
+        assertTrue(
+            MedicationAlarmReceiver.shouldRingForSchedule(
+                alarmType = MedicationNotificationHelper.ALARM_TYPE_FOLLOW_UP,
+                matchingReminder = baseReminder,
+                overrides = emptyList(),
+                overrideId = -1L,
+                effectiveDate = "2026-11-24",
+                scheduledTime = "08:00"
+            )
+        )
+
+        val tomorrowOverride = MedicationScheduleOverride(
+            id = 80L,
+            reminderId = 10L,
+            medicationId = 1L,
+            originalDate = "2026-11-25",
+            overrideType = MedicationScheduleOverride.TYPE_CANCELLED
+        )
+        assertTrue(
+            MedicationAlarmReceiver.shouldRingForSchedule(
+                alarmType = MedicationNotificationHelper.ALARM_TYPE_FOLLOW_UP,
+                matchingReminder = baseReminder,
+                overrides = listOf(tomorrowOverride),
+                overrideId = -1L,
+                effectiveDate = "2026-11-24",
+                scheduledTime = "08:00"
+            )
+        )
+    }
+
+    @Test
+    fun mainFollowUp_doesNotRingWhenOverriddenOrReminderEditedInPlace() {
+        val rescheduledOverride = MedicationScheduleOverride(
+            id = 81L,
+            reminderId = 10L,
+            medicationId = 1L,
+            originalDate = "2026-11-24",
+            overrideType = MedicationScheduleOverride.TYPE_RESCHEDULED,
+            newHour = 10,
+            newMinute = 0
+        )
+        assertFalse(
+            MedicationAlarmReceiver.shouldRingForSchedule(
+                alarmType = MedicationNotificationHelper.ALARM_TYPE_FOLLOW_UP,
+                matchingReminder = baseReminder,
+                overrides = listOf(rescheduledOverride),
+                overrideId = -1L,
+                effectiveDate = "2026-11-24",
+                scheduledTime = "08:00"
+            )
+        )
+
+        val cancelledOverride = MedicationScheduleOverride(
+            id = 82L,
+            reminderId = 10L,
+            medicationId = 1L,
+            originalDate = "2026-11-24",
+            overrideType = MedicationScheduleOverride.TYPE_CANCELLED
+        )
+        assertFalse(
+            MedicationAlarmReceiver.shouldRingForSchedule(
+                alarmType = MedicationNotificationHelper.ALARM_TYPE_FOLLOW_UP,
+                matchingReminder = baseReminder,
+                overrides = listOf(cancelledOverride),
+                overrideId = -1L,
+                effectiveDate = "2026-11-24",
+                scheduledTime = "08:00"
+            )
+        )
+
+        assertFalse(
+            MedicationAlarmReceiver.shouldRingForSchedule(
+                alarmType = MedicationNotificationHelper.ALARM_TYPE_FOLLOW_UP,
+                matchingReminder = baseReminder.copy(hour = 9, minute = 0),
+                overrides = emptyList(),
+                overrideId = -1L,
+                effectiveDate = "2026-11-24",
+                scheduledTime = "08:00"
+            )
+        )
+    }
+
+    @Test
+    fun overrideFollowUp_ringsOnlyWhileMatchingRescheduledOverrideExists() {
+        val override = MedicationScheduleOverride(
+            id = 90L,
+            reminderId = 10L,
+            medicationId = 1L,
+            originalDate = "2026-11-24",
+            overrideType = MedicationScheduleOverride.TYPE_RESCHEDULED,
+            newHour = 11,
+            newMinute = 15
+        )
+
+        assertTrue(
+            MedicationAlarmReceiver.shouldRingForSchedule(
+                alarmType = MedicationNotificationHelper.ALARM_TYPE_FOLLOW_UP,
+                matchingReminder = baseReminder,
+                overrides = listOf(override),
+                overrideId = 90L,
+                effectiveDate = "2026-11-24",
+                scheduledTime = "11:15"
+            )
+        )
+
+        // Override moved to another time
+        assertFalse(
+            MedicationAlarmReceiver.shouldRingForSchedule(
+                alarmType = MedicationNotificationHelper.ALARM_TYPE_FOLLOW_UP,
+                matchingReminder = baseReminder,
+                overrides = listOf(override.copy(newHour = 12, newMinute = 0)),
+                overrideId = 90L,
+                effectiveDate = "2026-11-24",
+                scheduledTime = "11:15"
+            )
+        )
+
+        // Override cancelled
+        assertFalse(
+            MedicationAlarmReceiver.shouldRingForSchedule(
+                alarmType = MedicationNotificationHelper.ALARM_TYPE_FOLLOW_UP,
+                matchingReminder = baseReminder,
+                overrides = listOf(
+                    override.copy(
+                        overrideType = MedicationScheduleOverride.TYPE_CANCELLED,
+                        newHour = null,
+                        newMinute = null
+                    )
+                ),
+                overrideId = 90L,
+                effectiveDate = "2026-11-24",
+                scheduledTime = "11:15"
+            )
+        )
+
+        // Override deleted
+        assertFalse(
+            MedicationAlarmReceiver.shouldRingForSchedule(
+                alarmType = MedicationNotificationHelper.ALARM_TYPE_FOLLOW_UP,
+                matchingReminder = baseReminder,
+                overrides = emptyList(),
+                overrideId = 90L,
+                effectiveDate = "2026-11-24",
+                scheduledTime = "11:15"
+            )
+        )
+    }
 }

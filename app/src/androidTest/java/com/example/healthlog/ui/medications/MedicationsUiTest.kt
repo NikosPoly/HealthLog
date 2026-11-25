@@ -124,4 +124,44 @@ class MedicationsUiTest {
         assertEquals(targetDate, savedDate)
         assertEquals(14 to 30, savedOneTimePair)
     }
+
+    @Test
+    fun reminderAlertsContent_rendersOptions_andInvokesCallbacks() {
+        var followUpValue: Boolean? = null
+        var keepRingingValue: Boolean? = null
+        var openSoundSettingsClicked = false
+
+        composeRule.setContent {
+            HealthLogTheme {
+                ReminderAlertsContent(
+                    followUpEnabled = true,
+                    keepRingingEnabled = false,
+                    onFollowUpChanged = { followUpValue = it },
+                    onKeepRingingChanged = { keepRingingValue = it },
+                    onOpenSoundSettings = { openSoundSettingsClicked = true }
+                )
+            }
+        }
+
+        composeRule.onNodeWithText(context.getString(R.string.reminder_alerts_title)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.reminder_alerts_subtitle)).assertIsDisplayed()
+
+        // Toggle follow-up OFF (was true -> expects false)
+        composeRule.onNodeWithText(context.getString(R.string.reminder_alerts_follow_up_title))
+            .assertIsDisplayed()
+            .performClick()
+        assertEquals(false, followUpValue)
+
+        // Toggle keep-ringing ON (was false -> expects true)
+        composeRule.onNodeWithText(context.getString(R.string.reminder_alerts_keep_ringing_title))
+            .assertIsDisplayed()
+            .performClick()
+        assertEquals(true, keepRingingValue)
+
+        // Tap system sound & DND settings row
+        composeRule.onNodeWithText(context.getString(R.string.reminder_alerts_system_sound_title))
+            .assertIsDisplayed()
+            .performClick()
+        assertTrue(openSoundSettingsClicked)
+    }
 }
