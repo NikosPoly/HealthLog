@@ -7,6 +7,8 @@ import com.example.healthlog.database.MedicationReminder
 import com.example.healthlog.database.MedicationScheduleOverride
 import com.example.healthlog.database.MedicationWithReminders
 import com.example.healthlog.repository.MedicationRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
@@ -209,7 +211,7 @@ class MedicationsViewModelTest {
         val fakeDao = FakeMedicationDao()
         val repository = MedicationRepository(fakeDao)
         val context = android.app.Application()
-        val viewModel = MedicationsViewModel(repository, context)
+        val viewModel = MedicationsViewModel(repository, context, CoroutineScope(Dispatchers.Unconfined))
 
         val med = MedicationWithReminders(
             medication = Medication(id = 1, name = "Aspirin", dosage = "100", unit = "mg", frequency = "DAILY"),

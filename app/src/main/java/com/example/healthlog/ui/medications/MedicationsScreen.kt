@@ -11,7 +11,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
@@ -36,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -59,6 +63,7 @@ fun MedicationsScreen(
     val isAddSheetOpen by viewModel.isAddSheetOpen.collectAsState()
     val editingMedication by viewModel.editingMedication.collectAsState()
     val deletingMedication by viewModel.deletingMedication.collectAsState()
+    val deletingMedicationUnloggedCount by viewModel.deletingMedicationUnloggedCount.collectAsState()
 
     var notificationsEnabled by remember {
         mutableStateOf(MedicationNotificationHelper.areNotificationsEnabled(context))
@@ -178,19 +183,39 @@ fun MedicationsScreen(
             onDismissRequest = viewModel::closeDeleteConfirmation,
             title = { Text(stringResource(R.string.medications_delete_confirm_title)) },
             text = {
-                Text(
-                    stringResource(
-                        R.string.medications_delete_confirm_desc,
-                        item.medication.name
+                Column {
+                    Text(
+                        stringResource(
+                            R.string.medications_delete_confirm_desc,
+                            item.medication.name
+                        )
                     )
-                )
+                    if (deletingMedicationUnloggedCount > 0) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = pluralStringResource(
+                                R.plurals.medications_delete_unlogged_warning,
+                                deletingMedicationUnloggedCount,
+                                deletingMedicationUnloggedCount
+                            ),
+                            color = MaterialTheme.colorScheme.error,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
             },
             confirmButton = {
                 TextButton(
                     onClick = viewModel::confirmDelete
                 ) {
                     Text(
-                        stringResource(R.string.medications_action_delete),
+                        stringResource(
+                            if (deletingMedicationUnloggedCount > 0) {
+                                R.string.medications_action_delete_anyway
+                            } else {
+                                R.string.medications_action_delete
+                            }
+                        ),
                         color = MaterialTheme.colorScheme.error,
                         fontWeight = FontWeight.Bold
                     )

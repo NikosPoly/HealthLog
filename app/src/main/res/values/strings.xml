@@ -36,17 +36,25 @@
     <string name="medications_action_add">Add Medication</string>
     <string name="medications_action_edit">Edit Medication</string>
     <string name="medications_action_delete">Delete</string>
+    <string name="medications_action_delete_anyway">Delete anyway</string>
     <string name="medications_delete_confirm_title">Delete Medication?</string>
     <string name="medications_delete_confirm_desc">Are you sure you want to delete %1$s? Future reminders will be removed, while past dose history will remain in your calendar.</string>
+    <plurals name="medications_delete_unlogged_warning">
+        <item quantity="one">This medication also has %1$d unlogged past dose that will be removed.</item>
+        <item quantity="other">This medication also has %1$d unlogged past doses that will be removed.</item>
+    </plurals>
 
     <!-- Dose items -->
     <string name="dose_status_taken">Taken</string>
     <string name="dose_status_skipped">Skipped</string>
     <string name="dose_status_pending">Pending</string>
     <string name="dose_status_scheduled">Scheduled</string>
+    <string name="dose_status_unlogged">Unlogged</string>
     <string name="dose_moved_from">Moved from %1$s</string>
     <string name="dose_action_mark_taken">Take</string>
     <string name="dose_action_mark_skipped">Skip</string>
+    <string name="dose_action_switch_to_taken">Mark taken</string>
+    <string name="dose_action_switch_to_skipped">Mark skipped</string>
     <string name="dose_action_undo">Undo</string>
     <string name="dose_quick_log">Quick Dose Log</string>
     <string name="dose_quick_log_desc">Log a medication you just took as-needed or right now:</string>
