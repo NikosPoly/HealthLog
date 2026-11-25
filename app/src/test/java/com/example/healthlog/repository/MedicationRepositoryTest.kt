@@ -18,6 +18,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.LocalDate
+import java.time.ZoneId
 
 class MedicationRepositoryTest {
 
@@ -543,5 +544,103 @@ class MedicationRepositoryTest {
         val logs = repository.getDoseLogsForDate("2026-11-23").first()
         assertEquals(1, logs.size)
         assertEquals("TAKEN", logs.single().status)
+    }
+
+    @Test
+    fun deleteMedication_withOnlyUnloggedLogs_hardDeletesMedicationAndUnloggedRows() = runBlocking {
+        val medId = repository.saveMedication(
+            Medication(name = "VitaminD", dosage = "1000", unit = "IU", frequency = "DAILY"),
+            listOf(MedicationReminder(medicationId = 0, hour = 8, minute = 0))
+        )
+        repository.recordDose(medId, "2026-11-21", "08:00", status = MedicationDoseLog.STATUS_UNLOGGED)
+        repository.recordDose(medId, "2026-11-22", "08:00", status = MedicationDoseLog.STATUS_UNLOGGED)
+        assertEquals(2, repository.getUnloggedDoseLogCount(medId))
+
+        val med = repository.getMedicationById(medId)!!
+        repository.deleteMedication(med)
+
+        assertNull(repository.getMedicationById(medId))
+        assertTrue(repository.allMedications.first().isEmpty())
+        assertTrue(repository.getDoseLogsInDateRange("2026-11-01", "2026-11-30").first().isEmpty())
+    }
+
+    @Test
+    fun deleteMedication_withTakenSkippedAndUnlogged_softDeletesAndDropsOnlyUnlogged() = runBlocking {
+        val medId = repository.saveMedication(
+            Medication(name = "Amlodipine", dosage = "5", unit = "mg", frequency = "DAILY"),
+            listOf(MedicationReminder(medicationId = 0, hour = 8, minute = 0))
+        )
+        repository.recordDose(medId, "2026-11-20", "08:00", status = MedicationDoseLog.STATUS_TAKEN)
+        repository.recordDose(medId, "2026-11-21", "08:00", status = MedicationDoseLog.STATUS_SKIPPED)
+        repository.recordDose(medId, "2026-11-22", "08:00", status = MedicationDoseLog.STATUS_UNLOGGED)
+        assertEquals(1, repository.getUnloggedDoseLogCount(medId))
+
+        val med = repository.getMedicationById(medId)!!
+        repository.deleteMedication(med)
+
+        val persisted = repository.getMedicationById(medId)
+        assertNotNull(persisted)
+        assertTrue(persisted!!.isDeleted)
+        assertFalse(persisted.isActive)
+        assertEquals(0, repository.getUnloggedDoseLogCount(medId))
+
+        val remainingLogs = repository.getDoseLogsInDateRange("2026-11-01", "2026-11-30").first()
+        assertEquals(2, remainingLogs.size)
+        assertTrue(remainingLogs.none { it.status == MedicationDoseLog.STATUS_UNLOGGED })
+        assertTrue(remainingLogs.any { it.status == MedicationDoseLog.STATUS_TAKEN })
+        assertTrue(remainingLogs.any { it.status == MedicationDoseLog.STATUS_SKIPPED })
+    }
+
+    @Test
+    fun sweepUnloggedPastDoses_persistsUnloggedAndDoesNotRecreateAfterManualDelete() = runBlocking {
+        val zone = ZoneId.of("UTC")
+        val createdAt = LocalDate.of(2026, 11, 20).atStartOfDay(zone).toInstant().toEpochMilli()
+        val medId = repository.saveMedication(
+            Medication(
+                name = "Losartan",
+                dosage = "50",
+                unit = "mg",
+                frequency = "DAILY",
+                isActive = true,
+                createdAt = createdAt
+            ),
+            listOf(
+                MedicationReminder(
+                    medicationId = 0,
+                    hour = 8,
+                    minute = 0,
+                    daysOfWeekMask = 127,
+                    isEnabled = true,
+                    startDate = "2026-11-20"
+                )
+            )
+        )
+        // Nov 20 already logged as TAKEN; Nov 21 & Nov 22 unlogged
+        repository.recordDose(medId, "2026-11-20", "08:00", status = MedicationDoseLog.STATUS_TAKEN)
+
+        val today = LocalDate.of(2026, 11, 23)
+        val newLastSwept = repository.sweepUnloggedPastDoses(
+            today = today,
+            lastSweptDate = null,
+            zoneId = zone
+        )
+        assertEquals(LocalDate.of(2026, 11, 22), newLastSwept)
+
+        val sweptLogs = repository.getDoseLogsInDateRange("2026-11-20", "2026-11-22").first()
+        assertEquals(3, sweptLogs.size)
+        assertEquals(2, repository.getUnloggedDoseLogCount(medId))
+
+        // User manually deletes Nov 21 UNLOGGED card
+        val nov21Log = sweptLogs.first { it.scheduledDate == "2026-11-21" }
+        repository.deleteDoseById(nov21Log.id)
+
+        // Sweeping again with persisted lastSweptDate does NOT recreate the deleted Nov 21 row
+        val secondSwept = repository.sweepUnloggedPastDoses(
+            today = today,
+            lastSweptDate = newLastSwept,
+            zoneId = zone
+        )
+        assertEquals(newLastSwept, secondSwept)
+        assertEquals(1, repository.getUnloggedDoseLogCount(medId))
     }
 }

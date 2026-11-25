@@ -549,4 +549,62 @@ class CalendarViewModelTest {
         }
         assertTrue(emptySummary.scheduledDoses.isEmpty())
     }
+
+    @Test
+    fun pastUnloggedDose_markTakenAndSwitchToSkipped_replacesLogCleanly() = runBlocking {
+        val pastDate = LocalDate.now().withDayOfMonth(1).let { firstOfMonth ->
+            if (LocalDate.now().dayOfMonth > 1) LocalDate.now().minusDays(1) else firstOfMonth.minusDays(1)
+        }
+        viewModel.onSelectDate(pastDate)
+
+        val med = Medication(
+            id = 30L,
+            name = "Amlodipine",
+            dosage = "5",
+            unit = "mg",
+            frequency = "DAILY",
+            isActive = true
+        )
+        medicationDao.medicationsFlow.value = listOf(MedicationWithReminders(med, emptyList()))
+        medicationDao.insertDoseLog(
+            MedicationDoseLog(
+                medicationId = 30L,
+                scheduledDate = pastDate.toString(),
+                scheduledTime = "08:00",
+                status = MedicationDoseLog.STATUS_UNLOGGED
+            )
+        )
+
+        val unloggedDose = withTimeout(5.seconds) {
+            viewModel.uiState.first { state ->
+                state.daySummaries[pastDate]?.scheduledDoses?.any {
+                    it.status == ScheduledDoseStatus.UNLOGGED
+                } == true
+            }.daySummaries[pastDate]!!.scheduledDoses.single()
+        }
+        assertTrue(unloggedDose.canToggleStatus)
+
+        // Resolve UNLOGGED -> TAKEN
+        viewModel.onMarkDoseTaken(unloggedDose)
+        val takenDose = withTimeout(5.seconds) {
+            viewModel.uiState.first { state ->
+                state.daySummaries[pastDate]?.scheduledDoses?.any {
+                    it.status == ScheduledDoseStatus.TAKEN
+                } == true
+            }.daySummaries[pastDate]!!.scheduledDoses.single()
+        }
+        assertEquals(1, medicationDao.doseLogs.count { it.medicationId == 30L && it.scheduledDate == pastDate.toString() })
+
+        // Switch TAKEN -> SKIPPED
+        viewModel.onMarkDoseSkipped(takenDose)
+        val skippedDose = withTimeout(5.seconds) {
+            viewModel.uiState.first { state ->
+                state.daySummaries[pastDate]?.scheduledDoses?.any {
+                    it.status == ScheduledDoseStatus.SKIPPED
+                } == true
+            }.daySummaries[pastDate]!!.scheduledDoses.single()
+        }
+        assertEquals(ScheduledDoseStatus.SKIPPED, skippedDose.status)
+        assertEquals(1, medicationDao.doseLogs.count { it.medicationId == 30L && it.scheduledDate == pastDate.toString() })
+    }
 }

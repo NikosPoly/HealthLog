@@ -225,4 +225,51 @@ class MedicationsViewModelTest {
         viewModel.closeDeleteConfirmation()
         assertEquals(null, viewModel.deletingMedication.value)
     }
+
+    @Test
+    fun openDeleteConfirmation_loadsUnloggedDoseCount_andResetsOnClose() {
+        val fakeDao = FakeMedicationDao()
+        fakeDao.doseLogs.add(
+            MedicationDoseLog(
+                id = 1,
+                medicationId = 1,
+                scheduledDate = "2026-11-20",
+                scheduledTime = "08:00",
+                status = MedicationDoseLog.STATUS_TAKEN
+            )
+        )
+        fakeDao.doseLogs.add(
+            MedicationDoseLog(
+                id = 2,
+                medicationId = 1,
+                scheduledDate = "2026-11-21",
+                scheduledTime = "08:00",
+                status = MedicationDoseLog.STATUS_UNLOGGED
+            )
+        )
+        fakeDao.doseLogs.add(
+            MedicationDoseLog(
+                id = 3,
+                medicationId = 1,
+                scheduledDate = "2026-11-22",
+                scheduledTime = "08:00",
+                status = MedicationDoseLog.STATUS_UNLOGGED
+            )
+        )
+
+        val repository = MedicationRepository(fakeDao)
+        val context = android.app.Application()
+        val viewModel = MedicationsViewModel(repository, context, CoroutineScope(Dispatchers.Unconfined))
+
+        val med = MedicationWithReminders(
+            medication = Medication(id = 1, name = "Aspirin", dosage = "100", unit = "mg", frequency = "DAILY"),
+            reminders = emptyList()
+        )
+
+        viewModel.openDeleteConfirmation(med)
+        assertEquals(2, viewModel.deletingMedicationUnloggedCount.value)
+
+        viewModel.closeDeleteConfirmation()
+        assertEquals(0, viewModel.deletingMedicationUnloggedCount.value)
+    }
 }
