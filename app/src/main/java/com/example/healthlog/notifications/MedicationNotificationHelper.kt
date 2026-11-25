@@ -123,6 +123,35 @@ object MedicationNotificationHelper {
         }
     }
 
+    fun buildNotificationSettingsIntent(context: Context): Intent {
+        val appLevelGranted = androidx.core.app.NotificationManagerCompat.from(context).areNotificationsEnabled()
+        return if (!appLevelGranted) {
+            // Master permission is off -> open App notification settings so user can toggle the master switch
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                    putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                }
+            } else {
+                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = Uri.fromParts("package", context.packageName, null)
+                }
+            }
+        } else {
+            // Master permission is on -> open Medication Reminders CHANNEL directly,
+            // bypassing the collapsed "Other ⌄" dropdown in app settings
+            buildChannelSettingsIntent(context)
+        }
+    }
+
+    fun openNotificationSettings(context: Context) {
+        val intent = buildNotificationSettingsIntent(context).apply {
+            if (context !is Activity) {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+        }
+        context.startActivity(intent)
+    }
+
     fun buildChannelSettingsIntent(context: Context): Intent {
         createNotificationChannel(context)
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -138,12 +167,7 @@ object MedicationNotificationHelper {
     }
 
     fun openChannelNotificationSettings(context: Context) {
-        val intent = buildChannelSettingsIntent(context).apply {
-            if (context !is Activity) {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-        }
-        context.startActivity(intent)
+        openNotificationSettings(context)
     }
 
     internal fun applyAlertFlags(notification: Notification, keepRinging: Boolean) {

@@ -111,6 +111,17 @@
     <string name="notification_permission_enable">Ενεργοποίηση</string>
     <string name="notification_permission_dont_allow">Να μην επιτρέπεται</string>
 
+    <!-- Reminder Alerts Settings -->
+    <string name="reminder_alerts_action">Ειδοποιήσεις υπενθυμίσεων</string>
+    <string name="reminder_alerts_title">Ειδοποιήσεις Υπενθυμίσεων</string>
+    <string name="reminder_alerts_subtitle">Κάντε τις υπενθυμίσεις φαρμάκων πιο ευδιάκριτες.</string>
+    <string name="reminder_alerts_follow_up_title">Επαναληπτικές υπενθυμίσεις</string>
+    <string name="reminder_alerts_follow_up_desc">Νέα ειδοποίηση κάθε 10 λεπτά αν δεν ληφθεί, έως 2 φορές</string>
+    <string name="reminder_alerts_keep_ringing_title">Συνεχής ήχος έως απόρριψη</string>
+    <string name="reminder_alerts_keep_ringing_desc">Επαναλαμβάνει τον ήχο και τη δόνηση μέχρι να πατήσετε ή να κλείσετε την ειδοποίηση</string>
+    <string name="reminder_alerts_system_sound_title">Ήχος, δόνηση &amp; Μην ενοχλείτε</string>
+    <string name="reminder_alerts_system_sound_desc">Αλλάξτε τον ήχο ή επιτρέψτε παράκαμψη του «Μην ενοχλείτε» στις ρυθμίσεις Android</string>
+
     <string name="calendar_title">Ημερολόγιο Υγείας</string>
     <string name="calendar_placeholder_title">Συμπτώματα &amp; Κλινικό Ημερολόγιο</string>
     <string name="calendar_placeholder_desc">Καταγράψτε καθημερινά συμπτώματα με βαθμολογία σοβαρότητας και δείτε συσχετίσεις με τις μετρήσεις σας.</string>

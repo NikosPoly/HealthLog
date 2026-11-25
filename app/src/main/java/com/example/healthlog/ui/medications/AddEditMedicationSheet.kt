@@ -2,10 +2,8 @@ package com.example.healthlog.ui.medications
 
 import android.Manifest
 import android.app.TimePickerDialog
-import android.content.Intent
-import android.net.Uri
+import android.content.Context
 import android.os.Build
-import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -647,16 +645,7 @@ fun AddEditMedicationSheet(
                     onClick = {
                         showPermissionPromptDialog = false
                         pendingSaveAfterPermission = true
-                        val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                            Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-                                putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-                            }
-                        } else {
-                            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                                data = Uri.fromParts("package", context.packageName, null)
-                            }
-                        }
-                        context.startActivity(intent)
+                        MedicationNotificationHelper.openNotificationSettings(context)
                     }
                 ) {
                     Text(stringResource(R.string.notification_permission_enable))

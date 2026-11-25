@@ -116,6 +116,17 @@
     <string name="notification_permission_enable">Enable</string>
     <string name="notification_permission_dont_allow">Don\'t allow</string>
 
+    <!-- Reminder Alerts Settings -->
+    <string name="reminder_alerts_action">Reminder alerts</string>
+    <string name="reminder_alerts_title">Reminder Alerts</string>
+    <string name="reminder_alerts_subtitle">Make medication reminders harder to miss.</string>
+    <string name="reminder_alerts_follow_up_title">Follow-up reminders</string>
+    <string name="reminder_alerts_follow_up_desc">Remind again every 10 min if not taken, up to 2 times</string>
+    <string name="reminder_alerts_keep_ringing_title">Keep ringing until dismissed</string>
+    <string name="reminder_alerts_keep_ringing_desc">Loop the alert sound and vibration until you interact with the notification</string>
+    <string name="reminder_alerts_system_sound_title">Sound, vibration &amp; Do Not Disturb</string>
+    <string name="reminder_alerts_system_sound_desc">Change the alert tone or allow overriding Do Not Disturb in Android settings</string>
+
     <string name="calendar_title">Health Calendar</string>
     <string name="calendar_placeholder_title">Symptoms &amp; Clinical Calendar</string>
     <string name="calendar_placeholder_desc">Log daily symptoms with severity ratings and view correlations with your vital signs.</string>
