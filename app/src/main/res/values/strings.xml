@@ -105,6 +105,7 @@
     <string name="notification_channel_medications_name">Medication Reminders</string>
     <string name="notification_channel_medications_desc">Alerts and reminders to take scheduled medications.</string>
     <string name="notification_medication_title">Time for %1$s</string>
+    <string name="notification_medication_follow_up_title">Still due: %1$s</string>
     <string name="notification_medication_text">%1$s %2$s • %3$s</string>
     <string name="notification_medication_text_no_instructions">%1$s %2$s</string>
     <string name="notification_action_mark_taken">Mark Taken</string>
@@ -114,6 +115,19 @@
     <string name="notification_permission_required_desc">To receive reminders for your medication, you need to enable notifications.</string>
     <string name="notification_permission_enable">Enable</string>
     <string name="notification_permission_dont_allow">Don\'t allow</string>
+
+    <!-- Reminder Alerts Settings -->
+    <string name="reminder_alerts_action">Reminder alerts</string>
+    <string name="reminder_alerts_title">Reminder Alerts</string>
+    <string name="reminder_alerts_subtitle">Make medication reminders harder to miss.</string>
+    <string name="reminder_alerts_follow_up_title">Follow-up reminders</string>
+    <string name="reminder_alerts_follow_up_desc">Remind again every 10 min if not taken, up to 2 times</string>
+    <string name="reminder_alerts_keep_ringing_title">Keep ringing until dismissed</string>
+    <string name="reminder_alerts_keep_ringing_desc">Loop the alert sound and vibration until you interact with the notification</string>
+    <string name="reminder_alerts_system_sound_title">Sound, vibration &amp; Do Not Disturb</string>
+    <string name="reminder_alerts_system_sound_desc">Change the alert tone or allow overriding Do Not Disturb in Android settings</string>
+    <string name="dose_alerts_disabled_badge">Alerts muted</string>
+    <string name="dose_alerts_disabled_desc">Notifications are disabled. Your phone will not ring for this dose.</string>
 
     <string name="calendar_title">Health Calendar</string>
     <string name="calendar_placeholder_title">Symptoms &amp; Clinical Calendar</string>

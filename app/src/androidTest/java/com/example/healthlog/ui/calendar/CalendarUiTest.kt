@@ -1,11 +1,13 @@
 package com.example.healthlog.ui.calendar
 
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -859,5 +861,131 @@ class CalendarUiTest {
             .assertIsDisplayed()
             .performClick()
         assertEquals(skippedDose, switchedToTaken)
+    }
+
+    @Test
+    fun calendarContent_notificationsDisabled_showsMutedBadgeOnlyOnPendingRecurringDose() {
+        val today = LocalDate.of(2026, 11, 10)
+        val month = YearMonth.from(today)
+        val pendingRecurring = ScheduledDoseItem(
+            medicationId = 10L,
+            medicationName = "Metformin",
+            dosage = "500",
+            unit = "mg",
+            instructions = null,
+            scheduledDate = today.toString(),
+            scheduledTime = "08:00",
+            hour = 8,
+            minute = 0,
+            status = ScheduledDoseStatus.PENDING,
+            isRecurring = true,
+            reminderId = 100L
+        )
+        val takenRecurring = ScheduledDoseItem(
+            medicationId = 11L,
+            medicationName = "Losartan",
+            dosage = "50",
+            unit = "mg",
+            instructions = null,
+            scheduledDate = today.toString(),
+            scheduledTime = "09:00",
+            hour = 9,
+            minute = 0,
+            status = ScheduledDoseStatus.TAKEN,
+            isRecurring = true,
+            reminderId = 101L,
+            doseLogId = 301L
+        )
+
+        composeRule.setContent {
+            HealthLogTheme {
+                CalendarContent(
+                    uiState = CalendarUiState(
+                        displayedMonth = month,
+                        selectedDate = today,
+                        daySummaries = mapOf(
+                            today to CalendarDaySummary(
+                                date = today,
+                                scheduledDoses = listOf(pendingRecurring, takenRecurring)
+                            )
+                        )
+                    ),
+                    onPreviousMonth = {},
+                    onNextMonth = {},
+                    onJumpToToday = {},
+                    onSelectMonthYear = {},
+                    onSelectDate = {},
+                    onOpenAddSymptom = {},
+                    onOpenEditSymptom = {},
+                    onDismissAddEditSheet = {},
+                    onSaveSymptom = { _, _, _, _, _ -> },
+                    onRequestDeleteSymptom = {},
+                    onConfirmDeleteSymptom = {},
+                    onDismissDeleteDialog = {},
+                    onOpenMeasurementDetails = {},
+                    today = today,
+                    notificationsEnabled = false
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag("calendar_list").performScrollToNode(hasText("Metformin"))
+        composeRule.onNodeWithText(context.getString(R.string.dose_alerts_disabled_badge)).assertIsDisplayed()
+        composeRule.onAllNodesWithTag("dose_alerts_muted_badge").assertCountEquals(1)
+    }
+
+    @Test
+    fun calendarContent_notificationsEnabled_hidesMutedBadge() {
+        val today = LocalDate.of(2026, 11, 10)
+        val month = YearMonth.from(today)
+        val pendingRecurring = ScheduledDoseItem(
+            medicationId = 10L,
+            medicationName = "Metformin",
+            dosage = "500",
+            unit = "mg",
+            instructions = null,
+            scheduledDate = today.toString(),
+            scheduledTime = "08:00",
+            hour = 8,
+            minute = 0,
+            status = ScheduledDoseStatus.PENDING,
+            isRecurring = true,
+            reminderId = 100L
+        )
+
+        composeRule.setContent {
+            HealthLogTheme {
+                CalendarContent(
+                    uiState = CalendarUiState(
+                        displayedMonth = month,
+                        selectedDate = today,
+                        daySummaries = mapOf(
+                            today to CalendarDaySummary(
+                                date = today,
+                                scheduledDoses = listOf(pendingRecurring)
+                            )
+                        )
+                    ),
+                    onPreviousMonth = {},
+                    onNextMonth = {},
+                    onJumpToToday = {},
+                    onSelectMonthYear = {},
+                    onSelectDate = {},
+                    onOpenAddSymptom = {},
+                    onOpenEditSymptom = {},
+                    onDismissAddEditSheet = {},
+                    onSaveSymptom = { _, _, _, _, _ -> },
+                    onRequestDeleteSymptom = {},
+                    onConfirmDeleteSymptom = {},
+                    onDismissDeleteDialog = {},
+                    onOpenMeasurementDetails = {},
+                    today = today,
+                    notificationsEnabled = true
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag("calendar_list").performScrollToNode(hasText("Metformin"))
+        composeRule.onNodeWithTag("dose_alerts_muted_badge").assertDoesNotExist()
     }
 }

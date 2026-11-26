@@ -1,17 +1,12 @@
 package com.example.healthlog.ui.medications
 
-import android.app.AlarmManager
-import android.app.PendingIntent
 import android.content.Context
-import android.content.Intent
 import com.example.healthlog.database.Medication
 import com.example.healthlog.database.MedicationReminder
 import com.example.healthlog.database.MedicationWithReminders
 import com.example.healthlog.model.MedicationScheduleResolver
 import com.example.healthlog.model.ScheduledDoseItem
-import com.example.healthlog.notifications.MedicationAlarmReceiver
 import com.example.healthlog.notifications.MedicationAlarmScheduler
-import com.example.healthlog.notifications.MedicationNotificationHelper
 import com.example.healthlog.repository.MedicationRepository
 import java.text.SimpleDateFormat
 import java.time.LocalDate
@@ -385,19 +380,6 @@ object MedicationActions {
             else -> return
         }
 
-        MedicationNotificationHelper.cancelNotification(appContext, notificationId)
-
-        val alarmManager = appContext.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
-        val snoozeIntent = Intent(appContext, MedicationAlarmReceiver::class.java)
-        val snoozePendingIntent = PendingIntent.getBroadcast(
-            appContext,
-            notificationId + MedicationAlarmScheduler.SNOOZE_OFFSET,
-            snoozeIntent,
-            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
-        )
-        if (snoozePendingIntent != null) {
-            alarmManager.cancel(snoozePendingIntent)
-            snoozePendingIntent.cancel()
-        }
+        MedicationAlarmScheduler.cancelActiveAlertsForNotification(appContext, notificationId)
     }
 }

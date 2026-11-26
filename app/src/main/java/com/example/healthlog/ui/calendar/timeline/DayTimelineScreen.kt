@@ -40,8 +40,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -54,6 +58,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.healthlog.R
 import com.example.healthlog.database.SymptomEntry
@@ -62,6 +69,7 @@ import com.example.healthlog.model.ScheduledDoseItem
 import com.example.healthlog.model.ScheduledDoseStatus
 import com.example.healthlog.model.SymptomSeverity
 import com.example.healthlog.model.SymptomType
+import com.example.healthlog.notifications.MedicationNotificationHelper
 import com.example.healthlog.ui.calendar.AddEditSymptomSheet
 import com.example.healthlog.ui.format.decimalSeparator
 import com.example.healthlog.ui.format.formatLocale
@@ -82,6 +90,19 @@ fun DayTimelineScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val resources = LocalResources.current
+    var notificationsEnabled by remember {
+        mutableStateOf(MedicationNotificationHelper.areNotificationsEnabled(context))
+    }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                notificationsEnabled = MedicationNotificationHelper.areNotificationsEnabled(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     LaunchedEffect(viewModel) {
         viewModel.userMessage.collect { medName ->
@@ -122,7 +143,8 @@ fun DayTimelineScreen(
         onChooseLogSymptomFromSlot = viewModel::onChooseLogSymptomFromSlot,
         onChooseAddMedicationFromSlot = viewModel::onChooseAddMedicationFromSlot,
         onDismissAddMedicationSheet = viewModel::onDismissAddMedicationSheet,
-        onSaveMedication = viewModel::onSaveMedication
+        onSaveMedication = viewModel::onSaveMedication,
+        notificationsEnabled = notificationsEnabled
     )
 }
 
@@ -169,7 +191,8 @@ fun DayTimelineContent(
     onRequestDeleteDose: (ScheduledDoseItem) -> Unit = {},
     onDismissDeleteDose: () -> Unit = {},
     onConfirmDeleteDose: (MedicationActions.RecurringDoseScope) -> Unit = {},
-    today: LocalDate = LocalDate.now()
+    today: LocalDate = LocalDate.now(),
+    notificationsEnabled: Boolean = true
 ) {
     val locale = formatLocale()
     val isToday = uiState.selectedDate == today
@@ -265,6 +288,7 @@ fun DayTimelineContent(
                     TimelineHourSlotRow(
                         slot = slot,
                         isFutureDate = isFutureDate,
+                        notificationsEnabled = notificationsEnabled,
                         onAddToSlotClick = { onEmptyHourClick(slot.hour) },
                         onOpenMeasurementDetails = onOpenMeasurementDetails,
                         onMarkDoseTaken = onMarkDoseTaken,
@@ -532,6 +556,7 @@ private fun TimelineFilterChipsRow(
 private fun TimelineHourSlotRow(
     slot: TimelineHourSlot,
     isFutureDate: Boolean,
+    notificationsEnabled: Boolean = true,
     onAddToSlotClick: () -> Unit,
     onOpenMeasurementDetails: (Long) -> Unit,
     onMarkDoseTaken: (ScheduledDoseItem) -> Unit,
@@ -593,6 +618,7 @@ private fun TimelineHourSlotRow(
                             TimelineMedicationCard(
                                 event = event,
                                 isFutureDate = isFutureDate,
+                                notificationsEnabled = notificationsEnabled,
                                 onMarkTaken = { onMarkDoseTaken(event.doseItem) },
                                 onMarkSkipped = { onMarkDoseSkipped(event.doseItem) },
                                 onUndo = { onUndoDose(event.doseItem) },
@@ -710,6 +736,7 @@ private fun TimelineVitalCard(
 private fun TimelineMedicationCard(
     event: TimelineEvent.Medication,
     isFutureDate: Boolean,
+    notificationsEnabled: Boolean = true,
     onMarkTaken: () -> Unit,
     onMarkSkipped: () -> Unit,
     onUndo: () -> Unit,
@@ -800,6 +827,34 @@ private fun TimelineMedicationCard(
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Medium
                         )
+                    }
+
+                    if (!notificationsEnabled && dose.isRecurring && dose.status == ScheduledDoseStatus.PENDING) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            modifier = Modifier.testTag("dose_alerts_muted_badge")
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_notifications_off),
+                                    contentDescription = stringResource(R.string.dose_alerts_disabled_desc),
+                                    modifier = Modifier.size(13.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = stringResource(R.string.dose_alerts_disabled_badge),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
                     }
                 }
 

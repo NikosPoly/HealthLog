@@ -2,10 +2,7 @@ package com.example.healthlog.ui.medications
 
 import android.Manifest
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import android.os.Build
-import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -22,6 +19,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -67,6 +65,13 @@ fun MedicationsScreen(
 
     var notificationsEnabled by remember {
         mutableStateOf(MedicationNotificationHelper.areNotificationsEnabled(context))
+    }
+    var showReminderAlertsSheet by rememberSaveable { mutableStateOf(false) }
+    var followUpEnabled by remember {
+        mutableStateOf(MedicationNotificationHelper.isFollowUpEnabled(context))
+    }
+    var keepRingingEnabled by remember {
+        mutableStateOf(MedicationNotificationHelper.isKeepRingingEnabled(context))
     }
     var showTogglePermissionDialog by rememberSaveable { mutableStateOf(false) }
     var pendingToggleMedicationId by rememberSaveable { mutableStateOf<Long?>(null) }
@@ -122,6 +127,20 @@ fun MedicationsScreen(
                         text = stringResource(R.string.medications_title),
                         fontWeight = FontWeight.Bold
                     )
+                },
+                actions = {
+                    IconButton(
+                        onClick = {
+                            followUpEnabled = MedicationNotificationHelper.isFollowUpEnabled(context)
+                            keepRingingEnabled = MedicationNotificationHelper.isKeepRingingEnabled(context)
+                            showReminderAlertsSheet = true
+                        }
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_notifications),
+                            contentDescription = stringResource(R.string.reminder_alerts_action)
+                        )
+                    }
                 }
             )
         },
@@ -270,16 +289,7 @@ fun MedicationsScreen(
                 Button(
                     onClick = {
                         showTogglePermissionDialog = false
-                        val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                            Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-                                putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-                            }
-                        } else {
-                            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                                data = Uri.fromParts("package", context.packageName, null)
-                            }
-                        }
-                        context.startActivity(intent)
+                        MedicationNotificationHelper.openNotificationSettings(context)
                     }
                 ) {
                     Text(stringResource(R.string.notification_permission_enable))
@@ -293,6 +303,25 @@ fun MedicationsScreen(
                     Text(stringResource(R.string.notification_permission_dont_allow))
                 }
             }
+        )
+    }
+
+    if (showReminderAlertsSheet) {
+        ReminderAlertsSheet(
+            followUpEnabled = followUpEnabled,
+            keepRingingEnabled = keepRingingEnabled,
+            onFollowUpChanged = { enabled ->
+                followUpEnabled = enabled
+                MedicationNotificationHelper.setFollowUpEnabled(context, enabled)
+            },
+            onKeepRingingChanged = { enabled ->
+                keepRingingEnabled = enabled
+                MedicationNotificationHelper.setKeepRingingEnabled(context, enabled)
+            },
+            onOpenSoundSettings = {
+                MedicationNotificationHelper.openChannelNotificationSettings(context)
+            },
+            onDismiss = { showReminderAlertsSheet = false }
         )
     }
 }

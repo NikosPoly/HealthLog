@@ -1,9 +1,12 @@
 package com.example.healthlog.ui.calendar.timeline
 
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -650,5 +653,134 @@ class DayTimelineUiTest {
             .assertIsDisplayed()
             .performClick()
         assertEquals(takenDose, switchedToSkipped)
+    }
+
+    @Test
+    fun dayTimelineContent_notificationsDisabled_showsMutedBadgeOnlyOnPendingRecurringDose() {
+        val today = LocalDate.of(2026, 11, 20)
+        val pendingRecurring = ScheduledDoseItem(
+            medicationId = 30L,
+            medicationName = "Metformin",
+            dosage = "500",
+            unit = "mg",
+            instructions = null,
+            scheduledDate = today.toString(),
+            scheduledTime = "08:00",
+            hour = 8,
+            minute = 0,
+            status = ScheduledDoseStatus.PENDING,
+            isRecurring = true,
+            reminderId = 300L
+        )
+        val takenRecurring = ScheduledDoseItem(
+            medicationId = 31L,
+            medicationName = "Losartan",
+            dosage = "50",
+            unit = "mg",
+            instructions = null,
+            scheduledDate = today.toString(),
+            scheduledTime = "08:30",
+            hour = 8,
+            minute = 30,
+            status = ScheduledDoseStatus.TAKEN,
+            isRecurring = true,
+            reminderId = 301L,
+            doseLogId = 401L
+        )
+        val slot = TimelineHourSlot(
+            hour = 8,
+            timeLabel = "08:00",
+            events = listOf(
+                TimelineEvent.Medication(pendingRecurring, 8, 0, "08:00"),
+                TimelineEvent.Medication(takenRecurring, 8, 30, "08:30")
+            )
+        )
+
+        composeRule.setContent {
+            HealthLogTheme {
+                DayTimelineContent(
+                    uiState = DayTimelineUiState(
+                        selectedDate = today,
+                        hourSlots = listOf(slot)
+                    ),
+                    onBack = {},
+                    onPreviousDay = {},
+                    onNextDay = {},
+                    onJumpToToday = {},
+                    onSelectFilter = {},
+                    onMarkDoseTaken = {},
+                    onMarkDoseSkipped = {},
+                    onUndoDose = {},
+                    onOpenEditSymptom = {},
+                    onDismissAddEditSymptomSheet = {},
+                    onSaveSymptom = { _, _, _, _, _ -> },
+                    onRequestDeleteSymptom = {},
+                    onConfirmDeleteSymptom = {},
+                    onDismissDeleteDialog = {},
+                    onOpenMeasurementDetails = {},
+                    today = today,
+                    notificationsEnabled = false
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("Metformin").assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.dose_alerts_disabled_badge)).assertIsDisplayed()
+        composeRule.onAllNodesWithTag("dose_alerts_muted_badge").assertCountEquals(1)
+    }
+
+    @Test
+    fun dayTimelineContent_notificationsEnabled_hidesMutedBadge() {
+        val today = LocalDate.of(2026, 11, 20)
+        val pendingRecurring = ScheduledDoseItem(
+            medicationId = 30L,
+            medicationName = "Metformin",
+            dosage = "500",
+            unit = "mg",
+            instructions = null,
+            scheduledDate = today.toString(),
+            scheduledTime = "08:00",
+            hour = 8,
+            minute = 0,
+            status = ScheduledDoseStatus.PENDING,
+            isRecurring = true,
+            reminderId = 300L
+        )
+        val slot = TimelineHourSlot(
+            hour = 8,
+            timeLabel = "08:00",
+            events = listOf(TimelineEvent.Medication(pendingRecurring, 8, 0, "08:00"))
+        )
+
+        composeRule.setContent {
+            HealthLogTheme {
+                DayTimelineContent(
+                    uiState = DayTimelineUiState(
+                        selectedDate = today,
+                        hourSlots = listOf(slot)
+                    ),
+                    onBack = {},
+                    onPreviousDay = {},
+                    onNextDay = {},
+                    onJumpToToday = {},
+                    onSelectFilter = {},
+                    onMarkDoseTaken = {},
+                    onMarkDoseSkipped = {},
+                    onUndoDose = {},
+                    onOpenEditSymptom = {},
+                    onDismissAddEditSymptomSheet = {},
+                    onSaveSymptom = { _, _, _, _, _ -> },
+                    onRequestDeleteSymptom = {},
+                    onConfirmDeleteSymptom = {},
+                    onDismissDeleteDialog = {},
+                    onOpenMeasurementDetails = {},
+                    today = today,
+                    notificationsEnabled = true
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("Metformin").assertIsDisplayed()
+        composeRule.onNodeWithTag("dose_alerts_muted_badge").assertDoesNotExist()
     }
 }

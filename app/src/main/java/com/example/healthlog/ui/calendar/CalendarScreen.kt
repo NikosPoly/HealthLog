@@ -35,6 +35,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,6 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -50,6 +52,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.healthlog.R
 import com.example.healthlog.database.Measurement
@@ -58,6 +63,7 @@ import com.example.healthlog.model.ScheduledDoseItem
 import com.example.healthlog.model.ScheduledDoseStatus
 import com.example.healthlog.model.SymptomSeverity
 import com.example.healthlog.model.SymptomType
+import com.example.healthlog.notifications.MedicationNotificationHelper
 import com.example.healthlog.ui.format.decimalSeparator
 import com.example.healthlog.ui.format.formatLocale
 import com.example.healthlog.ui.format.formatMeasurementValue
@@ -78,6 +84,20 @@ fun CalendarScreen(
     bottomBar: @Composable () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    var notificationsEnabled by remember {
+        mutableStateOf(MedicationNotificationHelper.areNotificationsEnabled(context))
+    }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                notificationsEnabled = MedicationNotificationHelper.areNotificationsEnabled(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     CalendarContent(
         uiState = uiState,
@@ -105,6 +125,7 @@ fun CalendarScreen(
         onDismissDeleteDialog = viewModel::onDismissDeleteDialog,
         onOpenMeasurementDetails = onOpenMeasurementDetails,
         onOpenDayTimeline = onOpenDayTimeline,
+        notificationsEnabled = notificationsEnabled,
         bottomBar = bottomBar
     )
 }
@@ -138,6 +159,7 @@ fun CalendarContent(
     onDismissDeleteDose: () -> Unit = {},
     onConfirmDeleteDose: (com.example.healthlog.ui.medications.MedicationActions.RecurringDoseScope) -> Unit = {},
     today: LocalDate = LocalDate.now(),
+    notificationsEnabled: Boolean = true,
     bottomBar: @Composable () -> Unit = {}
 ) {
     val locale = formatLocale()
@@ -336,6 +358,7 @@ fun CalendarContent(
                     ScheduledDoseDayItemCard(
                         dose = dose,
                         isFutureDate = isFutureDate,
+                        notificationsEnabled = notificationsEnabled,
                         onMarkTaken = { onMarkDoseTaken(dose) },
                         onMarkSkipped = { onMarkDoseSkipped(dose) },
                         onUndo = { onUndoDoseAction(dose) },
@@ -982,6 +1005,7 @@ private fun MeasurementDayItemCard(
 private fun ScheduledDoseDayItemCard(
     dose: ScheduledDoseItem,
     isFutureDate: Boolean,
+    notificationsEnabled: Boolean = true,
     onMarkTaken: () -> Unit,
     onMarkSkipped: () -> Unit,
     onUndo: () -> Unit,
@@ -1073,6 +1097,34 @@ private fun ScheduledDoseDayItemCard(
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Medium
                         )
+                    }
+
+                    if (!notificationsEnabled && dose.isRecurring && dose.status == ScheduledDoseStatus.PENDING) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            modifier = Modifier.testTag("dose_alerts_muted_badge")
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_notifications_off),
+                                    contentDescription = stringResource(R.string.dose_alerts_disabled_desc),
+                                    modifier = Modifier.size(13.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = stringResource(R.string.dose_alerts_disabled_badge),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
                     }
                 }
 

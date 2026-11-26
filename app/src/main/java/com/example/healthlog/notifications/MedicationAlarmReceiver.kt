@@ -26,6 +26,7 @@ class MedicationAlarmReceiver : BroadcastReceiver() {
         val overrideId = intent.getLongExtra(MedicationNotificationHelper.EXTRA_OVERRIDE_ID, -1L)
         val alarmType = intent.getStringExtra(MedicationNotificationHelper.EXTRA_ALARM_TYPE)
             ?: MedicationNotificationHelper.ALARM_TYPE_MAIN
+        val followUpCount = intent.getIntExtra(MedicationNotificationHelper.EXTRA_FOLLOW_UP_COUNT, 0)
 
         val scheduledTime = intent.getStringExtra(MedicationNotificationHelper.EXTRA_SCHEDULED_TIME) ?: ""
         val scheduledDateExtra = intent.getStringExtra(MedicationNotificationHelper.EXTRA_SCHEDULED_DATE)
@@ -49,11 +50,17 @@ class MedicationAlarmReceiver : BroadcastReceiver() {
             try {
                 // 0. Permission check: if notification permission was revoked, cancel and do NOT ring!
                 if (!MedicationNotificationHelper.areNotificationsEnabled(context)) {
-                    if (alarmType == MedicationNotificationHelper.ALARM_TYPE_OVERRIDE && overrideId != -1L) {
+                    if (overrideId != -1L) {
                         MedicationAlarmScheduler.cancelOverrideAlarm(context, overrideId)
                     } else if (reminderId != -1L) {
                         MedicationAlarmScheduler.cancelReminder(context, reminderId)
                     }
+                    return@launch
+                }
+
+                // 0.5. If follow-up reminders were turned off while one was pending, drop it silently.
+                val followUpEnabled = MedicationNotificationHelper.isFollowUpEnabled(context)
+                if (alarmType == MedicationNotificationHelper.ALARM_TYPE_FOLLOW_UP && !followUpEnabled) {
                     return@launch
                 }
 
@@ -63,9 +70,10 @@ class MedicationAlarmReceiver : BroadcastReceiver() {
 
                 // 1. Guard check: if medication was deleted or paused, cancel and do NOT ring!
                 if (medication == null || !medication.isActive || medication.isDeleted) {
-                    if (alarmType == MedicationNotificationHelper.ALARM_TYPE_OVERRIDE && overrideId != -1L) {
+                    if (overrideId != -1L) {
                         MedicationAlarmScheduler.cancelOverrideAlarm(context, overrideId)
-                    } else if (reminderId != -1L) {
+                    }
+                    if (reminderId != -1L) {
                         val overrides = dao.getOverridesForReminder(reminderId)
                         MedicationAlarmScheduler.cancelReminder(context, reminderId, overrides)
                     }
@@ -81,7 +89,7 @@ class MedicationAlarmReceiver : BroadcastReceiver() {
                 }
 
                 if (matchingReminder == null || !matchingReminder.isEnabled) {
-                    if (alarmType == MedicationNotificationHelper.ALARM_TYPE_OVERRIDE && overrideId != -1L) {
+                    if (overrideId != -1L) {
                         MedicationAlarmScheduler.cancelOverrideAlarm(context, overrideId)
                     } else if (reminderId != -1L) {
                         MedicationAlarmScheduler.cancelReminder(context, reminderId)
@@ -93,7 +101,7 @@ class MedicationAlarmReceiver : BroadcastReceiver() {
                 val effectiveDate = scheduledDateExtra ?: todayDate
                 val overrides = dao.getOverridesForReminder(matchingReminder.id)
 
-                // 3. Validate override/schedule state for MAIN, OVERRIDE, and SNOOZE alarms
+                // 3. Validate override/schedule state for MAIN, OVERRIDE, SNOOZE, and FOLLOW_UP alarms
                 val shouldRingForSchedule = shouldRingForSchedule(
                     alarmType = alarmType,
                     matchingReminder = matchingReminder,
@@ -109,6 +117,7 @@ class MedicationAlarmReceiver : BroadcastReceiver() {
                     (existingLog.status == "TAKEN" || existingLog.status == "SKIPPED")
 
                 if (shouldRingForSchedule && !isAlreadyLogged) {
+                    val isFollowUp = alarmType == MedicationNotificationHelper.ALARM_TYPE_FOLLOW_UP
                     MedicationNotificationHelper.showMedicationNotification(
                         context = context,
                         medicationId = medication.id,
@@ -119,12 +128,37 @@ class MedicationAlarmReceiver : BroadcastReceiver() {
                         scheduledTime = scheduledTime,
                         notificationId = notificationId,
                         scheduledDate = effectiveDate,
-                        reminderId = reminderId,
-                        overrideId = overrideId
+                        reminderId = matchingReminder.id,
+                        overrideId = overrideId,
+                        isFollowUp = isFollowUp
                     )
+
+                    val nextFollowUp = MedicationAlarmScheduler.nextFollowUpCount(
+                        alarmType = alarmType,
+                        currentFollowUpCount = followUpCount,
+                        followUpEnabled = followUpEnabled
+                    )
+                    if (nextFollowUp != null) {
+                        MedicationAlarmScheduler.scheduleFollowUp(
+                            context = context,
+                            medicationId = medication.id,
+                            medicationName = medication.name,
+                            dosage = medication.dosage,
+                            unit = medication.unit,
+                            instructions = medication.instructions,
+                            scheduledTime = scheduledTime,
+                            notificationId = notificationId,
+                            reminderId = matchingReminder.id,
+                            overrideId = overrideId,
+                            scheduledDate = effectiveDate,
+                            followUpCount = nextFollowUp
+                        )
+                    } else if (!followUpEnabled) {
+                        MedicationAlarmScheduler.cancelFollowUpAlarm(context, notificationId)
+                    }
                 }
 
-                // 5. Reschedule next recurring occurrence only for MAIN alarms (never for snoozes or one-off overrides)
+                // 5. Reschedule next recurring occurrence only for MAIN alarms (never for snoozes, overrides, or follow-ups)
                 if (alarmType == MedicationNotificationHelper.ALARM_TYPE_MAIN) {
                     val forwardCalendar = Calendar.getInstance().apply {
                         add(Calendar.SECOND, 60)
@@ -179,7 +213,8 @@ class MedicationAlarmReceiver : BroadcastReceiver() {
                     overrides.none { it.originalDate == effectiveDate }
                 }
 
-                MedicationNotificationHelper.ALARM_TYPE_SNOOZE -> {
+                MedicationNotificationHelper.ALARM_TYPE_SNOOZE,
+                MedicationNotificationHelper.ALARM_TYPE_FOLLOW_UP -> {
                     if (overrideId != -1L) {
                         val override = overrides.find { it.id == overrideId }
                         override != null &&

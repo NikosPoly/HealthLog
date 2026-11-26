@@ -1,18 +1,32 @@
 package com.example.healthlog.notifications
 
+import android.app.Activity
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.media.AudioAttributes
+import android.media.RingtoneManager
+import android.net.Uri
 import android.os.Build
+import android.provider.Settings
 import androidx.core.app.NotificationCompat
+import androidx.core.content.edit
 import com.example.healthlog.MainActivity
 import com.example.healthlog.R
 
 object MedicationNotificationHelper {
 
-    const val CHANNEL_ID = "medication_reminders_channel"
+    private const val LEGACY_CHANNEL_ID = "medication_reminders_channel"
+    const val CHANNEL_ID = "medication_reminders_channel_v2"
+
+    private const val PREFS_NAME = "app_settings"
+    const val KEY_FOLLOW_UP_ENABLED = "notification_follow_up_enabled"
+    const val KEY_KEEP_RINGING = "notification_keep_ringing"
+
+    private val VIBRATION_PATTERN = longArrayOf(0L, 500L, 250L, 500L, 250L, 500L)
 
     const val EXTRA_MEDICATION_ID = "extra_medication_id"
     const val EXTRA_MEDICATION_NAME = "extra_medication_name"
@@ -25,13 +39,35 @@ object MedicationNotificationHelper {
     const val EXTRA_REMINDER_ID = "extra_reminder_id"
     const val EXTRA_OVERRIDE_ID = "extra_override_id"
     const val EXTRA_ALARM_TYPE = "extra_alarm_type"
+    const val EXTRA_FOLLOW_UP_COUNT = "extra_follow_up_count"
 
     const val ALARM_TYPE_MAIN = "MAIN"
     const val ALARM_TYPE_SNOOZE = "SNOOZE"
     const val ALARM_TYPE_OVERRIDE = "OVERRIDE"
+    const val ALARM_TYPE_FOLLOW_UP = "FOLLOW_UP"
 
     const val ACTION_MARK_TAKEN = "com.example.healthlog.ACTION_MEDICATION_MARK_TAKEN"
     const val ACTION_SNOOZE = "com.example.healthlog.ACTION_MEDICATION_SNOOZE"
+
+    fun isFollowUpEnabled(context: Context): Boolean {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getBoolean(KEY_FOLLOW_UP_ENABLED, true)
+    }
+
+    fun setFollowUpEnabled(context: Context, enabled: Boolean) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit { putBoolean(KEY_FOLLOW_UP_ENABLED, enabled) }
+    }
+
+    fun isKeepRingingEnabled(context: Context): Boolean {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getBoolean(KEY_KEEP_RINGING, false)
+    }
+
+    fun setKeepRingingEnabled(context: Context, enabled: Boolean) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit { putBoolean(KEY_KEEP_RINGING, enabled) }
+    }
 
     fun areNotificationsEnabled(context: Context): Boolean {
         // 1. App-level permission check across all Android versions (including POST_NOTIFICATIONS on Android 13+)
@@ -51,17 +87,92 @@ object MedicationNotificationHelper {
         return true
     }
 
+    internal fun resolveDefaultAlarmSoundUri(): Uri? {
+        return RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+            ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+            ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+    }
+
     fun createNotificationChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+            // Remove the legacy channel so upgraded installs pick up the longer alarm sound & vibration defaults.
+            if (notificationManager.getNotificationChannel(LEGACY_CHANNEL_ID) != null) {
+                notificationManager.deleteNotificationChannel(LEGACY_CHANNEL_ID)
+            }
+
             val name = context.getString(R.string.notification_channel_medications_name)
             val descriptionText = context.getString(R.string.notification_channel_medications_desc)
             val importance = NotificationManager.IMPORTANCE_HIGH
+            val soundUri = resolveDefaultAlarmSoundUri()
+            val audioAttributes = AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build()
+
             val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
                 description = descriptionText
                 enableVibration(true)
+                vibrationPattern = VIBRATION_PATTERN
+                if (soundUri != null) {
+                    setSound(soundUri, audioAttributes)
+                }
             }
-            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
+        }
+    }
+
+    fun buildNotificationSettingsIntent(context: Context): Intent {
+        val appLevelGranted = androidx.core.app.NotificationManagerCompat.from(context).areNotificationsEnabled()
+        return if (!appLevelGranted) {
+            // Master permission is off -> open App notification settings so user can toggle the master switch
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                    putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                }
+            } else {
+                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = Uri.fromParts("package", context.packageName, null)
+                }
+            }
+        } else {
+            // Master permission is on -> open Medication Reminders CHANNEL directly,
+            // bypassing the collapsed "Other ⌄" dropdown in app settings
+            buildChannelSettingsIntent(context)
+        }
+    }
+
+    fun openNotificationSettings(context: Context) {
+        val intent = buildNotificationSettingsIntent(context).apply {
+            if (context !is Activity) {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+        }
+        context.startActivity(intent)
+    }
+
+    fun buildChannelSettingsIntent(context: Context): Intent {
+        createNotificationChannel(context)
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).apply {
+                putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                putExtra(Settings.EXTRA_CHANNEL_ID, CHANNEL_ID)
+            }
+        } else {
+            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = Uri.fromParts("package", context.packageName, null)
+            }
+        }
+    }
+
+    fun openChannelNotificationSettings(context: Context) {
+        openNotificationSettings(context)
+    }
+
+    internal fun applyAlertFlags(notification: Notification, keepRinging: Boolean) {
+        if (keepRinging) {
+            notification.flags = notification.flags or Notification.FLAG_INSISTENT
         }
     }
 
@@ -76,7 +187,8 @@ object MedicationNotificationHelper {
         notificationId: Int,
         scheduledDate: String? = null,
         reminderId: Long = notificationId.toLong(),
-        overrideId: Long = -1L
+        overrideId: Long = -1L,
+        isFollowUp: Boolean = false
     ) {
         createNotificationChannel(context)
 
@@ -134,7 +246,11 @@ object MedicationNotificationHelper {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val contentTitle = context.getString(R.string.notification_medication_title, medicationName)
+        val contentTitle = if (isFollowUp) {
+            context.getString(R.string.notification_medication_follow_up_title, medicationName)
+        } else {
+            context.getString(R.string.notification_medication_title, medicationName)
+        }
         val contentText = if (!instructions.isNullOrBlank()) {
             context.getString(R.string.notification_medication_text, dosage, unit, instructions)
         } else {
@@ -161,6 +277,8 @@ object MedicationNotificationHelper {
                 snoozePendingIntent
             )
             .build()
+
+        applyAlertFlags(notification, isKeepRingingEnabled(context))
 
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.notify(notificationId, notification)

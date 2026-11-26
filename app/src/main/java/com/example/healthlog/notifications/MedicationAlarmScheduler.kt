@@ -18,6 +18,49 @@ object MedicationAlarmScheduler {
 
     const val SNOOZE_OFFSET = 100_000
     const val OVERRIDE_OFFSET = 200_000
+    const val FOLLOW_UP_OFFSET = 400_000
+
+    const val FOLLOW_UP_DELAY_MINUTES = 10
+    const val MAX_FOLLOW_UP_COUNT = 2
+
+    fun snoozeRequestCode(notificationId: Int): Int = notificationId + SNOOZE_OFFSET
+
+    fun followUpRequestCode(notificationId: Int): Int = notificationId + FOLLOW_UP_OFFSET
+
+    fun calculateFollowUpTriggerMillis(
+        nowMillis: Long = System.currentTimeMillis(),
+        delayMinutes: Int = FOLLOW_UP_DELAY_MINUTES
+    ): Long = nowMillis + (delayMinutes * 60 * 1000L)
+
+    /**
+     * Determines the next follow-up sequence number (1..[MAX_FOLLOW_UP_COUNT]) to schedule
+     * after a notification of type [alarmType] fires, or null if no follow-up should be scheduled.
+     *
+     * - `MAIN`, `OVERRIDE`, and `SNOOZE` alerts each start a fresh follow-up sequence (`1`).
+     * - `FOLLOW_UP` alerts chain up to [MAX_FOLLOW_UP_COUNT] and then stop.
+     */
+    fun nextFollowUpCount(
+        alarmType: String,
+        currentFollowUpCount: Int,
+        followUpEnabled: Boolean
+    ): Int? {
+        if (!followUpEnabled) return null
+        return when (alarmType) {
+            MedicationNotificationHelper.ALARM_TYPE_MAIN,
+            MedicationNotificationHelper.ALARM_TYPE_OVERRIDE,
+            MedicationNotificationHelper.ALARM_TYPE_SNOOZE -> 1
+
+            MedicationNotificationHelper.ALARM_TYPE_FOLLOW_UP -> {
+                if (currentFollowUpCount in 1 until MAX_FOLLOW_UP_COUNT) {
+                    currentFollowUpCount + 1
+                } else {
+                    null
+                }
+            }
+
+            else -> null
+        }
+    }
 
     /**
      * Calculates the next epoch millis for a given reminder (hour:minute and days of week).
@@ -262,7 +305,7 @@ object MedicationAlarmScheduler {
 
     fun cancelOverrideAlarm(context: Context, overrideId: Long) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        cancelMainAndSnoozeAlarms(context, alarmManager, overrideRequestCode(overrideId))
+        cancelAllAlarmsForNotification(context, alarmManager, overrideRequestCode(overrideId))
     }
 
     fun cancelReminder(
@@ -271,7 +314,7 @@ object MedicationAlarmScheduler {
         overrides: List<MedicationScheduleOverride> = emptyList()
     ) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        cancelMainAndSnoozeAlarms(context, alarmManager, reminderId.toInt())
+        cancelAllAlarmsForNotification(context, alarmManager, reminderId.toInt())
 
         overrides
             .filter { it.reminderId == reminderId }
@@ -280,44 +323,56 @@ object MedicationAlarmScheduler {
             }
     }
 
-    private fun cancelMainAlarmOnly(
+    fun cancelFollowUpAlarm(context: Context, notificationId: Int) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
+        cancelBroadcastAlarm(context, alarmManager, followUpRequestCode(notificationId))
+    }
+
+    /**
+     * Dismisses the active tray notification and cancels any pending snooze or follow-up alarms
+     * associated with [notificationId], without touching the underlying recurring schedule.
+     */
+    fun cancelActiveAlertsForNotification(context: Context, notificationId: Int) {
+        MedicationNotificationHelper.cancelNotification(context, notificationId)
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
+        cancelBroadcastAlarm(context, alarmManager, snoozeRequestCode(notificationId))
+        cancelBroadcastAlarm(context, alarmManager, followUpRequestCode(notificationId))
+    }
+
+    private fun cancelBroadcastAlarm(
         context: Context,
         alarmManager: AlarmManager,
         requestCode: Int
     ) {
         val intent = Intent(context, MedicationAlarmReceiver::class.java)
-        val mainPendingIntent = PendingIntent.getBroadcast(
+        val pendingIntent = PendingIntent.getBroadcast(
             context,
             requestCode,
             intent,
             PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
         )
-        if (mainPendingIntent != null) {
-            alarmManager.cancel(mainPendingIntent)
-            mainPendingIntent.cancel()
+        if (pendingIntent != null) {
+            alarmManager.cancel(pendingIntent)
+            pendingIntent.cancel()
         }
     }
 
-    private fun cancelMainAndSnoozeAlarms(
+    private fun cancelMainAlarmOnly(
+        context: Context,
+        alarmManager: AlarmManager,
+        requestCode: Int
+    ) {
+        cancelBroadcastAlarm(context, alarmManager, requestCode)
+    }
+
+    private fun cancelAllAlarmsForNotification(
         context: Context,
         alarmManager: AlarmManager,
         notificationId: Int
     ) {
         cancelMainAlarmOnly(context, alarmManager, notificationId)
-
-        val intent = Intent(context, MedicationAlarmReceiver::class.java)
-        val snoozeRequestCode = notificationId + SNOOZE_OFFSET
-        val snoozePendingIntent = PendingIntent.getBroadcast(
-            context,
-            snoozeRequestCode,
-            intent,
-            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
-        )
-        if (snoozePendingIntent != null) {
-            alarmManager.cancel(snoozePendingIntent)
-            snoozePendingIntent.cancel()
-        }
-
+        cancelBroadcastAlarm(context, alarmManager, snoozeRequestCode(notificationId))
+        cancelBroadcastAlarm(context, alarmManager, followUpRequestCode(notificationId))
         MedicationNotificationHelper.cancelNotification(context, notificationId)
     }
 
@@ -335,6 +390,9 @@ object MedicationAlarmScheduler {
         scheduledDate: String? = null,
         snoozeMinutes: Int = 30
     ) {
+        // Cancel any pending follow-up so it doesn't fire during the snooze window.
+        cancelFollowUpAlarm(context, notificationId)
+
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val triggerAtMillis = System.currentTimeMillis() + (snoozeMinutes * 60 * 1000L)
 
@@ -356,7 +414,58 @@ object MedicationAlarmScheduler {
             putExtra(MedicationNotificationHelper.EXTRA_ALARM_TYPE, MedicationNotificationHelper.ALARM_TYPE_SNOOZE)
         }
 
-        val requestCode = notificationId + SNOOZE_OFFSET
+        val requestCode = snoozeRequestCode(notificationId)
+
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            requestCode,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        scheduleReliableAlarm(context, alarmManager, triggerAtMillis, pendingIntent)
+    }
+
+    fun scheduleFollowUp(
+        context: Context,
+        medicationId: Long,
+        medicationName: String,
+        dosage: String,
+        unit: String,
+        instructions: String?,
+        scheduledTime: String,
+        notificationId: Int,
+        reminderId: Long = notificationId.toLong(),
+        overrideId: Long = -1L,
+        scheduledDate: String? = null,
+        followUpCount: Int = 1,
+        delayMinutes: Int = FOLLOW_UP_DELAY_MINUTES
+    ) {
+        if (followUpCount !in 1..MAX_FOLLOW_UP_COUNT) return
+
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val triggerAtMillis = calculateFollowUpTriggerMillis(delayMinutes = delayMinutes)
+
+        val intent = Intent(context, MedicationAlarmReceiver::class.java).apply {
+            putExtra(MedicationNotificationHelper.EXTRA_MEDICATION_ID, medicationId)
+            putExtra(MedicationNotificationHelper.EXTRA_MEDICATION_NAME, medicationName)
+            putExtra(MedicationNotificationHelper.EXTRA_DOSAGE, dosage)
+            putExtra(MedicationNotificationHelper.EXTRA_UNIT, unit)
+            putExtra(MedicationNotificationHelper.EXTRA_INSTRUCTIONS, instructions)
+            putExtra(MedicationNotificationHelper.EXTRA_SCHEDULED_TIME, scheduledTime)
+            if (scheduledDate != null) {
+                putExtra(MedicationNotificationHelper.EXTRA_SCHEDULED_DATE, scheduledDate)
+            }
+            putExtra(MedicationNotificationHelper.EXTRA_NOTIFICATION_ID, notificationId)
+            putExtra(MedicationNotificationHelper.EXTRA_REMINDER_ID, reminderId)
+            if (overrideId != -1L) {
+                putExtra(MedicationNotificationHelper.EXTRA_OVERRIDE_ID, overrideId)
+            }
+            putExtra(MedicationNotificationHelper.EXTRA_ALARM_TYPE, MedicationNotificationHelper.ALARM_TYPE_FOLLOW_UP)
+            putExtra(MedicationNotificationHelper.EXTRA_FOLLOW_UP_COUNT, followUpCount)
+        }
+
+        val requestCode = followUpRequestCode(notificationId)
 
         val pendingIntent = PendingIntent.getBroadcast(
             context,

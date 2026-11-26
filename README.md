@@ -129,7 +129,7 @@ The app is available in Greek and English.
   - **Day summary card:** selecting a calendar day displays its quick event summary with scheduled medication doses, allowing instant Take, Skip, Move Time, and Delete actions, plus a "Full Day" button to open the detailed timeline.
   - **24-Hour Day Timeline Screen (`DayTimelineScreen`):**
     - **Hour-by-hour view (00:00 to 23:00):** chronologically groups all daily events (vitals, symptoms, medication doses) into hour slots. Empty slots can be collapsed or expanded, with a `+` action on any slot to log a symptom or medication directly at that specific hour.
-    - **Interactive medication dose cards:** displays medication name, dosage, scheduled time, and status badge (Pending, Taken, Skipped, Unlogged). Users can mark as Taken or Skipped directly. Today's recurring doses support Undo (reverting status to Pending). Past Unlogged doses show Take and Skip buttons, and past Taken/Skipped doses of scheduled medications show a one-tap **Mark taken** / **Mark skipped** switch instead of Undo. One-time and as-needed doses hide Undo and show a direct Delete (trash bin) action.
+    - **Interactive medication dose cards:** displays medication name, dosage, scheduled time, and status badge (Pending, Taken, Skipped, Unlogged). Users can mark as Taken or Skipped directly. Today's recurring doses support Undo (reverting status to Pending). Past Unlogged doses show Take and Skip buttons, and past Taken/Skipped doses of scheduled medications show a one-tap **Mark taken** / **Mark skipped** switch instead of Undo. One-time and as-needed doses hide Undo and show a direct Delete (trash bin) action. When device or channel notifications are disabled, pending recurring doses on both Calendar and Day Timeline remain visible and actionable while displaying a subtle **Alerts muted** badge (`ic_notifications_off.xml`).
     - **Move Time dialog:** reschedule a dose to a new hour and minute, with a scope dialog for recurring medications ("This day only" vs. "This and all future days").
     - **Delete Dose dialog:** remove a scheduled dose, with scope selection for recurring medications ("This day only" vs. "This and all future days").
     - **Read-only vital cards:** formatted measurement values, timestamps, and multi-colored metric icons (`MeasurementType.icon`), filtering out companion pulse records from blood pressure measurements. Tapping navigates to full measurement details.
@@ -143,7 +143,8 @@ The app is available in Greek and English.
   - **Unlogged past doses:** whenever the app opens, recurring reminder slots from past days that were never marked Taken or Skipped are saved as **Unlogged** dose logs (each past day is checked only once). The check respects paused medicines, per-day moves and cancellations, start/end dates, and skips slots that had already passed when the medicine was created. Unlogged doses stay on the calendar and timeline, ready to be marked Taken or Skipped (or deleted individually), for as long as the medicine exists.
   - **Medication Schedule Resolver:** computes daily scheduled doses based on start/end date bounds, recurrence frequency, and per-day overrides.
   - **As-needed & one-time medication logging:** dedicated quick-entry flow for symptomatic or ad-hoc medication intake directly from prescriptions or the form sheet.
-  - **Offline AlarmManager notifications:** scheduled via Android `AlarmManager` (`SCHEDULE_EXACT_ALARM`) with high-priority heads-up notifications and instant *Mark as Taken* actions, requiring zero cloud services or battery-draining polling.
+  - **Offline AlarmManager notifications & automatic follow-ups:** scheduled via Android `AlarmManager` (`SCHEDULE_EXACT_ALARM`) on the `medication_reminders_channel_v2` channel with an alarm-style default tone (`TYPE_ALARM` with `TYPE_RINGTONE` / `TYPE_NOTIFICATION` fallback), 3-pulse vibration, and instant *Mark as Taken* / *Snooze 30m* actions, requiring zero cloud services or battery-draining polling. When enabled (default ON), unanswered alerts automatically schedule up to 2 follow-up reminders spaced 10 minutes apart and cancel cleanly as soon as the dose is marked Taken, Skipped, Snoozed, edited, moved, or deleted.
+  - **Reminder Alerts sheet & smart settings routing:** tapping the bell icon in Medications opens `ReminderAlertsSheet`, letting users toggle automatic 10-minute follow-ups, toggle optional **Keep ringing until dismissed** (`FLAG_INSISTENT`, default OFF), or jump straight to Android's system sound, vibration, and Do Not Disturb settings (routing directly to the Medication Reminders channel when app notifications are on, or to app notification settings when master permission is off).
   - **Reboot resilience:** `BootReceiver` automatically reschedules all active medication alarms on device boot (`ACTION_BOOT_COMPLETED`).
   - **Add/edit medication modal sheet:** customizable name, dosage, measurement units (mg, ml, tablet, drops, puff, g, mcg, patch, unit), daily reminder time pickers, frequency selection, doctor instructions, and seamless Android 13+ `POST_NOTIFICATIONS` permission request & resume handling.
 - **A color per type and fixed brand identity:** red for blood pressure, pink for pulse, orange for blood sugar, green for
@@ -200,8 +201,8 @@ healthlog/
     │       └── vico/        the chart itself, its tooltip and axes (the only place Vico is used)
     ├── details/             measurement details screen: single-entry breakdown, clinical context tags
     │   └── references/      clinical reference cards, visual gauge meters, and stage badges
-    ├── medications/         medications screen: My Prescriptions, Add/Edit sheet, one-time meds,
-    │                        dose status actions and dialog state
+    ├── medications/         medications screen: My Prescriptions, Add/Edit sheet, ReminderAlertsSheet,
+    │                        one-time meds, dose status actions and dialog state
     ├── calendar/            calendar & timeline: CalendarScreen, DayTimelineScreen, DoseActionDialogs,
     │   │                    MonthHeader, MonthYearPickerDialog, CalendarDayCell, AddEditSymptomSheet
     │   └── timeline/        24-hour hour-by-hour timeline: DayTimelineContent, timeline filter chips,
@@ -238,6 +239,7 @@ Dedicated vector icons illustrate every clinical option and dialog action:
 - **Filtering Actions:** `ic_filter.xml` (filter action and badge), `ic_close.xml` (chip dismissal)
 - **Conversational Doctor Avatars:** `ic_doctor_guide.xml` (friendly educational guide avatar), `ic_doctor_warning.xml` (serious, attentive avatar with alert badge for clinical warnings)
 - **Custom Date & Time:** `ic_calendar.xml`
+- **Medication Alerts:** `ic_notifications.xml` (Reminder Alerts action & settings link), `ic_notifications_off.xml` (muted-alerts badge on pending doses)
 - **Export & Download Actions:** `ic_download.xml` (top app bar export action), `ic_format_pdf.xml` (doctor PDF report badge), `ic_format_csv.xml` (spreadsheet CSV data badge)
 
 These are rendered inside `OptionSelectorGroup` as compact, single-choice chips with icon presentation and accessible content descriptions, keeping the entry dialog uncluttered and easy to tap.
@@ -291,7 +293,9 @@ There are two kinds of tests:
 - `TimeAgoTest`: the "time ago" of the last measurement (hours, yesterday, days, months, years)
 - `MedicationScheduleResolverTest`: daily schedule resolution, interval calculations, start/end date bounds, per-day move/delete overrides, soft-delete dose history preservation, Unlogged status mapping and past Taken/Skipped switch eligibility, and the unlogged past dose sweep (logged slots, cancelled/moved overrides, paused medicines, already-swept days, creation-day guard)
 - `MedicationsViewModelTest`: active prescriptions list, add/edit sheet open/close state, one-time medications, and delete confirmation modal state with the unlogged past dose count
-- `MedicationAlarmSchedulerTest`: exact alarm computation, intent extras, reminder date bounds, and cancellation logic
+- `MedicationAlarmSchedulerTest`: exact alarm computation, intent extras, reminder date bounds, follow-up request codes, delay calculation, retry chaining, and cancellation logic
+- `MedicationAlarmReceiverTest`: schedule and override validation for main, override, snooze, and follow-up alarms
+- `MedicationNotificationHelperTest`: alert flag application (`FLAG_INSISTENT` keep-ringing behavior)
 - `MedicationRepositoryTest`: database queries for medications, reminders, soft-delete dose history preservation, dropping Unlogged doses on delete while keeping Taken/Skipped, the unlogged past dose sweep (no re-creation after manual deletion), and dose logs
 - `SymptomDomainTest`: symptom type enum matching and 1–5 severity level mapping with graceful fallbacks
 - `SymptomRepositoryTest`: symptom insertion, updates, range queries, and ID deletion
@@ -311,9 +315,9 @@ There are two kinds of tests:
 - `ChartPageTest`: the chart page: the period card (chart or empty message, stats), contextual shape legends, condition breakdown statistics and clinical insights, and the last entry card
 - `MeasurementDetailsScreenTest`: the details screen layout, clinical condition tags, back navigation and deletion
 - `MeasurementGuideScreenTest`: the educational guide screen, tabs, doctor speech bubble cards, and back navigation
-- `MedicationsUiTest`: medication management UI: My Prescriptions list, one-time medication chips, and add/edit medication sheet validation
-- `CalendarUiTest`: health calendar UI: month navigation, Month/Year picker grid dialog, Today quick-jump, day summary with scheduled doses (Take, Skip, Move, Delete), past Unlogged badge with Take/Skip, past Mark taken / Mark skipped switch without Undo, symptom creation sheet, custom name validation, and deletion dialog
-- `DayTimelineUiTest`: 24-hour day timeline UI: header navigation and Today jump, interactive medication take/skip actions, one-time dose delete action without undo, past Unlogged dose card actions, past Mark skipped switch without Undo, move/delete scope dialogs, symptom sheet integration, and Greek localization parity
+- `MedicationsUiTest`: medication management UI: My Prescriptions list, one-time medication chips, add/edit medication sheet validation, and `ReminderAlertsSheet` toggles and system settings callback
+- `CalendarUiTest`: health calendar UI: month navigation, Month/Year picker grid dialog, Today quick-jump, day summary with scheduled doses (Take, Skip, Move, Delete), past Unlogged badge with Take/Skip, past Mark taken / Mark skipped switch without Undo, muted-alerts badge visibility when notifications are disabled, symptom creation sheet, custom name validation, and deletion dialog
+- `DayTimelineUiTest`: 24-hour day timeline UI: header navigation and Today jump, interactive medication take/skip actions, one-time dose delete action without undo, past Unlogged dose card actions, past Mark skipped switch without Undo, muted-alerts badge visibility when notifications are disabled, move/delete scope dialogs, symptom sheet integration, and Greek localization parity
 - `BottomNavigationUiTest`: bottom navigation bar tab switching (Vitals, Medications, Calendar) and placeholder screen verification
 
 To run them:
