@@ -73,6 +73,14 @@ class MainActivity : FragmentActivity() {
         val medicationRepository = MedicationRepository(database.medicationDao())
         val symptomRepository = SymptomRepository(database.symptomDao())
         val userProfileRepository = com.example.healthlog.repository.UserProfileRepository(database.userProfileDao())
+        val backupRepository = com.example.healthlog.repository.BackupRepository(database)
+        val backupStorage = com.example.healthlog.backup.SharedPrefsBackupStorage(applicationContext)
+
+        // Ensure periodic automatic backup is scheduled according to current user preferences
+        com.example.healthlog.backup.AutoBackupWorker.ensureScheduled(
+            applicationContext,
+            backupStorage.schedule.value
+        )
 
         setContent {
             val isLockEnabled by appLockManager.isLockEnabled.collectAsState()
@@ -102,7 +110,9 @@ class MainActivity : FragmentActivity() {
                             medicationRepository = medicationRepository,
                             symptomRepository = symptomRepository,
                             userProfileRepository = userProfileRepository,
-                            appLockManager = appLockManager
+                            appLockManager = appLockManager,
+                            backupRepository = backupRepository,
+                            backupStorage = backupStorage
                         )
                     }
 

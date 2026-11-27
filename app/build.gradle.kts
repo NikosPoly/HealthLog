@@ -74,7 +74,12 @@ dependencies {
     implementation(libs.vico.compose.m3)
     // Biometric / device credential app lock
     implementation(libs.androidx.biometric)
+    implementation(libs.androidx.fragment.ktx)
+    // Background scheduled automatic backups
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.documentfile)
     testImplementation(libs.junit)
+    testImplementation("org.json:json:20240303")
     androidTestImplementation(platform(libs.androidx.compose.bom))
     // Keeps all kotlinx.serialization libraries (used by Navigation and by Room's test tools)
     // on the same version. Without it, the migration tests fail with an AbstractMethodError.

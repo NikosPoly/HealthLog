@@ -407,18 +407,40 @@ This document outlines the architectural strategy, feature specifications, and i
   * `ExportConfigTest` asserting default profile details inclusion.
   * Full English (`values/strings.xml`) and Greek (`values-el/strings.xml`) localization.
 
-#### Milestone 4.2: Data Backup & Restore
+#### Milestone 4.2: Data Backup & Restore (Completed)
 * **Goal:** Allow users to export and import their entire personal health log (measurements, medications, reminders, dose logs, schedule overrides, symptoms, and personal profile) securely to protect against device loss or upgrades.
-* **Step 1 — JSON Serialization Engine:**
-  * Serialize and deserialize all Room database tables (`measurements`, `medications`, `medication_reminders`, `medication_schedule_overrides`, `medication_dose_logs`, `symptoms`, `user_profile`) with schema version metadata to/from structured JSON.
-  * Keep device-local security flags (`isAppLockEnabled`) excluded from backups so restoring on a new phone never locks out the user.
-* **Step 2 — Encrypted Export:**
-  * Optional password-based encryption (AES-256-GCM with PBKDF2 key derivation) for the exported backup file.
-* **Step 3 — Storage Access Framework (SAF) & Profile UI Integration:**
-  * Surface Backup & Restore controls inside the Profile screen introduced in Milestone 4.1.
-  * Use `ActivityResultContracts.CreateDocument` to export to local storage, SD card, or Google Drive.
-  * Use `ActivityResultContracts.OpenDocument` to import and restore.
-* **Step 4 — Safe Import Transaction & Alarm Rescheduling:**
-  * Validate JSON integrity, decrypt if password-protected, and execute database restoration atomically inside a Room transaction, preventing partial or corrupted imports.
-  * Automatically reschedule active medication alarms after a successful restore.
+* **Step 1 — JSON Serialization Engine (`backup/BackupData.kt`) (Completed):**
+  * Implemented pure, zero-dependency serialization and deserialization for all Room tables (`measurements`, `medications`, `medication_reminders`, `medication_schedule_overrides`, `medication_dose_logs`, `symptoms`, `user_profile`) into versioned, structured JSON (`format: HEALTHLOG_BACKUP`, `version: 1`).
+  * Lenient schema mapping (omitted optional fields default safely; unknown future properties ignored gracefully) so future additions/removals will never break backups or require Room database migrations.
+  * Device-local security preferences (`isAppLockEnabled`) are strictly excluded from backups so restoring onto a new device never locks out the user.
+* **Step 2 — AES-256-GCM Encryption Engine (`backup/BackupCrypto.kt`) (Completed):**
+  * Password-based encryption using **AES-256 in GCM mode** (`AES/GCM/NoPadding`, 128-bit authentication tag) combined with **PBKDF2-HMAC-SHA256** (100,000 iterations, cryptographically random 16-byte salt, 12-byte IV).
+  * Encrypted envelope format (`format: HEALTHLOG_ENCRYPTED_BACKUP`, `.hlbackup`) containing cryptographic metadata and Base64 ciphertext.
+  * Unauthenticated metadata peeking (`peekMetadata`) allowing the UI to display exported date and item counts before asking for a password.
+  * Tamper detection: any bit corruption or invalid password triggers GCM authentication tag verification failure cleanly before any data is modified.
+* **Step 3 — Repository, Transactional Restore & Alarm Rescheduling (`repository/BackupRepository.kt`, `database/BackupDao.kt`) (Completed):**
+  * `BackupDao` Room DAO performing direct bulk retrieval, clearing, and bulk insertion.
+  * Atomic transactional restore inside `database.withTransaction`: clears existing rows in child-first foreign key order and inserts backup content in parent-first order.
+  * Automatically reschedules all active medication reminder alarms using `MedicationAlarmScheduler` immediately following database restoration.
+* **Step 4 — Scheduled Automatic Backups (`backup/AutoBackupWorker.kt`, `backup/BackupStorage.kt`) (Completed):**
+  * Background periodic backup executed via AndroidX `WorkManager` (`AutoBackupWorker`), with `ExistingPeriodicWorkPolicy.KEEP` on app startup to prevent resetting the timer, and `UPDATE` on user schedule change.
+  * Schedule frequencies: **Daily (1d)**, **Every 3 days (3d)**, **Weekly (7d — Default)**, **Every 2 weeks (14d)**, **Monthly (30d)**, and **Off**.
+  * Custom folder support via Storage Access Framework (`OpenDocumentTree` with persistable URI permissions) alongside default app internal storage (`filesDir/backups/`).
+  * Rolling retention: keeps the last 5 automated backups, automatically pruning older files.
+  * Optional pre-set Auto-Backup Password to automatically encrypt background scheduled backups.
+* **Step 5 — Profile Screen UI & SAF Integration (`ui/profile/`) (Completed):**
+  * Clean **Data & Backup** card in `ProfileScreen` featuring:
+    * Amber overdue warning banner when auto-backup is disabled (OFF), never taken, or elapsed time exceeds the schedule interval, with a one-tap **Back Up Now** action.
+    * Last backup timestamp formatted in the user's localized date format.
+    * Automatic Backup schedule interval dropdown menu.
+    * Auto-backup destination folder picker and reset-to-default button.
+    * Auto-backup encryption password modal setup dialog (`AutoBackupPasswordDialog`).
+    * **Export Backup** (`CreateDocument` SAF launcher) with interactive encryption dialog (`ManualBackupDialog`).
+    * **Restore Backup** (`OpenDocument` SAF launcher) with password prompt dialog (`RestorePasswordDialog`) and confirmation summary dialog (`RestoreConfirmDialog`) detailing item counts and replacement warning.
+* **Step 6 — Home Top Bar Warning Badge (`ui/home/`) (Completed):**
+  * Dynamic `isBackupOverdue` state in `HomeViewModel` listening to `BackupStorage` changes.
+  * Amber warning dot (`BadgedBox`) on the Home top bar profile icon alerting the user when a backup is overdue or disabled.
+* **Step 7 — Verification & Localization (Completed):**
+  * 366 unit tests passing across all suites (`BackupSerializerAndCryptoTest`, `BackupRepositoryTest`, `BackupScheduleAndStorageTest`, `ProfileViewModelTest`).
+  * 100% bilingual parity across English (`strings.xml`) and Greek (`values-el/strings.xml`).
 

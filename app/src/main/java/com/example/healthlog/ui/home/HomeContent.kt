@@ -54,6 +54,7 @@ import com.example.healthlog.ui.theme.icon
 @Composable
 fun HomeContent(
     selectedType: MeasurementType?,
+    isBackupOverdue: Boolean = false,
     snackbarHostState: SnackbarHostState,
     onOpenEntry: (MeasurementType) -> Unit,
     onDismissEntry: () -> Unit,
@@ -112,11 +113,27 @@ fun HomeContent(
                 },
                 actions = {
                     IconButton(onClick = onOpenProfile) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_profile),
-                            contentDescription = stringResource(R.string.action_profile),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        if (isBackupOverdue) {
+                            androidx.compose.material3.BadgedBox(
+                                badge = {
+                                    androidx.compose.material3.Badge(
+                                        containerColor = Color(0xFFD97706)
+                                    )
+                                }
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_profile),
+                                    contentDescription = stringResource(R.string.action_profile),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        } else {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_profile),
+                                contentDescription = stringResource(R.string.action_profile),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                     IconButton(onClick = onOpenHistory) {
                         Icon(

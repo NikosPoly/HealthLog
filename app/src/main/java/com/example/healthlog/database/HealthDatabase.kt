@@ -26,6 +26,7 @@ abstract class HealthDatabase : RoomDatabase() {
     abstract fun medicationDao(): MedicationDao
     abstract fun symptomDao(): SymptomDao
     abstract fun userProfileDao(): UserProfileDao
+    abstract fun backupDao(): BackupDao
 
     companion object {
         @Volatile
