@@ -499,6 +499,9 @@
     <string name="export_section_scope">Measurements</string>
     <string name="export_scope_current">Current only</string>
     <string name="export_scope_all">All metrics</string>
+    <string name="export_section_profile">Patient Information</string>
+    <string name="export_include_profile">Include personal profile</string>
+    <string name="export_include_profile_desc">Adds your name, age, and gender to the PDF header</string>
     <string name="export_section_date_range">Date Range</string>
     <string name="export_action_export">Download</string>
     <string name="export_action_cancel">Cancel</string>

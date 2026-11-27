@@ -86,6 +86,7 @@ fun HistoryContent(
     onRemoveDateFilter: (MeasurementType) -> Unit = {},
     onClearFilters: (MeasurementType) -> Unit = {},
     onOpenDetails: (Long) -> Unit = {},
+    hasProfileDetails: Boolean = false,
     onExport: (ExportConfig) -> Unit = {},
     onRequestDelete: (Measurement) -> Unit,
     onConfirmDelete: () -> Unit,
@@ -248,6 +249,7 @@ fun HistoryContent(
             ExportDialog(
                 selectedType = shownType,
                 measurementsByType = measurementsByType,
+                hasProfileDetails = hasProfileDetails,
                 onExport = { config ->
                     onExport(config)
                     showExportDialog = false

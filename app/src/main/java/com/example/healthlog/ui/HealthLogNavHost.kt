@@ -156,8 +156,17 @@ fun HealthLogNavHost(
         }
 
         composable(Routes.HISTORY) {
+            val context = androidx.compose.ui.platform.LocalContext.current
+            val profileRepo = userProfileRepository ?: remember {
+                val db = com.example.healthlog.database.HealthDatabase.getDatabase(context.applicationContext)
+                com.example.healthlog.repository.UserProfileRepository(db.userProfileDao())
+            }
+
             val viewModel: HistoryViewModel = viewModel(
-                factory = HistoryViewModel.factory(repository)
+                factory = HistoryViewModel.factory(
+                    repository = repository,
+                    userProfileRepository = profileRepo,
+                )
             )
 
             HistoryScreen(

@@ -493,6 +493,9 @@
     <string name="export_section_scope">Μετρήσεις</string>
     <string name="export_scope_current">Μόνο τρέχουσα</string>
     <string name="export_scope_all">Όλες οι μετρήσεις</string>
+    <string name="export_section_profile">Στοιχεία Ασθενούς</string>
+    <string name="export_include_profile">Συμπερίληψη προσωπικού προφίλ</string>
+    <string name="export_include_profile_desc">Προσθέτει όνομα, ηλικία και φύλο στην κεφαλίδα του PDF</string>
     <string name="export_section_date_range">Χρονικό διάστημα</string>
     <string name="export_action_export">Λήψη</string>
     <string name="export_action_cancel">Ακύρωση</string>

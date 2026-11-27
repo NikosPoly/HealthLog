@@ -22,6 +22,7 @@ data class ExportConfig(
     val scope: ExportScope = ExportScope.CURRENT_TYPE,
     val selectedType: MeasurementType,
     val dateFilter: DateFilter? = DateFilter.Last30Days,
+    val includeProfileDetails: Boolean = true,
 )
 
 // Filters measurements according to the selected export configuration.

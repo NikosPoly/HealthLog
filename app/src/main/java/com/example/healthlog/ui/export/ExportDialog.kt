@@ -29,6 +29,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDateRangePickerState
@@ -65,6 +66,7 @@ fun ExportDialog(
     onExport: (ExportConfig) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
+    hasProfileDetails: Boolean = false,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val locale = formatLocale()
@@ -74,15 +76,17 @@ fun ExportDialog(
     var draftDateFilter by rememberSaveable(stateSaver = DateFilterSaver) {
         mutableStateOf<DateFilter?>(DateFilter.Last30Days)
     }
+    var draftIncludeProfile by rememberSaveable { mutableStateOf(hasProfileDetails) }
 
     var showDateRangePicker by rememberSaveable { mutableStateOf(false) }
 
-    val config = remember(draftFormat, draftScope, selectedType, draftDateFilter) {
+    val config = remember(draftFormat, draftScope, selectedType, draftDateFilter, draftIncludeProfile) {
         ExportConfig(
             format = draftFormat,
             scope = draftScope,
             selectedType = selectedType,
             dateFilter = draftDateFilter,
+            includeProfileDetails = draftIncludeProfile,
         )
     }
 
@@ -196,6 +200,50 @@ fun ExportDialog(
                 onClick = { draftScope = ExportScope.ALL_TYPES },
                 testTag = "export_scope_all",
             )
+
+            // Optional Section: Patient Profile Details (only relevant for PDF reports when user has profile details)
+            if (hasProfileDetails && draftFormat == ExportFormat.PDF) {
+                Spacer(modifier = Modifier.height(20.dp))
+                HorizontalDivider()
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = stringResource(R.string.export_section_profile),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { draftIncludeProfile = !draftIncludeProfile }
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.export_include_profile),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium,
+                        )
+                        Text(
+                            text = stringResource(R.string.export_include_profile_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Switch(
+                        checked = draftIncludeProfile,
+                        onCheckedChange = { draftIncludeProfile = it },
+                        modifier = Modifier.testTag("export_include_profile_switch"),
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(20.dp))
             HorizontalDivider()
