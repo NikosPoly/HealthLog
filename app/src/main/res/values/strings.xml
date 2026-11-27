@@ -541,4 +541,10 @@
     <string name="profile_app_lock_enable_prompt_subtitle">Confirm your identity to activate App Lock</string>
     <string name="profile_saved_message">Profile updated</string>
     <string name="profile_action_save">Save</string>
+
+    <!-- Username Validation -->
+    <string name="username_error_start_letter">Must start with a letter</string>
+    <string name="username_error_too_short">Must be at least 3 characters</string>
+    <string name="username_error_too_long">Cannot exceed 30 characters</string>
+    <string name="username_error_invalid_chars">Only letters, numbers, underscores, and hyphens</string>
 </resources>

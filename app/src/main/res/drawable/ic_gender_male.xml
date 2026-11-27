@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+
+    <!-- Background circle -->
+    <path
+        android:fillColor="#D3D4D8"
+        android:pathData="M50,0 A50,50 0 1,1 50,100 A50,50 0 1,1 50,0 Z" />
+
+    <!-- Shirt (bottom edge follows the circle) -->
+    <path
+        android:fillColor="#5C85C2"
+        android:pathData="M10,80 C13,70 20,66 28,63.5 L40,59 L60,59 L72,63.5 C80,66 87,70 90,80 A50,50 0 0,1 10,80 Z" />
+
+    <!-- Neck -->
+    <path
+        android:fillColor="#F2B97C"
+        android:pathData="M41,48 L59,48 L59,60 C59,68 41,68 41,60 Z" />
+
+    <!-- Collar -->
+    <path
+        android:pathData="M40,59.5 C40,69.5 60,69.5 60,59.5"
+        android:strokeColor="#ECECEE"
+        android:strokeWidth="2.4"
+        android:strokeLineCap="round" />
+
+    <!-- Ears -->
+    <path
+        android:fillColor="#F2B97C"
+        android:pathData="M32,34 A4,5 0 1,1 32,44 A4,5 0 1,1 32,34 Z M68,34 A4,5 0 1,1 68,44 A4,5 0 1,1 68,34 Z" />
+
+    <!-- Face -->
+    <path
+        android:fillColor="#F9CFA3"
+        android:pathData="M32.5,30 C32.5,19 40,15 50,15 C60,15 67.5,19 67.5,30 L67.5,36 C67.5,47 58,56 50,56 C42,56 32.5,47 32.5,36 Z" />
+
+    <!-- Hair -->
+    <path
+        android:fillColor="#4B515D"
+        android:pathData="M32,37 C29,28 28,19 34,16 C36,8 44,5 52,6 C65,7 73,16 70,28 L68,37 L66,37 C66,32 65,28 63,25 C53,27 43,25 37,21 C35,25 34,31 34,37 Z" />
+</vector>

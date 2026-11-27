@@ -30,11 +30,17 @@ data class ProfileUiState(
     val biometricAvailability: BiometricAvailability = BiometricAvailability.AVAILABLE,
     val isSaving: Boolean = false
 ) {
+    val usernameError: com.example.healthlog.model.UsernameValidationError?
+        get() = com.example.healthlog.model.UsernameValidationRules.validate(name)
+
+    val isInputValid: Boolean
+        get() = usernameError == null
+
     val ageYears: Int?
         get() = calculateAgeYears(dateOfBirth)
 
     val hasChangesFromLoaded: Boolean
-        get() = name != loadedName || dateOfBirth != loadedDateOfBirth || gender != loadedGender
+        get() = name.trim() != loadedName.trim() || dateOfBirth != loadedDateOfBirth || gender != loadedGender
 
     internal var loadedName: String = ""
     internal var loadedDateOfBirth: LocalDate? = null
@@ -115,9 +121,11 @@ class ProfileViewModel(
     }
 
     fun saveProfile(onSaved: () -> Unit = {}) {
+        val current = _uiState.value
+        if (!current.isInputValid) return
+
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
-            val current = _uiState.value
             repository.saveProfile(
                 name = current.name,
                 dateOfBirth = current.dateOfBirth?.toString(),

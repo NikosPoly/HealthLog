@@ -31,6 +31,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -45,6 +46,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -129,6 +132,7 @@ fun ProfileScreen(
             // Personal Information Section
             PersonalInfoCard(
                 name = uiState.name,
+                nameError = uiState.usernameError,
                 onNameChange = viewModel::onNameChange,
                 dateOfBirth = uiState.dateOfBirth,
                 ageYears = uiState.ageYears,
@@ -179,7 +183,7 @@ fun ProfileScreen(
             // Save Action Button
             Button(
                 onClick = { viewModel.saveProfile() },
-                enabled = !uiState.isSaving && uiState.hasChangesFromLoaded,
+                enabled = !uiState.isSaving && uiState.hasChangesFromLoaded && uiState.isInputValid,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 16.dp)
@@ -235,6 +239,7 @@ fun ProfileScreen(
 @Composable
 private fun PersonalInfoCard(
     name: String,
+    nameError: com.example.healthlog.model.UsernameValidationError?,
     onNameChange: (String) -> Unit,
     dateOfBirth: LocalDate?,
     ageYears: Int?,
@@ -264,15 +269,106 @@ private fun PersonalInfoCard(
                 color = MaterialTheme.colorScheme.primary
             )
 
-            // Name
-            OutlinedTextField(
-                value = name,
-                onValueChange = onNameChange,
-                label = { Text(stringResource(R.string.profile_name_label)) },
-                placeholder = { Text(stringResource(R.string.profile_name_placeholder)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
+            // Name / Username: displays as clean read-only by default; tapping the pencil enables editing
+            var isNameEditing by remember { mutableStateOf(false) }
+            val nameFocusRequester = remember { FocusRequester() }
+
+            LaunchedEffect(isNameEditing) {
+                if (isNameEditing) {
+                    nameFocusRequester.requestFocus()
+                }
+            }
+
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = stringResource(R.string.profile_name_label),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                if (!isNameEditing) {
+                    // Read-only presentation card with pencil action
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { isNameEditing = true }
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = name.ifBlank { stringResource(R.string.profile_name_placeholder) },
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = if (name.isNotBlank()) {
+                                    MaterialTheme.colorScheme.onSurface
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                },
+                                fontWeight = if (name.isNotBlank()) FontWeight.Medium else FontWeight.Normal,
+                                modifier = Modifier.weight(1f)
+                            )
+                            IconButton(
+                                onClick = { isNameEditing = true },
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_edit),
+                                    contentDescription = stringResource(R.string.profile_name_label),
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    // Active edit field
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = onNameChange,
+                        placeholder = { Text(stringResource(R.string.profile_name_placeholder)) },
+                        isError = nameError != null,
+                        trailingIcon = {
+                            IconButton(onClick = { isNameEditing = false }) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_close),
+                                    contentDescription = stringResource(R.string.action_cancel),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        },
+                        supportingText = {
+                            if (nameError != null) {
+                                val errorText = when (nameError) {
+                                    com.example.healthlog.model.UsernameValidationError.MustStartWithLetter ->
+                                        stringResource(R.string.username_error_start_letter)
+                                    com.example.healthlog.model.UsernameValidationError.TooShort ->
+                                        stringResource(R.string.username_error_too_short)
+                                    com.example.healthlog.model.UsernameValidationError.TooLong ->
+                                        stringResource(R.string.username_error_too_long)
+                                    com.example.healthlog.model.UsernameValidationError.InvalidCharacters ->
+                                        stringResource(R.string.username_error_invalid_chars)
+                                }
+                                Text(
+                                    text = errorText,
+                                    color = MaterialTheme.colorScheme.error,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        },
+                        singleLine = true,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(nameFocusRequester)
+                    )
+                }
+            }
 
             // Date of Birth & Age
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -303,19 +399,21 @@ private fun PersonalInfoCard(
                         readOnly = true,
                         placeholder = { Text(stringResource(R.string.profile_dob_placeholder)) },
                         trailingIcon = {
-                            if (dateOfBirth != null) {
-                                IconButton(onClick = onClearDateOfBirth) {
-                                    Icon(
-                                        painter = painterResource(R.drawable.ic_close),
-                                        contentDescription = stringResource(R.string.profile_clear_dob),
-                                        modifier = Modifier.size(20.dp)
-                                    )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (dateOfBirth != null) {
+                                    IconButton(onClick = onClearDateOfBirth) {
+                                        Icon(
+                                            painter = painterResource(R.drawable.ic_close),
+                                            contentDescription = stringResource(R.string.profile_clear_dob),
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
                                 }
-                            } else {
                                 IconButton(onClick = onOpenDatePicker) {
                                     Icon(
-                                        painter = painterResource(R.drawable.ic_calendar),
+                                        painter = painterResource(R.drawable.ic_edit),
                                         contentDescription = stringResource(R.string.profile_dob_placeholder),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.size(20.dp)
                                     )
                                 }
@@ -326,7 +424,7 @@ private fun PersonalInfoCard(
                 }
             }
 
-            // Biological Sex / Gender
+            // Biological Sex / Gender with male and female icons
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = stringResource(R.string.profile_gender_label),
@@ -341,20 +439,36 @@ private fun PersonalInfoCard(
                     FilterChip(
                         selected = gender == UserGender.MALE,
                         onClick = { onGenderChange(UserGender.MALE) },
+                        leadingIcon = {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_gender_male),
+                                contentDescription = null,
+                                tint = androidx.compose.ui.graphics.Color.Unspecified,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        },
                         label = { Text(stringResource(R.string.profile_gender_male)) },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            selectedContainerColor = androidx.compose.ui.graphics.Color(0xFFD0E4FF),
+                            selectedLabelColor = androidx.compose.ui.graphics.Color(0xFF001D36)
                         )
                     )
 
                     FilterChip(
                         selected = gender == UserGender.FEMALE,
                         onClick = { onGenderChange(UserGender.FEMALE) },
+                        leadingIcon = {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_gender_female),
+                                contentDescription = null,
+                                tint = androidx.compose.ui.graphics.Color.Unspecified,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        },
                         label = { Text(stringResource(R.string.profile_gender_female)) },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            selectedContainerColor = androidx.compose.ui.graphics.Color(0xFFFFB3C6),
+                            selectedLabelColor = androidx.compose.ui.graphics.Color(0xFF5C001F)
                         )
                     )
                 }
@@ -457,6 +571,7 @@ private fun PersonalInfoCardPreview() {
     HealthLogTheme {
         PersonalInfoCard(
             name = "Maria",
+            nameError = null,
             onNameChange = {},
             dateOfBirth = LocalDate.of(1990, 5, 15),
             ageYears = 34,
