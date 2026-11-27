@@ -74,6 +74,7 @@ dependencies {
     implementation(libs.vico.compose.m3)
     // Biometric / device credential app lock
     implementation(libs.androidx.biometric)
+    implementation(libs.androidx.fragment.ktx)
     // Background scheduled automatic backups
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.documentfile)

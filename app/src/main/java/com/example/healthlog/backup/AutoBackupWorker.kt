@@ -132,7 +132,33 @@ class AutoBackupWorker(
         const val MAX_AUTO_BACKUPS = 5
 
         /**
-         * Schedules or cancels periodic auto-backup work according to [schedule].
+         * Ensures periodic auto-backup work is scheduled on app startup without resetting
+         * the existing periodic timer if already scheduled.
+         */
+        fun ensureScheduled(context: Context, schedule: BackupSchedule) {
+            val workManager = WorkManager.getInstance(context)
+
+            if (!schedule.isEnabled) {
+                workManager.cancelUniqueWork(UNIQUE_WORK_NAME)
+                return
+            }
+
+            val workRequest = PeriodicWorkRequestBuilder<AutoBackupWorker>(
+                schedule.repeatIntervalDays,
+                TimeUnit.DAYS
+            )
+                .build()
+
+            workManager.enqueueUniquePeriodicWork(
+                UNIQUE_WORK_NAME,
+                ExistingPeriodicWorkPolicy.KEEP,
+                workRequest
+            )
+        }
+
+        /**
+         * Schedules or cancels periodic auto-backup work according to [schedule],
+         * updating an existing schedule immediately when the user changes preferences.
          */
         fun updateSchedule(context: Context, schedule: BackupSchedule) {
             val workManager = WorkManager.getInstance(context)

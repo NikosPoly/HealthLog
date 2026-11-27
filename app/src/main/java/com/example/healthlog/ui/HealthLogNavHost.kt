@@ -51,6 +51,8 @@ fun HealthLogNavHost(
     symptomRepository: com.example.healthlog.repository.SymptomRepository? = null,
     userProfileRepository: com.example.healthlog.repository.UserProfileRepository? = null,
     appLockManager: com.example.healthlog.security.AppLockManager? = null,
+    backupRepository: com.example.healthlog.repository.BackupRepository? = null,
+    backupStorage: com.example.healthlog.backup.BackupStorage? = null,
 ) {
     val navController = rememberNavController()
 
@@ -258,11 +260,20 @@ fun HealthLogNavHost(
             val lockManager = appLockManager ?: remember {
                 com.example.healthlog.security.AppLockManager.getInstance(context.applicationContext)
             }
+            val resolvedBackupRepo = backupRepository ?: remember {
+                val db = com.example.healthlog.database.HealthDatabase.getDatabase(context.applicationContext)
+                com.example.healthlog.repository.BackupRepository(db)
+            }
+            val resolvedBackupStorage = backupStorage ?: remember {
+                com.example.healthlog.backup.SharedPrefsBackupStorage(context.applicationContext)
+            }
 
             val profileViewModel: com.example.healthlog.ui.profile.ProfileViewModel = viewModel(
                 factory = com.example.healthlog.ui.profile.ProfileViewModel.factory(
                     repository = profileRepo,
-                    appLockManager = lockManager
+                    appLockManager = lockManager,
+                    backupRepository = resolvedBackupRepo,
+                    backupStorage = resolvedBackupStorage
                 )
             )
 
