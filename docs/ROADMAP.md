@@ -109,13 +109,13 @@ This document outlines the architectural strategy, feature specifications, and i
 │ 2.2 History List Filtering (Stages, Conditions, Dates) (Completed)    │
 │ 2.3 Doctor Report Export (On-device PDF & CSV to Downloads) (Completed)│
 ├────────────────────────────────────────────────────────────────────────┤
-│ PHASE 3: Medications & Symptom Calendar (abandoned)                  │
+│ PHASE 3: Medications & Symptom Calendar (Completed)                    │
 │ 3.1 Bottom Navigation & Medication Management (AlarmManager)(Completed)│
-│ 3.2 Symptom Logging & Clinical Correlation Calendar (Next Focus)       │
+│ 3.2 Symptom Logging & Clinical Correlation Calendar (Completed)        │
 ├────────────────────────────────────────────────────────────────────────┤
 │ PHASE 4: Personal Profile, Security & Data Portability                 │
-│ 4.1 Personal Profile & Biometric App Lock (Next Focus)                 │
-│ 4.2 Backup & Restore (Encrypted JSON export/import via SAF)            │
+│ 4.1 Personal Profile & Biometric App Lock (Completed)                  │
+│ 4.2 Backup & Restore (Encrypted JSON export/import via SAF)(Next Focus)│
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -165,11 +165,11 @@ This document outlines the architectural strategy, feature specifications, and i
    * *Note on Measurement Notes:* Dropped/superseded in favor of discrete, structured symptoms and adherence records to preserve rapid vital entry.
 
 #### **Phase 4: Personal Profile, Security & Data Portability**
-9. **Personal Profile & Biometric App Lock (4.1):**
+9. **Personal Profile & Biometric App Lock (4.1) (Completed):**
    * Single local personal profile (`UserProfile`: optional Name, Date of Birth/Age, Gender) stored in Room, accessible from the Home top app bar.
    * Optional device-native biometric/credential app lock (`BiometricPrompt`) with cold-launch lock, 30s background timeout, and `FLAG_SECURE` Recents protection.
    * Optional patient header section on exported Doctor PDF reports.
-10. **Encrypted Backup & Restore (4.2):**
+10. **Encrypted Backup & Restore (4.2) (Next Focus):**
     * Full local JSON export/import of all health data (measurements, medications, reminders, dose logs, schedule overrides, symptoms, and personal profile) with optional AES-256-GCM password encryption via Storage Access Framework (SAF).
 
 ---
@@ -378,32 +378,33 @@ This document outlines the architectural strategy, feature specifications, and i
 
 ### Phase 4: Personal Profile, Security & Data Portability
 
-#### Milestone 4.1: Personal Profile & Biometric App Lock
+#### Milestone 4.1: Personal Profile & Biometric App Lock (Completed)
 * **Goal:** Provide a lean, guest-first personal profile (Name, Date of Birth / Age, Gender) integrated with Doctor PDF reports, paired with optional device-native biometric/credential app lock for privacy.
-* **Step 1 — Database Entity & Migration (`database/` & `repository/`):**
+* **Step 1 — Database Entity & Migration (`database/` & `repository/`) (Completed):**
   * Create single-row `UserProfile` entity (`id = 1`, `name`, `dateOfBirth` [ISO `YYYY-MM-DD` nullable], `gender` [enum name nullable], `updatedAt`).
   * Add `UserProfileDao` and `UserProfileRepository` exposing reactive `Flow<UserProfile?>` and upsert/clear operations.
   * Add Room `MIGRATION_5_6` creating `user_profile` without altering existing tables.
   * Pure helper to compute current Age from `dateOfBirth`.
-* **Step 2 — Biometric App Lock & Privacy Protection (`MainActivity` & `security/`):**
-  * Update `MainActivity` to extend `FragmentActivity` to host AndroidX `BiometricPrompt` (`BIOMETRIC_STRONG or BIOMETRIC_WEAK or DEVICE_CREDENTIAL`).
+* **Step 2 — Biometric App Lock & Privacy Protection (`MainActivity` & `security/`) (Completed):**
+  * Update `MainActivity` to extend `FragmentActivity` to host AndroidX `BiometricPrompt` (`BIOMETRIC_WEAK or DEVICE_CREDENTIAL`).
   * Store `isAppLockEnabled` in device-local `SharedPreferences` (`app_settings`) so it is read synchronously in `onCreate` before the first frame renders (zero flash of sensitive data) and stays strictly device-local.
   * Lock on cold launch and when returning from background after a **30-second grace period**.
   * Apply `WindowManager.LayoutParams.FLAG_SECURE` while App Lock is enabled to prevent screenshots and Recents thumbnail previews.
   * Verify device biometric/credential availability before allowing the user to enable App Lock, and require authentication before disabling it.
-* **Step 3 — Profile Screen & Navigation (`ui/profile/` & `ui/HealthLogNavHost.kt`):**
+* **Step 3 — Profile Screen & Navigation (`ui/profile/` & `ui/HealthLogNavHost.kt`) (Completed):**
   * Add `Routes.PROFILE` and a Profile action button in the Home top app bar (`HomeContent`).
   * Clean Material 3 Profile screen with:
-    * Personal Info section: Name input, Date of Birth picker displaying calculated Age, and Gender selector (all optional).
+    * Personal Info section: Name input with username validation (must start with letter, 3–30 characters, letters/numbers/hyphens/underscores only), Date of Birth picker displaying calculated Age, and Gender selector with vivid avatars (`ic_gender_male.xml`, `ic_gender_female.xml`) and soft blue/vivid rose selected chips (all optional).
+    * Read-only mode out of the box with pencil icon (`ic_edit.xml`) toggle for editing.
     * Security section: Biometric / Device Lock toggle with status/availability helper text.
     * Natural placement for the upcoming Backup & Restore section in Milestone 4.2.
-* **Step 4 — Doctor PDF Report Integration (`ui/export/`):**
+* **Step 4 — Doctor PDF Report Integration (`ui/export/`) (Completed):**
   * Render a compact Patient Info strip (Name, Age/DOB, Gender — omitting unset fields) in the `PdfReportGenerator` header when enabled.
   * Add an `"Include profile details"` toggle in `ExportDialog` (shown/defaulted ON when at least one profile field is filled, allowing anonymous exports in one tap).
-* **Step 5 — Testing & Localization:**
-  * Room migration test (`MIGRATION_5_6`) in `MigrationTest.kt`.
-  * Unit tests for `UserProfileRepository`, age calculation, lock timeout logic, and PDF export config/header handling.
-  * Instrumented UI tests for Profile editing, persistence, lock toggle flow, and ExportDialog profile toggle.
+* **Step 5 — Testing & Localization (Completed):**
+  * Room migration test (`MIGRATION_5_6`) in `MigrationTest.kt` verifying schema upgrade and data preservation.
+  * Unit tests in `UserProfileRepositoryTest`, `UserGenderTest`, `UsernameValidationTest`, `AppLockManagerTest`, and `ProfileViewModelTest` (all 349 app unit tests passing).
+  * `ExportConfigTest` asserting default profile details inclusion.
   * Full English (`values/strings.xml`) and Greek (`values-el/strings.xml`) localization.
 
 #### Milestone 4.2: Data Backup & Restore
