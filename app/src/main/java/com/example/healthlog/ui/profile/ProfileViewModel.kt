@@ -12,6 +12,7 @@ import com.example.healthlog.security.AndroidBiometricAuthenticator
 import com.example.healthlog.security.AppAuthenticator
 import com.example.healthlog.security.AppLockManager
 import com.example.healthlog.security.BiometricAvailability
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -50,8 +51,11 @@ data class ProfileUiState(
 class ProfileViewModel(
     private val repository: UserProfileRepository,
     private val appLockManager: AppLockManager,
-    private val authenticator: AppAuthenticator = AndroidBiometricAuthenticator
+    private val authenticator: AppAuthenticator = AndroidBiometricAuthenticator,
+    private val coroutineScope: CoroutineScope? = null
 ) : ViewModel() {
+
+    private val scope: CoroutineScope get() = coroutineScope ?: viewModelScope
 
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
@@ -62,7 +66,7 @@ class ProfileViewModel(
     private var isInitialLoaded = false
 
     init {
-        viewModelScope.launch {
+        scope.launch {
             repository.observeProfile().collect { profile ->
                 val parsedDob = parseDateOfBirthOrNull(profile?.dateOfBirth)
                 val parsedGender = UserGender.fromNameOrNull(profile?.gender)
@@ -124,7 +128,7 @@ class ProfileViewModel(
         val current = _uiState.value
         if (!current.isInputValid) return
 
-        viewModelScope.launch {
+        scope.launch {
             _uiState.update { it.copy(isSaving = true) }
             repository.saveProfile(
                 name = current.name,
