@@ -75,6 +75,7 @@ dependencies {
     // Biometric / device credential app lock
     implementation(libs.androidx.biometric)
     testImplementation(libs.junit)
+    testImplementation("org.json:json:20240303")
     androidTestImplementation(platform(libs.androidx.compose.bom))
     // Keeps all kotlinx.serialization libraries (used by Navigation and by Room's test tools)
     // on the same version. Without it, the migration tests fail with an AbstractMethodError.
