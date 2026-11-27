@@ -74,6 +74,9 @@ dependencies {
     implementation(libs.vico.compose.m3)
     // Biometric / device credential app lock
     implementation(libs.androidx.biometric)
+    // Background scheduled automatic backups
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.documentfile)
     testImplementation(libs.junit)
     testImplementation("org.json:json:20240303")
     androidTestImplementation(platform(libs.androidx.compose.bom))
