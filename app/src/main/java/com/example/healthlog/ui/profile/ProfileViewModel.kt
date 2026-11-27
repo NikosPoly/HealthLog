@@ -158,7 +158,11 @@ class ProfileViewModel(
                             customBackupFolderUri = snapshot.customFolderUri,
                             isAutoBackupPasswordEnabled = snapshot.isPasswordEnabled,
                             isBackupOverdue = snapshot.isOverdue
-                        )
+                        ).apply {
+                            this.loadedName = current.loadedName
+                            this.loadedDateOfBirth = current.loadedDateOfBirth
+                            this.loadedGender = current.loadedGender
+                        }
                     }
                 }
             }
@@ -205,7 +209,7 @@ class ProfileViewModel(
 
     fun onBackupScheduleSelected(context: Context, schedule: BackupSchedule) {
         backupStorage?.setSchedule(schedule)
-        scheduleUpdater(context.applicationContext, schedule)
+        scheduleUpdater(context.applicationContext ?: context, schedule)
         refreshBackupStatus()
     }
 
