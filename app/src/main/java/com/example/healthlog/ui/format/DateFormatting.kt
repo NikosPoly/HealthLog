@@ -23,3 +23,14 @@ fun formatTimestamp(timestamp: Long, formatter: DateTimeFormatter): String =
     Instant.ofEpochMilli(timestamp)
         .atZone(ZoneId.systemDefault())
         .format(formatter)
+
+/**
+ * Formats a [java.time.LocalDate] as localized medium date, e.g. "Oct 27, 2026" or "27 Οκτ 2026".
+ */
+fun formatFullDate(
+    date: java.time.LocalDate,
+    locale: java.util.Locale = java.util.Locale.getDefault()
+): String {
+    val formatter = DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.MEDIUM).withLocale(locale)
+    return date.format(formatter)
+}

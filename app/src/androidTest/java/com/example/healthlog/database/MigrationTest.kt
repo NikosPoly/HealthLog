@@ -107,7 +107,12 @@ class MigrationTest {
         }
 
         helper.runMigrationsAndValidate(
-            testDatabase, 5, true, HealthDatabase.MIGRATION_1_2, HealthDatabase.MIGRATION_2_3, HealthDatabase.MIGRATION_3_4, HealthDatabase.MIGRATION_4_5
+            testDatabase, 6, true,
+            HealthDatabase.MIGRATION_1_2,
+            HealthDatabase.MIGRATION_2_3,
+            HealthDatabase.MIGRATION_3_4,
+            HealthDatabase.MIGRATION_4_5,
+            HealthDatabase.MIGRATION_5_6
         ).close()
 
         val database = Room.databaseBuilder(
@@ -115,7 +120,13 @@ class MigrationTest {
             HealthDatabase::class.java,
             testDatabase
         )
-            .addMigrations(HealthDatabase.MIGRATION_1_2, HealthDatabase.MIGRATION_2_3, HealthDatabase.MIGRATION_3_4, HealthDatabase.MIGRATION_4_5)
+            .addMigrations(
+                HealthDatabase.MIGRATION_1_2,
+                HealthDatabase.MIGRATION_2_3,
+                HealthDatabase.MIGRATION_3_4,
+                HealthDatabase.MIGRATION_4_5,
+                HealthDatabase.MIGRATION_5_6
+            )
             .build()
 
         try {
@@ -292,6 +303,63 @@ class MigrationTest {
             assertEquals(3, cursor.getInt(2))
             assertEquals(2200L, cursor.getLong(3))
             assertEquals("Mild afternoon tension", cursor.getString(4))
+        }
+    }
+
+    // Version 5 → 6: creates the user_profile table and preserves all existing v5 data.
+    @Test
+    fun migrate5To6_createsUserProfileAndPreservesData() {
+        helper.createDatabase(testDatabase, 5).apply {
+            execSQL(
+                "INSERT INTO measurements (id, type, value, secondaryValue, tertiaryValue, hasArrhythmia, mealContext, arm, bodyPosition, timestamp) " +
+                        "VALUES (1, 'BLOOD_PRESSURE', 120, 80, 72, 0, null, 'LEFT', 'SITTING', 1000)"
+            )
+            execSQL(
+                "INSERT INTO medications (id, name, dosage, unit, frequency, instructions, isActive, isDeleted, createdAt) " +
+                        "VALUES (1, 'Amlodipine', '5', 'mg', 'DAILY', null, 1, 0, 2000)"
+            )
+            execSQL(
+                "INSERT INTO symptoms (id, symptomType, customName, severity, timestamp, notes) " +
+                        "VALUES (1, 'HEADACHE', null, 3, 2200, 'Mild tension')"
+            )
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(
+            testDatabase, 6, true, HealthDatabase.MIGRATION_5_6
+        )
+
+        // Existing data preserved
+        db.query("SELECT value, secondaryValue, tertiaryValue FROM measurements WHERE id = 1").use { cursor ->
+            assertEquals(1, cursor.count)
+            cursor.moveToFirst()
+            assertEquals(120.0, cursor.getDouble(0), 0.0)
+            assertEquals(80.0, cursor.getDouble(1), 0.0)
+            assertEquals(72.0, cursor.getDouble(2), 0.0)
+        }
+        db.query("SELECT name FROM medications WHERE id = 1").use { cursor ->
+            assertEquals(1, cursor.count)
+            cursor.moveToFirst()
+            assertEquals("Amlodipine", cursor.getString(0))
+        }
+        db.query("SELECT symptomType FROM symptoms WHERE id = 1").use { cursor ->
+            assertEquals(1, cursor.count)
+            cursor.moveToFirst()
+            assertEquals("HEADACHE", cursor.getString(0))
+        }
+
+        // New user_profile table exists and can accept rows
+        db.execSQL(
+            "INSERT INTO user_profile (id, name, dateOfBirth, gender, updatedAt) " +
+                    "VALUES (1, 'Nikos', '1990-05-15', 'MALE', 3000)"
+        )
+        db.query("SELECT name, dateOfBirth, gender, updatedAt FROM user_profile WHERE id = 1").use { cursor ->
+            assertEquals(1, cursor.count)
+            cursor.moveToFirst()
+            assertEquals("Nikos", cursor.getString(0))
+            assertEquals("1990-05-15", cursor.getString(1))
+            assertEquals("MALE", cursor.getString(2))
+            assertEquals(3000L, cursor.getLong(3))
         }
     }
 }

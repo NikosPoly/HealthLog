@@ -4,6 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -35,6 +36,7 @@ private object Routes {
     const val DETAILS = "details/{measurementId}"
     const val GUIDE = "guide/{type}"
     const val DAY_TIMELINE = "day_timeline/{date}"
+    const val PROFILE = "profile"
 
     fun details(measurementId: Long) = "details/$measurementId"
     fun guide(type: MeasurementType) = "guide/${type.name}"
@@ -47,6 +49,8 @@ fun HealthLogNavHost(
     repository: MeasurementRepository,
     medicationRepository: MedicationRepository? = null,
     symptomRepository: com.example.healthlog.repository.SymptomRepository? = null,
+    userProfileRepository: com.example.healthlog.repository.UserProfileRepository? = null,
+    appLockManager: com.example.healthlog.security.AppLockManager? = null,
 ) {
     val navController = rememberNavController()
 
@@ -91,6 +95,9 @@ fun HealthLogNavHost(
                         onOpenHistory = {
                             // launchSingleTop: a double tap doesn't open the history twice.
                             navController.navigate(Routes.HISTORY) { launchSingleTop = true }
+                        },
+                        onOpenProfile = {
+                            navController.navigate(Routes.PROFILE) { launchSingleTop = true }
                         },
                         onOpenGuide = { type ->
                             navController.navigate(Routes.guide(type)) { launchSingleTop = true }
@@ -149,8 +156,17 @@ fun HealthLogNavHost(
         }
 
         composable(Routes.HISTORY) {
+            val context = androidx.compose.ui.platform.LocalContext.current
+            val profileRepo = userProfileRepository ?: remember {
+                val db = com.example.healthlog.database.HealthDatabase.getDatabase(context.applicationContext)
+                com.example.healthlog.repository.UserProfileRepository(db.userProfileDao())
+            }
+
             val viewModel: HistoryViewModel = viewModel(
-                factory = HistoryViewModel.factory(repository)
+                factory = HistoryViewModel.factory(
+                    repository = repository,
+                    userProfileRepository = profileRepo,
+                )
             )
 
             HistoryScreen(
@@ -231,6 +247,29 @@ fun HealthLogNavHost(
                     }
                 )
             }
+        }
+
+        composable(Routes.PROFILE) {
+            val context = androidx.compose.ui.platform.LocalContext.current
+            val profileRepo = userProfileRepository ?: remember {
+                val db = com.example.healthlog.database.HealthDatabase.getDatabase(context.applicationContext)
+                com.example.healthlog.repository.UserProfileRepository(db.userProfileDao())
+            }
+            val lockManager = appLockManager ?: remember {
+                com.example.healthlog.security.AppLockManager.getInstance(context.applicationContext)
+            }
+
+            val profileViewModel: com.example.healthlog.ui.profile.ProfileViewModel = viewModel(
+                factory = com.example.healthlog.ui.profile.ProfileViewModel.factory(
+                    repository = profileRepo,
+                    appLockManager = lockManager
+                )
+            )
+
+            com.example.healthlog.ui.profile.ProfileScreen(
+                viewModel = profileViewModel,
+                onBack = { navController.popBackStack() }
+            )
         }
     }
 }

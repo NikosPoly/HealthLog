@@ -95,5 +95,6 @@ class ExportConfigTest {
         assertEquals(ExportFormat.PDF, config.format)
         assertEquals(ExportScope.CURRENT_TYPE, config.scope)
         assertEquals(DateFilter.Last30Days, config.dateFilter)
+        assertTrue(config.includeProfileDetails)
     }
 }

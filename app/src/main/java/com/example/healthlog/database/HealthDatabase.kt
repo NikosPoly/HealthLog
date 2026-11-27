@@ -15,8 +15,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         MedicationDoseLog::class,
         MedicationScheduleOverride::class,
         SymptomEntry::class,
+        UserProfile::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = true
 )
 abstract class HealthDatabase : RoomDatabase() {
@@ -24,6 +25,7 @@ abstract class HealthDatabase : RoomDatabase() {
     abstract fun measurementDao(): MeasurementDao
     abstract fun medicationDao(): MedicationDao
     abstract fun symptomDao(): SymptomDao
+    abstract fun userProfileDao(): UserProfileDao
 
     companion object {
         @Volatile
@@ -166,6 +168,24 @@ abstract class HealthDatabase : RoomDatabase() {
             }
         }
 
+        // Version 5 → 6: add single-row personal profile table (`user_profile`).
+        internal val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `user_profile` (
+                        `id` INTEGER NOT NULL,
+                        `name` TEXT,
+                        `dateOfBirth` TEXT,
+                        `gender` TEXT,
+                        `updatedAt` INTEGER NOT NULL,
+                        PRIMARY KEY(`id`)
+                    )
+                    """.trimIndent()
+                )
+            }
+        }
+
         fun getDatabase(context: Context): HealthDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -173,7 +193,13 @@ abstract class HealthDatabase : RoomDatabase() {
                     HealthDatabase::class.java,
                     "health_database"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+                    .addMigrations(
+                        MIGRATION_1_2,
+                        MIGRATION_2_3,
+                        MIGRATION_3_4,
+                        MIGRATION_4_5,
+                        MIGRATION_5_6
+                    )
                     .build()
 
                 INSTANCE = instance

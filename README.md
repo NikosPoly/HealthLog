@@ -82,11 +82,12 @@ The app is available in Greek and English.
   - **Mode toggle:** a "See Chart" / "See Entries" button switches the history between the list and a line chart over time.
 - **Doctor Report Export (PDF & CSV to Downloads):**
   - **Quick access:** dedicated download action button (`ic_download.xml`) in the History top app bar.
-  - **Export options bottom sheet:** clean modal dialog allowing configuration of format (**Doctor Report PDF** or **Spreadsheet CSV**), measurement scope (**Current metric** or **All metrics**), and date span (**Last 7 Days**, **Last 30 Days**, **All Time**, or **Pick Dates** via custom date range picker).
+  - **Export options bottom sheet:** clean modal dialog allowing configuration of format (**Doctor Report PDF** or **Spreadsheet CSV**), measurement scope (**Current metric** or **All metrics**), date span (**Last 7 Days**, **Last 30 Days**, **All Time**, or **Pick Dates** via custom date range picker), and an optional **Profile details** toggle (defaulted ON when personal profile details exist) to personalize the report or export anonymously.
   - **Live matching entries counter & validation:** dynamically computes the matching records count and disables the download button when 0 entries match the criteria.
   - **Native A4 clinical PDF report:**
     - Formatted with standard A4 margins (595 × 842 pt) and clean clinical typography.
     - **Header:** HealthLog branding, title, generated timestamp, metric scope, and date range subtitle.
+    - **Patient info strip:** optional personal demographic header section (Name, Age / Date of Birth, Gender) when enabled in the export dialog.
     - **Summary statistics box:** total entries count, clinical average, lowest, and highest readings.
     - **Trajectory mini-graph:** smooth vital signs trajectory chart with shaded canvas and min/max markers.
     - **Chronological table:** Date, Time, formatted values (e.g. `120/80 (72 bpm)`), clinical guideline stage evaluations with stage color badges, and physical condition tags (Arm, Body Posture, Meal Context, Arrhythmia).
@@ -147,6 +148,16 @@ The app is available in Greek and English.
   - **Reminder Alerts sheet & smart settings routing:** tapping the bell icon in Medications opens `ReminderAlertsSheet`, letting users toggle automatic 10-minute follow-ups, toggle optional **Keep ringing until dismissed** (`FLAG_INSISTENT`, default OFF), or jump straight to Android's system sound, vibration, and Do Not Disturb settings (routing directly to the Medication Reminders channel when app notifications are on, or to app notification settings when master permission is off).
   - **Reboot resilience:** `BootReceiver` automatically reschedules all active medication alarms on device boot (`ACTION_BOOT_COMPLETED`).
   - **Add/edit medication modal sheet:** customizable name, dosage, measurement units (mg, ml, tablet, drops, puff, g, mcg, patch, unit), daily reminder time pickers, frequency selection, doctor instructions, and seamless Android 13+ `POST_NOTIFICATIONS` permission request & resume handling.
+- **Personal Profile & Biometric App Lock:**
+  - **Top bar access:** dedicated profile action button (`ic_profile.xml`) on the Home screen header.
+  - **Single personal profile:** lean, local-first demographic profile stored in Room (`user_profile` table) with optional Name, Date of Birth (with live age calculation in years), and Gender.
+  - **Username validation rules:** usernames must start with an English or Greek letter (`[a-zA-Z\u0370-\u03FF\u1F00-\u1FFF]`), between 3 and 30 characters, and contain only letters, numbers, hyphens, and underscores.
+  - **Read-only out of the box with pencil edit toggle:** fields appear in clean read-only presentation by default; clicking the pencil icon (`ic_edit.xml`) or container activates editing mode with real-time validation and save confirmation.
+  - **Vivid gender avatars & styling:** custom full-color vector avatars (`ic_gender_male.xml`, `ic_gender_female.xml`) rendered with `tint = Color.Unspecified`, styled with soft blue (`#D0E4FF`) for Male and vivid rose (`#FFB3C6`) for Female when selected. Tapping the selected chip clears the selection.
+  - **Biometric & credential app lock:** optional app-level lock powered by AndroidX `BiometricPrompt` (`BIOMETRIC_WEAK | DEVICE_CREDENTIAL`) supporting fingerprint, face recognition, or device PIN/pattern/password.
+  - **Synchronous state & zero data flash:** lock flag stored synchronously in `SharedPreferences` (`app_settings`) to prevent any flicker of sensitive health data before authentication on launch.
+  - **30-second background timeout:** requires authentication on cold launch and whenever the app returns from background after 30+ seconds.
+  - **Window privacy (`FLAG_SECURE`):** automatically applies `FLAG_SECURE` while App Lock is active, preventing screen capture and hiding app previews in the Android Recent Apps / multitasking switcher.
 - **A color per type and fixed brand identity:** red for blood pressure, pink for pulse, orange for blood sugar, green for
   weight and blue for height. Each type's history page, home card and entry dialog are in its
   color, in light and dark mode. The app's overall theme is built around a dedicated brand pink
@@ -175,6 +186,7 @@ The app is available in Greek and English.
 - [MaterialKolor](https://github.com/jordond/materialkolor) for the type colors: a full Material
   color scheme from one color per type
 - Android `AlarmManager` and `BroadcastReceiver` for offline medication reminders and reboot rescheduling
+- AndroidX [Biometric](https://developer.android.com/jetpack/androidx/releases/biometric) for device-native biometric and credential app locking
 - MVVM: ViewModels with `StateFlow`, and a repository between the ViewModels and the database
 
 ## Project structure
@@ -183,15 +195,17 @@ All source code is in `app/src/main/java/com/example/healthlog/`:
 
 ```
 healthlog/
-├── database/                Room entities (Measurement, Medication, Reminder, DoseLog), DAO, migrations
-├── repository/              MeasurementRepository and MedicationRepository, data access points
-├── model/                   MedicationScheduleResolver, ScheduledDoseItem, measurement types & validation
+├── database/                Room entities (Measurement, Medication, Reminder, DoseLog, UserProfile), DAO, migrations
+├── repository/              MeasurementRepository, MedicationRepository, UserProfileRepository
+├── model/                   MedicationScheduleResolver, ScheduledDoseItem, UserGender, validation rules
 ├── guidelines/              clinical evaluation logic & medical standards (ISH, WHO, WHF, Oxford)
 │   └── protocols/           evidence-based clinical measurement protocols & doctor persona visual
 ├── notifications/           MedicationAlarmScheduler, MedicationAlarmReceiver, and BootReceiver
+├── security/                AppLockManager, BiometricAuthenticator, AppLockStorage
 └── ui/                      navigation (HealthLogNavHost, AppBottomBar, NavDestination)
     ├── home/                home screen: the type picker cards, with their icons
     │   └── newentry/        adding an entry: the new-entry dialog, its state and inputs
+    ├── profile/             personal profile: ProfileScreen, ProfileContent, ProfileViewModel
     ├── history/             history screen: the type tabs, the list/chart switch, deleting
     │   ├── list/            the list mode: the entry cards
     │   ├── filter/          history filtering: FilterBar, FilterBottomSheet, and filter criteria
@@ -241,6 +255,7 @@ Dedicated vector icons illustrate every clinical option and dialog action:
 - **Custom Date & Time:** `ic_calendar.xml`
 - **Medication Alerts:** `ic_notifications.xml` (Reminder Alerts action & settings link), `ic_notifications_off.xml` (muted-alerts badge on pending doses)
 - **Export & Download Actions:** `ic_download.xml` (top app bar export action), `ic_format_pdf.xml` (doctor PDF report badge), `ic_format_csv.xml` (spreadsheet CSV data badge)
+- **Profile & Security Actions:** `ic_profile.xml` (profile top bar action), `ic_lock.xml` (app lock screen icon), `ic_edit.xml` (pencil edit mode toggle), `ic_gender_male.xml` (male avatar), `ic_gender_female.xml` (female avatar)
 
 These are rendered inside `OptionSelectorGroup` as compact, single-choice chips with icon presentation and accessible content descriptions, keeping the entry dialog uncluttered and easy to tap.
 
@@ -302,10 +317,15 @@ There are two kinds of tests:
 - `CalendarAggregatorTest`: monthly event aggregation, ISO date string parsing, companion pulse deduplication from blood pressure, and multi-metric clinical rank evaluation
 - `CalendarViewModelTest`: month navigation, Month/Year dialog selection with day-clamping, jump to today, scheduled doses resolution, symptom CRUD workflows, and resolving a past Unlogged dose then switching it between Taken and Skipped
 - `DayTimelineViewModelTest`: 24-hour hour slot grouping, event filtering (All, Vitals, Medications, Symptoms), move/delete dose scoping, and slot-directed logging
+- `UserGenderTest`: gender enum parsing, case-insensitive string resolution, null handling, and birthdate age calculation
+- `UsernameValidationTest`: username character rules, letter prefix requirement, length bounds, and Greek character support
+- `UserProfileRepositoryTest`: profile observing, whitespace normalization, and clearing
+- `AppLockManagerTest`: cold start lock, 30-second background timeout, transient prompt suppression, and manual unlock
+- `ProfileViewModelTest`: profile loading, username validation, gender selection toggle, app lock toggle, and profile persistence
 - `LocalizationParityTest`: programmatic verification of 100% string and plural parity between `values/strings.xml` and `values-el/strings.xml`
 
 **Instrumented tests** (`app/src/androidTest`, run on an emulator or device):
-- `MigrationTest`: the database migrations (including version 4 → 5 with medications, reminders, dose logs, and symptoms tables)
+- `MigrationTest`: the database migrations (including version 4 → 5 with medications, reminders, dose logs, and symptoms tables, and version 5 → 6 with the user profile table)
 - `NewEntryDialogTest`: the new-entry dialog's UI
 - `HistoryContentTest`: the history's tabs, swiping, empty pages, entry details navigation, deleting, the See Chart
   button and the period chips
@@ -330,7 +350,7 @@ Run them on a separate emulator, not on a device with data you want to keep.
 
 ## Database
 
-Measurements are stored locally with Room. The database is currently at **version 5**.
+Measurements are stored locally with Room. The database is currently at **version 6**.
 
 ### Schema versions & migrations
 
@@ -343,6 +363,7 @@ Measurements are stored locally with Room. The database is currently at **versio
   - `medication_reminders`: stores recurring daily reminder alarms (`id`, `medicationId`, `hour`, `minute`, `daysOfWeekMask`, `isEnabled`, `startDate`, `endDate`) with cascading foreign key delete on `medicationId`.
   - `medication_dose_logs`: stores intake history (`id`, `medicationId`, `scheduledDate`, `scheduledTime`, `actionTimestamp`, `status`, `notes`). `status` is `TAKEN`, `SKIPPED`, or `UNLOGGED` (unresolved past recurring doses); `UNLOGGED` is a plain text value, so it was added without a schema change or migration.
   - `symptoms`: stores logged symptoms (`id`, `symptomType`, `customName`, `severity`, `timestamp`, `notes`) with an index on `timestamp` for fast date-range queries.
+- **Version 5 → 6 (`MIGRATION_5_6`):** Created `user_profile` table (`id` INTEGER PRIMARY KEY, `name` TEXT, `dateOfBirth` TEXT, `gender` TEXT, `updatedAt` INTEGER) without altering existing measurement, medication, or symptom tables.
 
 Any change to what is stored needs a database migration in `HealthDatabase.kt`, for example:
 - adding, removing or renaming a column in `Measurement`

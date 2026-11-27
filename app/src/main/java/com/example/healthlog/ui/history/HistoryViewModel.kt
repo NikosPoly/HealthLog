@@ -28,8 +28,18 @@ import kotlinx.coroutines.launch
 
 // State and actions of the history screen: the saved measurements per type, filtering, and deleting them.
 class HistoryViewModel(
-    private val repository: MeasurementRepository
+    private val repository: MeasurementRepository,
+    private val userProfileRepository: com.example.healthlog.repository.UserProfileRepository? = null,
 ) : ViewModel() {
+
+    // Current user profile for exporting reports with patient metadata.
+    val userProfile: StateFlow<com.example.healthlog.database.UserProfile?> =
+        (userProfileRepository?.observeProfile() ?: kotlinx.coroutines.flow.flowOf(null))
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = null
+            )
 
     // One live list per measurement type, newest first. Each history page shows one of them.
     private val measurementsByType: Map<MeasurementType, StateFlow<List<Measurement>>> =
@@ -164,10 +174,13 @@ class HistoryViewModel(
     }
 
     companion object {
-        // Tells Android how to create this ViewModel with a repository.
-        fun factory(repository: MeasurementRepository): ViewModelProvider.Factory = viewModelFactory {
+        // Tells Android how to create this ViewModel with repositories.
+        fun factory(
+            repository: MeasurementRepository,
+            userProfileRepository: com.example.healthlog.repository.UserProfileRepository? = null,
+        ): ViewModelProvider.Factory = viewModelFactory {
             initializer {
-                HistoryViewModel(repository)
+                HistoryViewModel(repository, userProfileRepository)
             }
         }
     }

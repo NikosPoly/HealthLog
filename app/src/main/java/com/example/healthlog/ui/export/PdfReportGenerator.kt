@@ -103,6 +103,7 @@ class PdfReportGenerator(private val context: Context) {
         measurements: List<Measurement>,
         outputFile: File,
         latestHeightCm: Double? = null,
+        userProfile: com.example.healthlog.database.UserProfile? = null,
     ) {
         val document = PdfDocument()
         val locale = resolveLocale()
@@ -114,8 +115,8 @@ class PdfReportGenerator(private val context: Context) {
 
         var yPos = MARGIN
 
-        // 1. Header (Brand, title, date range)
-        yPos = drawHeader(canvas, config, locale, yPos)
+        // 1. Header (Brand, title, date range, patient info)
+        yPos = drawHeader(canvas, config, locale, yPos, userProfile)
 
         // 2. Summary Statistics Box
         yPos = drawSummaryStats(canvas, config, measurements, locale, yPos)
@@ -164,6 +165,7 @@ class PdfReportGenerator(private val context: Context) {
         config: ExportConfig,
         locale: Locale,
         startY: Float,
+        userProfile: com.example.healthlog.database.UserProfile? = null,
     ): Float {
         var y = startY
 
@@ -196,6 +198,32 @@ class PdfReportGenerator(private val context: Context) {
 
         canvas.drawText("$scopeText  •  $dateRangeText", MARGIN, y + 10f, sectionHeaderPaint)
         y += 18f
+
+        // Patient profile details strip (if enabled and populated)
+        if (config.includeProfileDetails && userProfile != null && userProfile.hasAnyDetails) {
+            val patientParts = mutableListOf<String>()
+            userProfile.name?.takeIf { it.isNotBlank() }?.let { patientParts.add(it) }
+
+            val age = com.example.healthlog.model.calculateAgeYears(userProfile.dateOfBirth)
+            if (age != null) {
+                patientParts.add(context.getString(R.string.profile_age_format, age))
+            }
+
+            val genderEnum = com.example.healthlog.model.UserGender.fromNameOrNull(userProfile.gender)
+            if (genderEnum != null) {
+                val genderText = when (genderEnum) {
+                    com.example.healthlog.model.UserGender.MALE -> context.getString(R.string.profile_gender_male)
+                    com.example.healthlog.model.UserGender.FEMALE -> context.getString(R.string.profile_gender_female)
+                }
+                patientParts.add(genderText)
+            }
+
+            if (patientParts.isNotEmpty()) {
+                val patientText = patientParts.joinToString("  •  ")
+                canvas.drawText(patientText, MARGIN, y + 8f, boldBodyPaint)
+                y += 14f
+            }
+        }
 
         // Divider
         canvas.drawLine(MARGIN, y, PAGE_WIDTH - MARGIN, y, linePaint)

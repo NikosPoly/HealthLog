@@ -59,6 +59,7 @@ fun HomeContent(
     onDismissEntry: () -> Unit,
     onSave: (Measurement) -> Unit,
     onOpenHistory: () -> Unit,
+    onOpenProfile: () -> Unit,
     onOpenGuide: (MeasurementType) -> Unit = {},
     isDialogVisible: Boolean = true,
     bottomBar: @Composable () -> Unit = {}
@@ -110,6 +111,13 @@ fun HomeContent(
                     }
                 },
                 actions = {
+                    IconButton(onClick = onOpenProfile) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_profile),
+                            contentDescription = stringResource(R.string.action_profile),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                     IconButton(onClick = onOpenHistory) {
                         Icon(
                             painter = painterResource(R.drawable.ic_history),
@@ -204,7 +212,8 @@ private fun HomeContentPreview() {
             onOpenEntry = {},
             onDismissEntry = {},
             onSave = {},
-            onOpenHistory = {}
+            onOpenHistory = {},
+            onOpenProfile = {}
         )
     }
 }

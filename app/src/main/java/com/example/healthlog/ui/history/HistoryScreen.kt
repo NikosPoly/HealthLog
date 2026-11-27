@@ -66,6 +66,7 @@ fun HistoryScreen(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val latestHeight by viewModel.latestHeight.collectAsState()
+    val userProfile by viewModel.userProfile.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.messages.collect { messageId ->
@@ -105,6 +106,7 @@ fun HistoryScreen(
                         measurements = measurements,
                         outputFile = file,
                         latestHeightCm = latestHeight,
+                        userProfile = userProfile,
                     )
                     Triple(file, "application/pdf", R.string.export_pdf_saved_to_downloads)
                 } else {
@@ -142,5 +144,6 @@ fun HistoryScreen(
         onRequestDelete = viewModel::requestDelete,
         onConfirmDelete = viewModel::confirmDelete,
         onCancelDelete = viewModel::cancelDelete,
+        hasProfileDetails = userProfile?.hasAnyDetails == true,
     )
 }
