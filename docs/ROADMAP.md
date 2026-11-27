@@ -81,13 +81,17 @@ This document outlines the architectural strategy, feature specifications, and i
 * **Status:** Deprecated / dropped from Phase 3 scope.
 * **Rationale:** In practice, free-form text inputs during rapid vital logging (< 5s) add unnecessary friction and form fatigue. Contextual observations are substantially better modeled as discrete **Symptoms** (with severity and timestamps) or **Medication adherence records**, avoiding an unused nullable column in the `measurements` table.
 
-### J. User Profiles & Data Portability
-* **Local Multi-Profile Strategy:**
-  * Stored strictly in local Room database (e.g. `Profile` entity + `profileId` on entries).
-  * Ideal for family members (e.g., tracking a parent's and a child's vitals on a shared device).
-  * Guest/Default profile enabled by default with zero onboarding friction.
+### J. Personal Profile, Biometric Lock & Data Portability
+* **Single Personal Profile (Guest-First):**
+  * Designed strictly as a personal health log (no confusing multi-user switching on a personal device).
+  * Stored locally in a single-row Room table (`user_profile`) with optional demographic fields: **Name**, **Date of Birth** (computed Age), and **Gender**.
+  * Zero onboarding friction — all fields are optional and can be filled in or updated anytime.
+  * Optional integration with PDF Doctor Reports (patient header strip with toggle in `ExportDialog`).
+* **Biometric / Device Lock:**
+  * Optional app-level privacy lock powered by AndroidX `BiometricPrompt` (fingerprint, face unlock, or device PIN/pattern/password) — avoiding custom local passwords that cannot be recovered if forgotten.
+  * Locks on cold launch and after 30 seconds in the background, paired with `FLAG_SECURE` when enabled.
 * **Data Portability:**
-  * Encrypted backup and restore to JSON/SQLite file that users can save to their personal Google Drive or internal storage.
+  * Encrypted backup and restore to a JSON file via Storage Access Framework (SAF) that users can save to their personal Google Drive, SD card, or internal storage.
 
 ---
 
@@ -109,9 +113,9 @@ This document outlines the architectural strategy, feature specifications, and i
 │ 3.1 Bottom Navigation & Medication Management (AlarmManager)(Completed)│
 │ 3.2 Symptom Logging & Clinical Correlation Calendar (Next Focus)       │
 ├────────────────────────────────────────────────────────────────────────┤
-│ PHASE 4: Local Profiles & Data Portability                             │
-│ 4.1 Local Multi-User Profiles (device profile switcher, guest-first)    │
-│ 4.2 Backup & Restore (Encrypted JSON/database export to Drive/Files)    │
+│ PHASE 4: Personal Profile, Security & Data Portability                 │
+│ 4.1 Personal Profile & Biometric App Lock (Next Focus)                 │
+│ 4.2 Backup & Restore (Encrypted JSON export/import via SAF)            │
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -160,10 +164,13 @@ This document outlines the architectural strategy, feature specifications, and i
    * Day detail correlation view linking vital spikes with symptom timestamps and missed/taken medications.
    * *Note on Measurement Notes:* Dropped/superseded in favor of discrete, structured symptoms and adherence records to preserve rapid vital entry.
 
-#### **Phase 4: User Accounts & Cloud Infrastructure**
-10. **Authentication & User Profiles (with Guest Mode):**
-    * Design whether accounts are local multi-profile (e.g., family members on one tablet) or cloud-based (Firebase Auth / Supabase).
-    * Migrate database to associate records with `userId`.
+#### **Phase 4: Personal Profile, Security & Data Portability**
+9. **Personal Profile & Biometric App Lock (4.1):**
+   * Single local personal profile (`UserProfile`: optional Name, Date of Birth/Age, Gender) stored in Room, accessible from the Home top app bar.
+   * Optional device-native biometric/credential app lock (`BiometricPrompt`) with cold-launch lock, 30s background timeout, and `FLAG_SECURE` Recents protection.
+   * Optional patient header section on exported Doctor PDF reports.
+10. **Encrypted Backup & Restore (4.2):**
+    * Full local JSON export/import of all health data (measurements, medications, reminders, dose logs, schedule overrides, symptoms, and personal profile) with optional AES-256-GCM password encryption via Storage Access Framework (SAF).
 
 ---
 
@@ -173,7 +180,7 @@ This document outlines the architectural strategy, feature specifications, and i
 | :--- | :--- | :--- |
 | **Backend / Cloud** | None (Local-First) | Zero server operating costs (€0.00); absolute user privacy; avoids GDPR/HIPAA cloud storage liabilities. |
 | **Doctor Sharing** | On-Device PDF & Print | Eliminates need for custom doctor portals; universally supported by all healthcare clinics via email or paper. |
-| **User Accounts** | Local Device Profiles | Frictionless zero-login startup for single users, with optional local profile switching for multi-user households. |
+| **User Profile & Security** | Single Local Profile + Biometric Lock | Frictionless personal health log with optional Name, DOB, and Gender, secured via Android `BiometricPrompt` (no cloud accounts or unrecoverable local passwords). |
 | **Notifications** | Local `AlarmManager` | Reliable offline reminders without external push notification services (FCM) or remote server dependencies. |
 
 ---
@@ -369,29 +376,48 @@ This document outlines the architectural strategy, feature specifications, and i
 
 ---
 
-### Phase 4: Local Profiles & Data Portability
+### Phase 4: Personal Profile, Security & Data Portability
 
-#### Milestone 4.1: Local Multi-User Profiles (Guest-First)
-* **Goal:** Enable multi-user tracking on a single shared device (e.g. family members) without cloud servers or accounts.
-* **Step 1 — Database Entity & Migration:**
-  * Create `Profile` entity (`id`, `name`, `avatarColor`, `isDefault`, `createdAt`).
-  * Database migration: add `profileId INTEGER NOT NULL DEFAULT 1` to `Measurement`.
-  * Pre-populate database with a default "Personal" profile so existing user data is completely preserved.
-* **Step 2 — Profile Management Repository:**
-  * Manage active profile selection using DataStore / StateFlow.
-  * Scope all DAO queries by `activeProfileId`.
-* **Step 3 — Profile Switcher UI:**
-  * Top bar profile dropdown / switcher sheet allowing one-tap switching between profiles and adding a new profile.
+#### Milestone 4.1: Personal Profile & Biometric App Lock
+* **Goal:** Provide a lean, guest-first personal profile (Name, Date of Birth / Age, Gender) integrated with Doctor PDF reports, paired with optional device-native biometric/credential app lock for privacy.
+* **Step 1 — Database Entity & Migration (`database/` & `repository/`):**
+  * Create single-row `UserProfile` entity (`id = 1`, `name`, `dateOfBirth` [ISO `YYYY-MM-DD` nullable], `gender` [enum name nullable], `updatedAt`).
+  * Add `UserProfileDao` and `UserProfileRepository` exposing reactive `Flow<UserProfile?>` and upsert/clear operations.
+  * Add Room `MIGRATION_5_6` creating `user_profile` without altering existing tables.
+  * Pure helper to compute current Age from `dateOfBirth`.
+* **Step 2 — Biometric App Lock & Privacy Protection (`MainActivity` & `security/`):**
+  * Update `MainActivity` to extend `FragmentActivity` to host AndroidX `BiometricPrompt` (`BIOMETRIC_STRONG or BIOMETRIC_WEAK or DEVICE_CREDENTIAL`).
+  * Store `isAppLockEnabled` in device-local `SharedPreferences` (`app_settings`) so it is read synchronously in `onCreate` before the first frame renders (zero flash of sensitive data) and stays strictly device-local.
+  * Lock on cold launch and when returning from background after a **30-second grace period**.
+  * Apply `WindowManager.LayoutParams.FLAG_SECURE` while App Lock is enabled to prevent screenshots and Recents thumbnail previews.
+  * Verify device biometric/credential availability before allowing the user to enable App Lock, and require authentication before disabling it.
+* **Step 3 — Profile Screen & Navigation (`ui/profile/` & `ui/HealthLogNavHost.kt`):**
+  * Add `Routes.PROFILE` and a Profile action button in the Home top app bar (`HomeContent`).
+  * Clean Material 3 Profile screen with:
+    * Personal Info section: Name input, Date of Birth picker displaying calculated Age, and Gender selector (all optional).
+    * Security section: Biometric / Device Lock toggle with status/availability helper text.
+    * Natural placement for the upcoming Backup & Restore section in Milestone 4.2.
+* **Step 4 — Doctor PDF Report Integration (`ui/export/`):**
+  * Render a compact Patient Info strip (Name, Age/DOB, Gender — omitting unset fields) in the `PdfReportGenerator` header when enabled.
+  * Add an `"Include profile details"` toggle in `ExportDialog` (shown/defaulted ON when at least one profile field is filled, allowing anonymous exports in one tap).
+* **Step 5 — Testing & Localization:**
+  * Room migration test (`MIGRATION_5_6`) in `MigrationTest.kt`.
+  * Unit tests for `UserProfileRepository`, age calculation, lock timeout logic, and PDF export config/header handling.
+  * Instrumented UI tests for Profile editing, persistence, lock toggle flow, and ExportDialog profile toggle.
+  * Full English (`values/strings.xml`) and Greek (`values-el/strings.xml`) localization.
 
 #### Milestone 4.2: Data Backup & Restore
-* **Goal:** Allow users to export and import their entire health log (measurements, medications, symptoms, profiles) securely.
+* **Goal:** Allow users to export and import their entire personal health log (measurements, medications, reminders, dose logs, schedule overrides, symptoms, and personal profile) securely to protect against device loss or upgrades.
 * **Step 1 — JSON Serialization Engine:**
-  * Serialize and deserialize all Room database tables to/from structured JSON.
+  * Serialize and deserialize all Room database tables (`measurements`, `medications`, `medication_reminders`, `medication_schedule_overrides`, `medication_dose_logs`, `symptoms`, `user_profile`) with schema version metadata to/from structured JSON.
+  * Keep device-local security flags (`isAppLockEnabled`) excluded from backups so restoring on a new phone never locks out the user.
 * **Step 2 — Encrypted Export:**
-  * Optional password-based encryption (AES-256-GCM) for the backup file.
-* **Step 3 — Storage Access Framework (SAF):**
+  * Optional password-based encryption (AES-256-GCM with PBKDF2 key derivation) for the exported backup file.
+* **Step 3 — Storage Access Framework (SAF) & Profile UI Integration:**
+  * Surface Backup & Restore controls inside the Profile screen introduced in Milestone 4.1.
   * Use `ActivityResultContracts.CreateDocument` to export to local storage, SD card, or Google Drive.
   * Use `ActivityResultContracts.OpenDocument` to import and restore.
-* **Step 4 — Safe Import Transaction:**
-  * Validate JSON integrity and execute database restoration inside a Room transaction, preventing partial or corrupted imports.
+* **Step 4 — Safe Import Transaction & Alarm Rescheduling:**
+  * Validate JSON integrity, decrypt if password-protected, and execute database restoration atomically inside a Room transaction, preventing partial or corrupted imports.
+  * Automatically reschedule active medication alarms after a successful restore.
 
