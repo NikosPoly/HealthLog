@@ -158,6 +158,20 @@ The app is available in Greek and English.
   - **Synchronous state & zero data flash:** lock flag stored synchronously in `SharedPreferences` (`app_settings`) to prevent any flicker of sensitive health data before authentication on launch.
   - **30-second background timeout:** requires authentication on cold launch and whenever the app returns from background after 30+ seconds.
   - **Window privacy (`FLAG_SECURE`):** automatically applies `FLAG_SECURE` while App Lock is active, preventing screen capture and hiding app previews in the Android Recent Apps / multitasking switcher.
+- **Data Backup & Restore (Encrypted JSON & Automated Background Backups):**
+  - **Full data portability:** exports and restores complete health history across all database tables (measurements, prescriptions, reminders, schedule overrides, dose history, symptoms, and personal profile) in a single portable file.
+  - **Forward-compatible versioned JSON:** structured format (`version: 1`) with lenient parsing ensuring future app versions can restore older backups seamlessly without Room schema migrations.
+  - **Optional AES-256-GCM encryption (`.hlbackup`):** high-grade authenticated encryption using AES-256-GCM with PBKDF2-HMAC-SHA256 key derivation (100,000 iterations, 16-byte random salt, 12-byte IV). Tamper-evident authentication tag prevents corrupted or manipulated files from touching the database.
+  - **Storage Access Framework (SAF) integration:**
+    - **Export:** save backups anywhere on device storage, SD cards, or cloud providers (Google Drive, Nextcloud, OneDrive) via system file picker (`CreateDocument`).
+    - **Restore:** inspect and restore from any backup file (`OpenDocument`) with interactive password prompt (for encrypted backups) and a confirmation dialog detailing creation date and item counts before replacing data.
+  - **Atomic database restoration & alarm rescheduling:** executes full wipe and re-insertion within a single database transaction (`withTransaction`) preserving foreign-key relationships, and immediately reschedules all active medication reminder alarms. Device-local App Lock settings are excluded so users never get locked out.
+  - **Automated background backups (`WorkManager`):**
+    - Configurable schedule frequencies: **Daily**, **Every 3 days**, **Weekly** (default), **Every 2 weeks**, **Monthly**, and **Off**.
+    - Target folder flexibility: saves to internal app storage (`filesDir/backups/`) or a user-selected custom folder via SAF tree picker (`OpenDocumentTree`) with persisted permissions.
+    - Automatic rolling retention: automatically retains the latest 5 automated backups, pruning older files.
+    - Optional pre-configured Auto-Backup password to encrypt scheduled background backups silently without user prompts.
+  - **Overdue backup warning alerts:** tracks last backup timestamp and warns when backups are disabled, never taken, or overdue via an amber banner in Profile with a one-tap **Back Up Now** action, plus an amber alert badge on the Home top bar profile icon.
 - **A color per type and fixed brand identity:** red for blood pressure, pink for pulse, orange for blood sugar, green for
   weight and blue for height. Each type's history page, home card and entry dialog are in its
   color, in light and dark mode. The app's overall theme is built around a dedicated brand pink
@@ -187,6 +201,9 @@ The app is available in Greek and English.
   color scheme from one color per type
 - Android `AlarmManager` and `BroadcastReceiver` for offline medication reminders and reboot rescheduling
 - AndroidX [Biometric](https://developer.android.com/jetpack/androidx/releases/biometric) for device-native biometric and credential app locking
+- AndroidX [WorkManager](https://developer.android.com/topic/libraries/architecture/workmanager) for scheduled background auto-backups
+- AndroidX [DocumentFile](https://developer.android.com/reference/androidx/documentfile/provider/DocumentFile) for Storage Access Framework directory tree access
+- Java Cryptography Architecture (`javax.crypto`) with AES-256-GCM and PBKDF2-HMAC-SHA256 for secure encrypted backups
 - MVVM: ViewModels with `StateFlow`, and a repository between the ViewModels and the database
 
 ## Project structure
@@ -196,7 +213,8 @@ All source code is in `app/src/main/java/com/example/healthlog/`:
 ```
 healthlog/
 ├── database/                Room entities (Measurement, Medication, Reminder, DoseLog, UserProfile), DAO, migrations
-├── repository/              MeasurementRepository, MedicationRepository, UserProfileRepository
+├── repository/              MeasurementRepository, MedicationRepository, UserProfileRepository, BackupRepository
+├── backup/                  BackupSerializer, BackupCrypto, BackupData, AutoBackupWorker, BackupStorage, BackupSchedule
 ├── model/                   MedicationScheduleResolver, ScheduledDoseItem, UserGender, validation rules
 ├── guidelines/              clinical evaluation logic & medical standards (ISH, WHO, WHF, Oxford)
 │   └── protocols/           evidence-based clinical measurement protocols & doctor persona visual
@@ -205,7 +223,7 @@ healthlog/
 └── ui/                      navigation (HealthLogNavHost, AppBottomBar, NavDestination)
     ├── home/                home screen: the type picker cards, with their icons
     │   └── newentry/        adding an entry: the new-entry dialog, its state and inputs
-    ├── profile/             personal profile: ProfileScreen, ProfileContent, ProfileViewModel
+    ├── profile/             personal profile: ProfileScreen, ProfileContent, ProfileViewModel, BackupDialogs
     ├── history/             history screen: the type tabs, the list/chart switch, deleting
     │   ├── list/            the list mode: the entry cards
     │   ├── filter/          history filtering: FilterBar, FilterBottomSheet, and filter criteria
@@ -256,6 +274,7 @@ Dedicated vector icons illustrate every clinical option and dialog action:
 - **Medication Alerts:** `ic_notifications.xml` (Reminder Alerts action & settings link), `ic_notifications_off.xml` (muted-alerts badge on pending doses)
 - **Export & Download Actions:** `ic_download.xml` (top app bar export action), `ic_format_pdf.xml` (doctor PDF report badge), `ic_format_csv.xml` (spreadsheet CSV data badge)
 - **Profile & Security Actions:** `ic_profile.xml` (profile top bar action), `ic_lock.xml` (app lock screen icon), `ic_edit.xml` (pencil edit mode toggle), `ic_gender_male.xml` (male avatar), `ic_gender_female.xml` (female avatar)
+- **Backup & Restore Actions:** `ic_backup.xml` (backup action & schedule), `ic_restore.xml` (restore action), `ic_folder.xml` (custom auto-backup directory), `ic_warning.xml` (backup overdue banner), `ic_key.xml` (auto-backup password protection)
 
 These are rendered inside `OptionSelectorGroup` as compact, single-choice chips with icon presentation and accessible content descriptions, keeping the entry dialog uncluttered and easy to tap.
 
@@ -321,7 +340,10 @@ There are two kinds of tests:
 - `UsernameValidationTest`: username character rules, letter prefix requirement, length bounds, and Greek character support
 - `UserProfileRepositoryTest`: profile observing, whitespace normalization, and clearing
 - `AppLockManagerTest`: cold start lock, 30-second background timeout, transient prompt suppression, and manual unlock
-- `ProfileViewModelTest`: profile loading, username validation, gender selection toggle, app lock toggle, and profile persistence
+- `ProfileViewModelTest`: profile loading, username validation, gender selection toggle, app lock toggle, backup schedule changes, custom folder selection, password setting, encrypted restore password verification, and profile persistence
+- `BackupSerializerAndCryptoTest`: JSON serialization and deserialization across all tables, AES-256-GCM encryption/decryption, metadata peeking, and tamper rejection
+- `BackupRepositoryTest`: database snapshot creation and transactional restore across all tables
+- `BackupScheduleAndStorageTest`: backup schedule intervals, SharedPrefs backup storage, and overdue calculation
 - `LocalizationParityTest`: programmatic verification of 100% string and plural parity between `values/strings.xml` and `values-el/strings.xml`
 
 **Instrumented tests** (`app/src/androidTest`, run on an emulator or device):
@@ -417,6 +439,7 @@ For detailed specifications and architectural decisions, see the complete [Produ
 *(Note: Per-measurement free-text notes were dropped/superseded in favor of discrete symptoms and medication adherence records).*
 
 ### Phase 4: Local Profiles & Data Portability
+- [x] Personal Profile & Biometric App Lock (Milestone 4.1 Completed)
+- [x] Data backup & restore (Milestone 4.2 Completed)
 - [ ] Local multi-user profiles (device profile switcher with guest-first experience)
-- [ ] Data backup & restore (encrypted export to personal storage or Google Drive)
 - [ ] Wider automated test coverage
