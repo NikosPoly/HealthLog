@@ -508,4 +508,12 @@
     <string name="export_pdf_saved_to_downloads">PDF report saved to Downloads</string>
     <string name="export_csv_saved_to_downloads">CSV data saved to Downloads</string>
     <string name="export_save_failed">Failed to save export file</string>
+
+    <!-- Biometric App Lock -->
+    <string name="app_lock_title">HealthLog is locked</string>
+    <string name="app_lock_subtitle">Authenticate to view your health records</string>
+    <string name="app_lock_action_unlock">Unlock</string>
+    <string name="app_lock_prompt_title">Unlock HealthLog</string>
+    <string name="app_lock_prompt_subtitle">Use biometrics or your device screen lock</string>
+    <string name="app_lock_icon_desc">App locked</string>
 </resources>

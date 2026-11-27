@@ -502,4 +502,12 @@
     <string name="export_pdf_saved_to_downloads">Η αναφορά PDF αποθηκεύτηκε στις Λήψεις</string>
     <string name="export_csv_saved_to_downloads">Τα δεδομένα CSV αποθηκεύτηκαν στις Λήψεις</string>
     <string name="export_save_failed">Αποτυχία αποθήκευσης του αρχείου εξαγωγής</string>
+
+    <!-- Biometric App Lock -->
+    <string name="app_lock_title">Το HealthLog είναι κλειδωμένο</string>
+    <string name="app_lock_subtitle">Πιστοποιήστε την ταυτότητά σας για πρόσβαση στα δεδομένα υγείας</string>
+    <string name="app_lock_action_unlock">Ξεκλείδωμα</string>
+    <string name="app_lock_prompt_title">Ξεκλείδωμα HealthLog</string>
+    <string name="app_lock_prompt_subtitle">Χρησιμοποιήστε βιομετρικά ή το κλείδωμα οθόνης</string>
+    <string name="app_lock_icon_desc">Κλειδωμένη εφαρμογή</string>
 </resources>

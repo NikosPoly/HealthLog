@@ -72,6 +72,8 @@ dependencies {
     implementation(libs.material.kolor)
     // Charts in the history (only used in ui/history/chart/vico)
     implementation(libs.vico.compose.m3)
+    // Biometric / device credential app lock
+    implementation(libs.androidx.biometric)
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     // Keeps all kotlinx.serialization libraries (used by Navigation and by Room's test tools)

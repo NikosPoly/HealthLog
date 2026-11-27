@@ -4,29 +4,48 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.FragmentActivity
 import com.example.healthlog.database.HealthDatabase
+import com.example.healthlog.model.MedicationScheduleResolver
+import com.example.healthlog.notifications.MedicationAlarmScheduler
 import com.example.healthlog.notifications.MedicationNotificationHelper
 import com.example.healthlog.repository.MeasurementRepository
 import com.example.healthlog.repository.MedicationRepository
+import com.example.healthlog.repository.SymptomRepository
+import com.example.healthlog.security.AndroidBiometricAuthenticator
+import com.example.healthlog.security.AppLockManager
+import com.example.healthlog.security.AppLockScreen
 import com.example.healthlog.ui.HealthLogNavHost
 import com.example.healthlog.ui.theme.HealthLogTheme
-
-import com.example.healthlog.model.MedicationScheduleResolver
-import com.example.healthlog.notifications.MedicationAlarmScheduler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
+
+    private lateinit var appLockManager: AppLockManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        appLockManager = AppLockManager.getInstance(applicationContext)
+        updateSecureWindowFlag(appLockManager.isLockEnabled.value)
 
         // Initialize local medication notification channel
         MedicationNotificationHelper.createNotificationChannel(applicationContext)
@@ -52,16 +71,76 @@ class MainActivity : ComponentActivity() {
         val database = HealthDatabase.getDatabase(applicationContext)
         val measurementRepository = MeasurementRepository(database.measurementDao())
         val medicationRepository = MedicationRepository(database.medicationDao())
-        val symptomRepository = com.example.healthlog.repository.SymptomRepository(database.symptomDao())
+        val symptomRepository = SymptomRepository(database.symptomDao())
 
         setContent {
-            HealthLogTheme {
-                HealthLogNavHost(
-                    repository = measurementRepository,
-                    medicationRepository = medicationRepository,
-                    symptomRepository = symptomRepository
-                )
+            val isLockEnabled by appLockManager.isLockEnabled.collectAsState()
+            val isLocked by appLockManager.isLocked.collectAsState()
+            var hasUnlockedOnce by remember { mutableStateOf(!isLocked) }
+            var lockErrorMessage by remember { mutableStateOf<String?>(null) }
+
+            LaunchedEffect(isLockEnabled) {
+                updateSecureWindowFlag(isLockEnabled)
             }
+
+            LaunchedEffect(isLocked) {
+                if (!isLocked) {
+                    hasUnlockedOnce = true
+                    lockErrorMessage = null
+                }
+            }
+
+            HealthLogTheme {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    // Never compose the health navigation graph on cold start until unlocked.
+                    // Once unlocked during the session, keep it mounted behind the opaque lock
+                    // screen so returning after a background timeout preserves the user's screen.
+                    if (hasUnlockedOnce) {
+                        HealthLogNavHost(
+                            repository = measurementRepository,
+                            medicationRepository = medicationRepository,
+                            symptomRepository = symptomRepository
+                        )
+                    }
+
+                    if (isLocked) {
+                        AppLockScreen(
+                            errorMessage = lockErrorMessage,
+                            onUnlockClick = {
+                                lockErrorMessage = null
+                                appLockManager.beginAuthentication()
+                                AndroidBiometricAuthenticator.authenticate(
+                                    activity = this@MainActivity,
+                                    title = getString(R.string.app_lock_prompt_title),
+                                    subtitle = getString(R.string.app_lock_prompt_subtitle),
+                                    onSuccess = {
+                                        appLockManager.endAuthentication(succeeded = true)
+                                    },
+                                    onError = { error ->
+                                        appLockManager.endAuthentication(succeeded = false)
+                                        lockErrorMessage = error
+                                    }
+                                )
+                            },
+                            onBackPressed = {
+                                moveTaskToBack(true)
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        appLockManager.onAppForegrounded()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (!isChangingConfigurations) {
+            appLockManager.onAppBackgrounded()
         }
     }
 
@@ -112,6 +191,14 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+        }
+    }
+
+    private fun updateSecureWindowFlag(enabled: Boolean) {
+        if (enabled) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        } else {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
         }
     }
 
