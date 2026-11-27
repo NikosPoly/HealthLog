@@ -16,6 +16,7 @@ import com.example.healthlog.model.MeasurementType
 fun HomeScreen(
     viewModel: HomeViewModel,
     onOpenHistory: () -> Unit,
+    onOpenProfile: () -> Unit,
     onOpenGuide: (MeasurementType) -> Unit = {},
     isDialogVisible: Boolean = true,
     bottomBar: @Composable () -> Unit = {}
@@ -38,6 +39,7 @@ fun HomeScreen(
         onDismissEntry = viewModel::closeEntry,
         onSave = viewModel::save,
         onOpenHistory = onOpenHistory,
+        onOpenProfile = onOpenProfile,
         onOpenGuide = onOpenGuide,
         isDialogVisible = isDialogVisible,
         bottomBar = bottomBar

@@ -516,4 +516,29 @@
     <string name="app_lock_prompt_title">Unlock HealthLog</string>
     <string name="app_lock_prompt_subtitle">Use biometrics or your device screen lock</string>
     <string name="app_lock_icon_desc">App locked</string>
+
+    <!-- Personal Profile & App Lock Settings -->
+    <string name="action_profile">Profile</string>
+    <string name="profile_screen_title">Personal Profile</string>
+    <string name="profile_section_personal_info">Personal Information</string>
+    <string name="profile_name_label">Name / Nickname</string>
+    <string name="profile_name_placeholder">e.g. Maria</string>
+    <string name="profile_dob_label">Date of birth</string>
+    <string name="profile_dob_placeholder">Select date of birth</string>
+    <string name="profile_age_format">%d years old</string>
+    <string name="profile_gender_label">Gender</string>
+    <string name="profile_gender_male">Male</string>
+    <string name="profile_gender_female">Female</string>
+    <string name="profile_clear_dob">Clear date of birth</string>
+    <string name="profile_section_security">Security &amp; Privacy</string>
+    <string name="profile_app_lock_title">Biometric App Lock</string>
+    <string name="profile_app_lock_subtitle">Require fingerprint, face, or screen lock to open the app</string>
+    <string name="profile_app_lock_no_credential_warning">To use App Lock, please set up a screen lock (PIN, pattern, or password) in your device settings.</string>
+    <string name="profile_app_lock_unavailable_warning">Biometric and screen lock features are unavailable on this device.</string>
+    <string name="profile_app_lock_disable_prompt_title">Disable App Lock</string>
+    <string name="profile_app_lock_disable_prompt_subtitle">Authenticate to turn off App Lock</string>
+    <string name="profile_app_lock_enable_prompt_title">Enable App Lock</string>
+    <string name="profile_app_lock_enable_prompt_subtitle">Confirm your identity to activate App Lock</string>
+    <string name="profile_saved_message">Profile updated</string>
+    <string name="profile_action_save">Save</string>
 </resources>

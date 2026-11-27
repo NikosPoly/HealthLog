@@ -72,6 +72,7 @@ class MainActivity : FragmentActivity() {
         val measurementRepository = MeasurementRepository(database.measurementDao())
         val medicationRepository = MedicationRepository(database.medicationDao())
         val symptomRepository = SymptomRepository(database.symptomDao())
+        val userProfileRepository = com.example.healthlog.repository.UserProfileRepository(database.userProfileDao())
 
         setContent {
             val isLockEnabled by appLockManager.isLockEnabled.collectAsState()
@@ -99,7 +100,9 @@ class MainActivity : FragmentActivity() {
                         HealthLogNavHost(
                             repository = measurementRepository,
                             medicationRepository = medicationRepository,
-                            symptomRepository = symptomRepository
+                            symptomRepository = symptomRepository,
+                            userProfileRepository = userProfileRepository,
+                            appLockManager = appLockManager
                         )
                     }
 

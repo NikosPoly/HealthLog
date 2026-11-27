@@ -510,4 +510,29 @@
     <string name="app_lock_prompt_title">Ξεκλείδωμα HealthLog</string>
     <string name="app_lock_prompt_subtitle">Χρησιμοποιήστε βιομετρικά ή το κλείδωμα οθόνης</string>
     <string name="app_lock_icon_desc">Κλειδωμένη εφαρμογή</string>
+
+    <!-- Personal Profile & App Lock Settings -->
+    <string name="action_profile">Προφίλ</string>
+    <string name="profile_screen_title">Προσωπικό Προφίλ</string>
+    <string name="profile_section_personal_info">Προσωπικά Στοιχεία</string>
+    <string name="profile_name_label">Όνομα / Ψευδώνυμο</string>
+    <string name="profile_name_placeholder">π.χ. Μαρία</string>
+    <string name="profile_dob_label">Ημερομηνία γέννησης</string>
+    <string name="profile_dob_placeholder">Επιλογή ημερομηνίας γέννησης</string>
+    <string name="profile_age_format">%d ετών</string>
+    <string name="profile_gender_label">Φύλο</string>
+    <string name="profile_gender_male">Άνδρας</string>
+    <string name="profile_gender_female">Γυναίκα</string>
+    <string name="profile_clear_dob">Εκκαθάριση ημερομηνίας γέννησης</string>
+    <string name="profile_section_security">Ασφάλεια &amp; Απόρρητο</string>
+    <string name="profile_app_lock_title">Βιομετρικό Κλείδωμα</string>
+    <string name="profile_app_lock_subtitle">Απαίτηση δακτυλικού αποτυπώματος, προσώπου ή κλειδώματος οθόνης για άνοιγμα της εφαρμογής</string>
+    <string name="profile_app_lock_no_credential_warning">Για να χρησιμοποιήσετε το Κλείδωμα Εφαρμογής, ορίστε κλείδωμα οθόνης (PIN, μοτίβο ή κωδικό) στις ρυθμίσεις της συσκευής σας.</string>
+    <string name="profile_app_lock_unavailable_warning">Οι λειτουργίες βιομετρικών και κλειδώματος οθόνης δεν είναι διαθέσιμες σε αυτή τη συσκευή.</string>
+    <string name="profile_app_lock_disable_prompt_title">Απενεργοποίηση Κλειδώματος</string>
+    <string name="profile_app_lock_disable_prompt_subtitle">Πιστοποιήστε την ταυτότητά σας για απενεργοποίηση</string>
+    <string name="profile_app_lock_enable_prompt_title">Ενεργοποίηση Κλειδώματος</string>
+    <string name="profile_app_lock_enable_prompt_subtitle">Επιβεβαιώστε την ταυτότητά σας για ενεργοποίηση</string>
+    <string name="profile_saved_message">Το προφίλ ενημερώθηκε</string>
+    <string name="profile_action_save">Αποθήκευση</string>
 </resources>
