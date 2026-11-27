@@ -69,8 +69,13 @@ fun HealthLogNavHost(
         startDestination = Routes.HOME
     ) {
         composable(Routes.HOME) {
+            val context = androidx.compose.ui.platform.LocalContext.current
+            val resolvedBackupStorage = backupStorage ?: remember {
+                com.example.healthlog.backup.SharedPrefsBackupStorage(context.applicationContext)
+            }
+
             val viewModel: HomeViewModel = viewModel(
-                factory = HomeViewModel.factory(repository)
+                factory = HomeViewModel.factory(repository, resolvedBackupStorage)
             )
 
             val currentBackStackEntry by navController.currentBackStackEntryAsState()
@@ -87,8 +92,6 @@ fun HealthLogNavHost(
                     onTabSelected = { selectedTab = it }
                 )
             }
-
-            val context = androidx.compose.ui.platform.LocalContext.current
 
             when (selectedTab) {
                 NavigationTab.VITALS -> {

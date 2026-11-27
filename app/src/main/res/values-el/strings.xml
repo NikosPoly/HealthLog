@@ -601,4 +601,5 @@
     <string name="backup_folder_reset">Επαναφορά στον προεπιλεγμένο φάκελο αντιγράφων</string>
     <string name="backup_auto_password_saved">Ο κωδικός αυτόματων αντιγράφων αποθηκεύτηκε</string>
     <string name="backup_auto_password_cleared">Ο κωδικός αυτόματων αντιγράφων αφαιρέθηκε</string>
+    <string name="backup_warning_badge_desc">Απαιτείται ή εκκρεμεί αντίγραφο ασφαλείας</string>
 </resources>

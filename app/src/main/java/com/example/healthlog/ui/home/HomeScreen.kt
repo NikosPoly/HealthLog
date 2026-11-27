@@ -22,11 +22,13 @@ fun HomeScreen(
     bottomBar: @Composable () -> Unit = {}
 ) {
     val selectedType by viewModel.selectedType.collectAsState()
+    val isBackupOverdue by viewModel.isBackupOverdue.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
     val resources = LocalResources.current
 
     LaunchedEffect(Unit) {
+        viewModel.refreshBackupStatus()
         viewModel.messages.collect { messageId ->
             snackbarHostState.showSnackbar(resources.getString(messageId))
         }
@@ -34,6 +36,7 @@ fun HomeScreen(
 
     HomeContent(
         selectedType = selectedType,
+        isBackupOverdue = isBackupOverdue,
         snackbarHostState = snackbarHostState,
         onOpenEntry = viewModel::openEntry,
         onDismissEntry = viewModel::closeEntry,
